@@ -1,0 +1,11 @@
+
+@import "tailwindcss";
+
+
+
+:root{
+
+--color-secondary:#b6c1d3;
+--color-button:bg-gradient-to-r from-blue-500 to-purple-600;
+
+}
