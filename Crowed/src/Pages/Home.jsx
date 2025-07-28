@@ -69,7 +69,7 @@ const Home = () => {
           <button className="p-2  px-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-md font-bold text-white cursor-pointer max-sm:px-5">
             Get Started
           </button>
-          <button className="p-2 px-10 bg-white/10 border border-white/10 rounded-md font-bold text-white cursor-pointer  max-sm:px-5">
+          <button className="p-2 px-10 bg-white/5 border border-white/10 rounded-md font-bold text-white cursor-pointer  max-sm:px-5">
             watch demo
           </button>
         </div>
