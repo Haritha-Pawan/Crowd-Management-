@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import '../assets/assets'
-import assets from '../assets/assets'
+import '../assets/assets.js'
+import assets from '../assets/assets.js'
 import Sidebar from '../Ui/Sidebar.jsx';
 import{User,Car,TriangleAlert} from 'lucide-react';
 import Overview from './Attendee/Overview.jsx';
@@ -32,7 +32,7 @@ const AttendeeDashbord = () => {
 
 
   return (
-    <div className='h-screen flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 '>
+    <div className=' flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 '>
         <Sidebar 
           
           title={"Attendee Dashboard"}
