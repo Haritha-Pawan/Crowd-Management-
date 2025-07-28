@@ -24,7 +24,7 @@ const AdminOverview = () => {
                  {card.map((data,index)=>(
 
                     
-                  <div key={index} className="users bg-white/10 p-5 text-white font-bold  rounded-md w-58">
+                  <div key={index} className="users bg-white/5 border-white/10 p-5 text-white font-bold  rounded-md w-58">
                     
                     <div className="icon flex justify-between ">
                         <div className="title text-[18px] ">{data.title}</div>

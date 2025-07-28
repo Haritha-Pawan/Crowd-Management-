@@ -32,7 +32,7 @@ const CounterManagement = () => {
                  {card.map((data,index)=>(
 
                     
-                  <div key={index} className="users bg-white/10 p-5 text-white font-bold  rounded-md w-58">
+                  <div key={index} className="users bg-white/5 border border-white/10 p-5 text-white font-bold  rounded-md w-58">
                     
                     <div className="icon flex justify-between ">
                         <div className="title text-[18px] ">{data.title}</div>
@@ -54,7 +54,7 @@ const CounterManagement = () => {
 
 
             <div className="grid grid-cols-2 mt-4 gap-10">
-                <div className="p-2 bg-white/10 rounded-md text-white">
+                <div className="p-2 bg-white/5 border border-white/10 rounded-md text-white">
                     <div className="flex">
                         <div className="counter-Name ">Counter A1</div>
                         <div className={`counter-status `}>Entry</div>

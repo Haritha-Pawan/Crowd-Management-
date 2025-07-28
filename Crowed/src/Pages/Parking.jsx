@@ -104,7 +104,7 @@ const Parking = () => {
         </div>
 
         <div className="grid xl:grid-cols-3 max-sm:grid-cols-1 gap-10 mt-10">
-          <div className="bg-white/10 p-3 text-(--color-secondary) rounded-md border border-white/10 shadow-md">
+          <div className="bg-white/5 p-3 text-(--color-secondary) rounded-md border border-white/10 shadow-md">
             Available Spot
             <div className="text-[#4ade80] text-4xl font-bold flex justify-between">
               7
@@ -112,7 +112,7 @@ const Parking = () => {
             </div>
           </div>
 
-          <div className="bg-white/10 p-3 text-(--color-secondary) rounded-md border border-white/10 shadow-md">
+          <div className="bg-white/5 p-3 text-(--color-secondary) rounded-md border border-white/10 shadow-md">
             Occupied Spot
             <div className="text-[#f87171] text-4xl font-bold flex justify-between">
               2
@@ -120,7 +120,7 @@ const Parking = () => {
             </div>
           </div>
 
-          <div className="bg-white/10 p-3 text-(--color-secondary) rounded-md border border-white/10 shadow-md">
+          <div className="bg-white/5 p-3 text-(--color-secondary) rounded-md border border-white/10 shadow-md">
             Available Spot
             <div className="text-[#4ade80] text-4xl font-bold flex justify-between">
               7
@@ -135,7 +135,7 @@ const Parking = () => {
           {parkingDetails.map((spot, index) => (
             <div
               key={index}
-              className="spot-Area  bg-white/10  p-3 text-(--color-secondary) rounded-md border border-white/10 shadow-md mt-10"
+              className="spot-Area  bg-white/5  p-3 text-(--color-secondary) rounded-md border border-white/10  mt-10 backdrop-blur-md"
             >
               <div className="spot-Name text-white font-bold flex  justify-between text-xl mb-1">
                 Spot {spot.name}

@@ -26,7 +26,7 @@ const UserManagement = () => {
           <div className="card grid md:grid-cols-4 gap-10 ">
 
             {data.map((data,index)=>(
-                 <div className="p-5 bg-white/10 w-58 rounded-md shadow-md">
+                 <div className="p-5 bg-white/5 border border-white/10 w-58 rounded-md shadow-md">
                      <div className="text-gray-300">{data.title}</div>
                      <div className="text-2xl text-white font-bold flex justify-between ">{data.count}
                         
@@ -48,7 +48,7 @@ const UserManagement = () => {
 
 
         {/*start serch section*/}
-             <div className="search-section bg-white/10 p-5 mt-5 rounded-md ">
+             <div className="search-section bg-white/5 border border-white/10 p-5 mt-5 rounded-md ">
                   <div className="flex gap-4">
                     <Filter color='#ffffff' size={30}/>
                       <div className="text-white text-2xl font-bold">Filter & Search</div>
@@ -59,7 +59,7 @@ const UserManagement = () => {
                       <div className="flex flex-col">
                            
                              <label className='text-white '>Search User</label>
-                             <input type="text" placeholder='Serach by Name, Email or Nic' className='bg-white/10 p-2 px-8 rounded-md border border-white/5 shadow-md'/>
+                             <input type="text" placeholder='Serach by Name, Email or Nic' className='bg-white/5  p-2 px-8 rounded-md border border-white/10 shadow-md'/>
                               <Search className=' relative bottom-7 ml-2'  size={20}/>
 
                           
@@ -70,7 +70,7 @@ const UserManagement = () => {
                      <div className="flex flex-col">
                            
                              <label className='text-white'>Status Filter</label>
-                             <select className='bg-white/10 p-2 w-[250px] rounded-md border border-white/5 text-gray-100 shadow-md'>
+                             <select className='bg-white/5 p-2 w-[250px] rounded-md border border-white/10 text-gray-100 shadow-md'>
                                <option className='text-gray/5 '>All Status</option>
                                <option>sd</option>
                                 <option>All Status</option>
@@ -83,7 +83,7 @@ const UserManagement = () => {
                         <div className="flex flex-col">
                            
                              <label className='text-white'>Role Filter</label>
-                             <select className='bg-white/10 p-2 w-[250px] rounded-md border border-white/5 text-gray-100 shadow-md'>
+                             <select className='bg-white/5 p-2 w-[250px] rounded-md border border-white/10 text-gray-100 shadow-md'>
                                <option className='text-gray/5 '>All Role</option>
                                <option>sd</option>
                                <option>All Status</option>
@@ -94,7 +94,7 @@ const UserManagement = () => {
 
 
                       <div className="flex flex-col">    
-                          <button className='bg-white/10 p-2 text-white relative top-6 rounded-md px-4 cursor-pointer border border-white/5 shadow-md'>Clear Filter</button>               
+                          <button className='bg-white/5 p-2 text-white relative top-6 rounded-md px-4 cursor-pointer border border-white/10 shadow-md'>Clear Filter</button>               
                    </div>
                  </div> 
              </div>
@@ -102,7 +102,7 @@ const UserManagement = () => {
              {/* End of Serac */}
 
 
-             <div className="table bg-white/10 p-5 mt-5 rounded-md w-full ">
+             <div className="table bg-white/5 border-white/10  p-5 mt-5 rounded-md w-full ">
                   
              </div>
 
