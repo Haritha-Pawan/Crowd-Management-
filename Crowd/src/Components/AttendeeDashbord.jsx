@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import '../assets/assets.js'
 import assets from '../assets/assets.js'
-import Sidebar from '../Ui/Sidebar.jsx';
+import Sidebar from '../Ui/SidebarDash.jsx';
 import{User,Car,TriangleAlert} from 'lucide-react';
 import Overview from './Attendee/Overview.jsx';
 import Profile from './Attendee/Profile.jsx';
