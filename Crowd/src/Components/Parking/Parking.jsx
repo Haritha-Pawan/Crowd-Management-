@@ -94,7 +94,7 @@ const Parking = () => {
       
       <div className="box p-10 mt-20 w-full">
 
-               
+              
                 
          
         <div className="text-white text-4xl font-bold">Smart Parking System</div>
@@ -142,7 +142,7 @@ const Parking = () => {
                 <div
                   className={`availability ${
                     spot.status === "available"
-                      ? "border border-green-500/20  p-1 rounded-full text-xs px-2 text-green-400"
+                      ? "border border-green-500/20 bg-green-500/20 p-1 rounded-full text-xs px-2 text-green-400"
                       : "bg-red-500/20 border border-red-800/20 p-1 rounded-full text-xs px-2 text-red-500"
                   }  `}
                 >
