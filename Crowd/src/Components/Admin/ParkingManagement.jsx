@@ -1,7 +1,10 @@
 import { Car, ChartNoAxesCombined, Circle, CircleDotIcon, Delete, DeleteIcon, Edit, Locate, LocationEdit, LocationEditIcon, Trash2Icon } from 'lucide-react';
-import React from 'react'
+import React, { useState } from 'react'
+import AddForm from './Parking/AddForm';
 
 const ParkingManagement = () => {
+
+   const[isPopupOpen,setIsPopupOpen] = useState(false);
 
   const card = [
         
@@ -38,7 +41,12 @@ const ParkingManagement = () => {
         </div>
 
 
-        <button className="add-Parking bg-gradient-to-r from-blue-500 to-purple-600 p-2 px-10 cursor-pointer  font-medium mt-5 absolute right-22 rounded-md hover:opacity-70 focus:outline-none focus:ring-2 text-white ">+ Add Prking Zone</button>
+        <button onClick={()=>setIsPopupOpen(true)} className="add-Parking bg-gradient-to-r from-blue-500 to-purple-600 p-2 px-10 cursor-pointer  font-medium mt-5 absolute right-22 rounded-md hover:opacity-70  text-white ">+ Add Prking Zone</button>
+           
+       <AddForm
+       isOpen={isPopupOpen}
+       onClose={()=>setIsPopupOpen(false)}
+       />
 
        {/*parking slots*/}
        <div className="parking-slots mt-20 grid grid-cols-2 gap-10">
