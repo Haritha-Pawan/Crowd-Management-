@@ -4,6 +4,7 @@ import assets from '../assets/assets.js';
 import { Link } from "react-router-dom";
 import Register from "./Register.jsx"
 import Features from "./Features.jsx";
+import Login from "../Components/Login/Login.jsx";
 
 const Home = () => {
   return (
@@ -66,9 +67,11 @@ const Home = () => {
         </div>
 
         <div className="button-section mt-10 flex gap-6">
+          <Link to='/Login'>
           <button className="p-2  px-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-md font-bold text-white cursor-pointer max-sm:px-5">
             Get Started
           </button>
+          </Link>
           <button className="p-2 px-10 bg-white/5 border border-white/10 rounded-md font-bold text-white cursor-pointer  max-sm:px-5">
             watch demo
           </button>

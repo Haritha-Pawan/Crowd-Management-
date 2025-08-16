@@ -1,5 +1,6 @@
 import { Circle, Filter, Search, User } from 'lucide-react'
 import React from 'react'
+import { Eye, Edit, Trash } from "lucide-react";
 
 const UserManagement = () => {
 
@@ -7,12 +8,21 @@ const UserManagement = () => {
 
    
     
-     {title:"Total Users",count:"4",icon:<User/>},
-     {title:"Active Users",count:"4",icon:<Circle color='#facc15'/>},
+    {title:"Total Users",count:"4",icon:<User/>},
+    {title:"Active Users",count:"4",icon:<Circle color='#facc15'/>},
     {title:"Pending",count:"4",icon:""},
     {title:"Organizers",count:"4",icon:""},
 
 
+  ];
+   const users = [
+    {
+      name: "Naveen",
+      email: "Navee@gmail.com",
+      role: "Attendee",
+      counter: "A1",
+      status: "Active",
+    },
   ];
 
 
@@ -21,7 +31,7 @@ const UserManagement = () => {
           <div className="header text-3xl text-white font-bold">User Management</div>
           <div className="sub-heading text-gray-300 mb-5">Manage system users and their permissions</div>
 
-                {/* card section total users .... */}
+         {/* card section total users .... */}
 
           <div className="card grid md:grid-cols-4 gap-10 ">
 
@@ -102,9 +112,55 @@ const UserManagement = () => {
              {/* End of Serac */}
 
 
-             <div className="table bg-white/5 border-white/10  p-5 mt-5 rounded-md w-full ">
+             <div className="table bg-white/5 border-white/10  p-5 mt-5 rounded-md w-full text-white ">
+               
+                  <h2 className="text-xl font-semibold mb-4">Users</h2>
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-gray-500">
+                        <th className="pb-3">Name</th>
+                        <th className="pb-3">Email</th>
+                        <th className="pb-3">Role</th>
+                        <th className="pb-3">Counter</th>
+                        <th className="pb-3">Status</th>
+                        <th className="pb-3">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((user, idx) => (
+                        <tr key={idx} className="border-b border-gray-600">
+                          <td className="py-3">{user.name}</td>
+                          <td className="py-3">
+                            <span className="font-bold">
+                              {user.email.split("@")[0]}
+                            </span>
+                            @{user.email.split("@")[1]}
+                          </td>
+                          <td className="py-3">{user.role}</td>
+                          <td className="py-3">{user.counter}</td>
+                          <td className="py-3">
+                            <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">
+                              {user.status}
+                            </span>
+                          </td>
+                          <td className="py-3 flex gap-2">
+                            <button className="bg-blue-700 p-2 rounded hover:bg-blue-600">
+                              <Eye size={16} />
+                            </button>
+                            <button className="bg-blue-700 p-2 rounded hover:bg-blue-600">
+                              <Edit size={16} />
+                            </button>
+                            <button className="bg-red-700 p-2 rounded hover:bg-gray-600">
+                              <Trash size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+              
                   
-             </div>
+          </div>
 
 
     </div>
