@@ -17,11 +17,11 @@ const ParkingManagement = () => {
         ];
 
   return (
-    <div className='p-12 '>
+    <div className='p-12 2xl:h-screen'>
         <div className="header text-white text-3xl font-bold">Parking Management</div>
         <div className="sub-heding text-gray-300 text-xl">Manage parking zones and reservations</div>
 
-        <div className="card grid lg:grid-cols-4 mt-8 md:grid-cols-2  gap-3 mx-auto">
+        <div className="card grid 2xl:grid-cols-4  lg:grid-cols-4 mt-8 md:grid-cols-2  gap-3 mx-auto">
 
             {card.map((data,index)=>(
 
@@ -49,7 +49,7 @@ const ParkingManagement = () => {
        />
 
        {/*parking slots*/}
-       <div className="parking-slots mt-20 grid grid-cols-2 gap-10">
+       <div className="parking-slots mt-20 2xl:grid-2 lg:grid grid-cols-2 gap-10">
           <div className="p-5 bg-white/5 rouned-md border border-white/10 rounded-md text-white text-2xl font-medium"> 
                <div className="title flex lg:gap-30  max-sm:gap-1">Zone A - Main Parking
                  <div className="bg-green-500/20 text-xs rounded-full border border-green-300/20 w-10 px-8 flex justify-center items-center  h-5 relative top-3">Active</div>
