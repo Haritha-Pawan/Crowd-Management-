@@ -1,6 +1,6 @@
 
 import React from 'react'
-import Sidebar from '../../Ui/Sidebar.jsx';
+import Sidebar from '../../Ui/SidebarDash.jsx';
 import {Routes ,Route} from 'react-router-dom'
 import{User,UserPlus,Car,TriangleAlert,Settings} from 'lucide-react';
 import AdminOverview from './AdminOverview.jsx';

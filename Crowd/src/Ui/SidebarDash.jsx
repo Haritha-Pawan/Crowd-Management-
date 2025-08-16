@@ -3,7 +3,7 @@ import { Car, MoveLeft, User, Users, TriangleAlert } from "lucide-react";
 import { Link } from "react-router-dom";
 import assets from "../assets/assets.js";
 
-const Sidebar = ({title,subtitle,links}) => {
+const SidebarDash = ({title,subtitle,links}) => {
 
 
   return (
@@ -45,4 +45,4 @@ const Sidebar = ({title,subtitle,links}) => {
   );
 };
 
-export default Sidebar;
+export default SidebarDash;
