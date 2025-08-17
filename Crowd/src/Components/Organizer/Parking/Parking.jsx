@@ -1,8 +1,13 @@
 import { Car, Map } from "lucide-react";
 import React from "react";
-import BackButton from "../Ui/BackButton";
+import { useNavigate } from "react-router-dom";
+
 
 const Parking = () => {
+
+ const navigate = useNavigate();
+
+
   const parkingDetails = [
     {
       id: 1,
@@ -88,13 +93,16 @@ const Parking = () => {
     },
   ];
 
+
+
+
   return (
     <div className="h-auto flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 ">
 
       
       <div className="box p-10 mt-20 w-full">
 
-               
+              
                 
          
         <div className="text-white text-4xl font-bold">Smart Parking System</div>
@@ -142,7 +150,7 @@ const Parking = () => {
                 <div
                   className={`availability ${
                     spot.status === "available"
-                      ? "border border-green-500/20  p-1 rounded-full text-xs px-2 text-green-400"
+                      ? "border border-green-500/20 bg-green-500/20 p-1 rounded-full text-xs px-2 text-green-400"
                       : "bg-red-500/20 border border-red-800/20 p-1 rounded-full text-xs px-2 text-red-500"
                   }  `}
                 >
@@ -192,7 +200,9 @@ const Parking = () => {
                   <div className="bg-white/10 px-10 border border-white/10 p-2 rounded-md cursor-pointer text-center  font-bold text-black">
                     Navigate{" "}
                   </div>
-                  <div className="bg-white/10 px-10 border border-white/10 p-2 rounded-md cursor-pointer text-center  text-white font-bold bg-gradient-to-r from-blue-500 to-purple-600">
+                  <div 
+                      onClick={() => navigate("/reserve")}
+                     className="bg-white/10 px-10  p-2 rounded-md cursor-pointer text-center  text-white font-bold bg-gradient-to-r from-blue-500 to-purple-600">
                     Reserve
                   </div>
                 </div>
