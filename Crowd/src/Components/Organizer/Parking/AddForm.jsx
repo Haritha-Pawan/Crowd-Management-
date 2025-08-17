@@ -35,8 +35,6 @@ const AddForm = ({isOpen,onClose}) => {
                                  <input type='text' placeholder="Capacity" className='text-white w-full  bg-[#272f40] border border-white/20 rounded-md p-2  placeholder:text-gray-500'/>
                          </div>
 
-                         <button>c</button>
-
                          
 
                          <div className="grid grid-cols-3 gap-2 mt-3">

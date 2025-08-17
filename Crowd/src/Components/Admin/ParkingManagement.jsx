@@ -1,6 +1,6 @@
 import { Car, ChartNoAxesCombined, Circle, CircleDotIcon, Delete, DeleteIcon, Edit, Locate, LocationEdit, LocationEditIcon, Trash2Icon } from 'lucide-react';
 import React, { useState } from 'react'
-import AddForm from './Parking/AddForm';
+import AddForm from '../Organizer/Parking/AddForm';
 
 const ParkingManagement = () => {
 
