@@ -2,8 +2,8 @@ import React from 'react'
 
 const Task = () => {
   return (
-    <div>
-      task
+    <div className='w-30 h-40 bg-red-400'>
+      
     </div>
   )
 }
