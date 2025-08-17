@@ -1,9 +1,20 @@
-import { Car, CardSim, CreditCard, User } from 'lucide-react'
+import { Car, CardSim, CreditCard, MoveLeftIcon, User } from 'lucide-react'
 import React from 'react'
+import {  useNavigate } from 'react-router-dom'
 
 const Reserve = () => {
+   
+    const navigate = useNavigate();
+
   return (
      <div className="h-screen flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 ">
+
+        <div 
+         onClick={()=>navigate('/parking')}
+        className='flex absolute top-12 left-10 bg-white/5 px-4 py-1 rounded-md border border-white/10 cursor-pointer gap-1'>
+            <MoveLeftIcon color='#ffff'/>
+             <div className='text-white '>Back to Home</div>
+        </div>
              
            <div className="box p-10 mt-14 w-full">
                    <div className="text-white text-4xl font-bold">Smart Parking System</div>
@@ -86,7 +97,7 @@ const Reserve = () => {
                                         <div className='flex gap-7 mt-2'>
 
                                                  <div className='flex flex-col'>
-                                                         <label className='text-gray-300 text-[13px]'>Full Name</label>
+                                                         <label className='text-gray-300 text-[13px]'>Email</label>
                                                         <input type='email' placeholder='harithapawan@gmail.com' className='w-[200px] border border-white/10 bg-white/5 rounded-md placeholder:ml-2 text-gray-300 text-[13px] outline-none p-2' />
                                                  </div>
 

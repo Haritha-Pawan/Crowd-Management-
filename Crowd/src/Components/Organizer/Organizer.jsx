@@ -1,14 +1,17 @@
-import { Car, Settings, TriangleAlert, User, UserPlus } from 'lucide-react'
+import { Car, Eye, Settings, TriangleAlert, User, UserPlus } from 'lucide-react'
 import React from 'react'
 import SidebarDash from '../../Ui/SidebarDash'
+import { Routes,Route } from 'react-router-dom';
+import Live from './Live/live';
+import Task from './Task/Task';
 
 const Organizer = () => {
     const OrganizerLinks = [
-        { name: 'overview', icon: <User size={20} />, to: '/Organizer/AdminOverview' },
-        { name: 'Task Management', icon: <UserPlus />, to: '/Organizer/OrganizerManagement' },
-        { name: ' Management', icon: <Car />, to: '/Admin/OrganizerManagement' },
+        { name: 'overview', icon: <User size={20} />, to: '/Organizer/OrganizerOverview' },
+        { name: 'Task Management', icon: <UserPlus />, to: '/Organizer/task' },
+        { name: ' Management', icon: <Car />, to: '/Organizer/OrganizerManagement' },
         { name: ' Management', icon: <TriangleAlert />, to: '/Organizer/parkingManagement' },
-        {name:' Management',icon:<Settings />,to:'/Organizer/service'}
+        {name:' Live Priview',icon:<Eye />,to:'/Organizer/Live'}
       ];
 
   return (
@@ -25,7 +28,13 @@ const Organizer = () => {
           {/* Right side */}
     
             <div className="Right flex flex-10/12">
-      
+                  
+                   <Routes>
+                      <Route path='/Live' element={<Live/>}/>
+                      <Route path='/task' element={<Task/>}/>
+                   </Routes>
+
+                 
        
            </div>
           
