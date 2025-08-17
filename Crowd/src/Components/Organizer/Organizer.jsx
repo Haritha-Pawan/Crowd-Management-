@@ -16,7 +16,7 @@ const Organizer = () => {
           
           <SidebarDash 
           
-          title={"Admin Dashboard"}
+          title={"Organizer Dashboard"}
           subtitle={"Your event experience hub"}
           links={OrganizerLinks}
 
