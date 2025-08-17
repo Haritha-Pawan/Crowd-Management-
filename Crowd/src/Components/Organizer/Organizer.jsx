@@ -11,7 +11,7 @@ const Organizer = () => {
         { name: 'Task Management', icon: <UserPlus />, to: '/Organizer/task' },
         { name: ' Management', icon: <Car />, to: '/Organizer/OrganizerManagement' },
         { name: ' Management', icon: <TriangleAlert />, to: '/Organizer/parkingManagement' },
-        {name:' Live Priview',icon:<Eye />,to:'/Organizer/Live'}
+        {name:' Live Preview',icon:<Eye />,to:'/Organizer/Live'}
       ];
 
   return (
