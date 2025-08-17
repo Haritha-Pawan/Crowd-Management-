@@ -6,10 +6,10 @@ import Register from './Pages/Register.jsx'
 import Attendee from './Components/AttendeeDashbord.jsx'
 import Admin from './Components/Admin/Admin.jsx'
 import Overview from './Components/Attendee/Overview.jsx'
-import Parking from './Components/Parking/Parking.jsx'
+import Parking from './Components/Organizer/Parking/Parking.jsx'
 import Profile from './Components/Attendee/Profile.jsx'
 import Organizer from './Components/Organizer/Organizer.jsx'
-
+import Reserve from './Components/Organizer/Parking/Reserve.jsx'
 
 
 const App = () => {
@@ -34,6 +34,7 @@ const App = () => {
               <Route path='/admin/*' element={<Admin/>}/>
 
               <Route path='/Organizer' element={<Organizer/>} />
+              <Route path="/reserve" element={<Reserve/>}/>
               
              
                

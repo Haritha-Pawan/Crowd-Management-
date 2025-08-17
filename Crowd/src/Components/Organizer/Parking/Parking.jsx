@@ -1,8 +1,13 @@
 import { Car, Map } from "lucide-react";
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 
 const Parking = () => {
+
+ const navigate = useNavigate();
+
+
   const parkingDetails = [
     {
       id: 1,
@@ -87,6 +92,9 @@ const Parking = () => {
       features: ["Valet"],
     },
   ];
+
+
+
 
   return (
     <div className="h-auto flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 ">
@@ -192,7 +200,9 @@ const Parking = () => {
                   <div className="bg-white/10 px-10 border border-white/10 p-2 rounded-md cursor-pointer text-center  font-bold text-black">
                     Navigate{" "}
                   </div>
-                  <div className="bg-white/10 px-10 border border-white/10 p-2 rounded-md cursor-pointer text-center  text-white font-bold bg-gradient-to-r from-blue-500 to-purple-600">
+                  <div 
+                      onClick={() => navigate("/reserve")}
+                     className="bg-white/10 px-10  p-2 rounded-md cursor-pointer text-center  text-white font-bold bg-gradient-to-r from-blue-500 to-purple-600">
                     Reserve
                   </div>
                 </div>
