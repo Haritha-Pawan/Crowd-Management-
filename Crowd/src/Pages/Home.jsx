@@ -2,9 +2,7 @@ import React from "react";
 import Role from "./Role";
 import assets from '../assets/assets.js';
 import { Link } from "react-router-dom";
-import Register from "./Register.jsx"
 import Features from "./Features.jsx";
-import Login from "../Components/Login/Login.jsx";
 
 const Home = () => {
   return (
