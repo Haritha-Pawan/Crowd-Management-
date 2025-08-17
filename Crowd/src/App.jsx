@@ -11,7 +11,6 @@ import Profile from './Components/Attendee/Profile.jsx'
 import Organizer from './Components/Organizer/Organizer.jsx'
 
 
-
 const App = () => {
   return (
 
