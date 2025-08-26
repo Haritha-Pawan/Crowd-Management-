@@ -73,7 +73,6 @@ const UserManagement = () => {
                               <Search className=' relative bottom-7 ml-2'  size={20}/>
 
                           
-                     
 
                       </div>
 
