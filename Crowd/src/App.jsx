@@ -11,6 +11,7 @@ import Parking from './Components/Organizer/Parking/Parking.jsx'
 import Profile from './Components/Attendee/Profile.jsx'
 import Organizer from './Components/Organizer/Organizer.jsx'
 import Reserve from './Components/Organizer/Parking/Reserve.jsx'
+import Login from './Pages/Login.jsx'
 
 
 const App = () => {
@@ -26,6 +27,7 @@ const App = () => {
 
               <Route path='/' element={<Home/>}/>
               <Route path='/register' element={<Register />}/>
+               <Route path='/Login' element={<Login />}/>
               <Route path='/parking' element={<Parking />}/>
               
               <Route path='/attendee/*' element={<Attendee/>}/>
@@ -34,6 +36,7 @@ const App = () => {
              
 
               <Route path='/admin/*' element={<Admin/>}/>
+
 
 
               <Route path='/Organizer/*' element={<Organizer/>} />
