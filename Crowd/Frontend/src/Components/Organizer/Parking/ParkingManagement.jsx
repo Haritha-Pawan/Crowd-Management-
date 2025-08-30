@@ -1,6 +1,6 @@
 import { Car, ChartNoAxesCombined, Circle, CircleDotIcon, Delete, DeleteIcon, Edit, Locate, LocationEdit, LocationEditIcon, Trash2Icon } from 'lucide-react';
 import React, { useState } from 'react'
-import AddForm from '../Organizer/Parking/AddForm';
+import AddForm from './AddForm';
 
 const ParkingManagement = () => {
 
@@ -41,7 +41,7 @@ const ParkingManagement = () => {
         </div>
 
 
-        <button onClick={()=>setIsPopupOpen(true)} className="add-Parking bg-gradient-to-r from-blue-500 to-purple-600 p-2 px-10 cursor-pointer  font-medium mt-5 absolute right-22 rounded-md hover:opacity-70  text-white ">+ Add Prking Zone</button>
+        <button onClick={()=>setIsPopupOpen(true)} className="add-Parking bg-gradient-to-r from-blue-500 to-purple-600 p-2 px-10 cursor-pointer  font-medium mt-5 absolute right-22 rounded-md hover:opacity-70  text-white ">+ Add Parking Zone</button>
            
        <AddForm
        isOpen={isPopupOpen}
