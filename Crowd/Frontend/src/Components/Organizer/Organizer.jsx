@@ -4,18 +4,19 @@ import SidebarDash from '../../Ui/SidebarDash'
 import { Routes,Route } from 'react-router-dom';
 import Live from './Live/live';
 import Task from './Task/Task';
+import ParkingManagement from './Parking/ParkingManagement';
 
 const Organizer = () => {
     const OrganizerLinks = [
         { name: 'overview', icon: <User size={20} />, to: '/Organizer/OrganizerOverview' },
         { name: 'Task Management', icon: <UserPlus />, to: '/Organizer/task' },
-        { name: ' Management', icon: <Car />, to: '/Organizer/OrganizerManagement' },
-        { name: ' Management', icon: <TriangleAlert />, to: '/Organizer/parkingManagement' },
+        { name: ' Parking Management', icon: <Car />, to: '/Organizer/parkingManagement' },
+        { name: '  Management', icon: <TriangleAlert />, to: '' },
         {name:' Live Preview',icon:<Eye />,to:'/Organizer/Live'}
       ];
 
   return (
- <div className='flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 h-auto'>
+ <div className='flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 h-screen'>
           
           <SidebarDash 
           
@@ -32,6 +33,7 @@ const Organizer = () => {
                    <Routes>
                       <Route path='/Live' element={<Live/>}/>
                       <Route path='/task' element={<Task/>}/>
+                      <Route path="/ParkingManagement" element={<ParkingManagement/>} />
                    </Routes>
 
                  

@@ -6,7 +6,7 @@ import{User,UserPlus,Car,TriangleAlert,Settings, Loader2Icon} from 'lucide-react
 import AdminOverview from './AdminOverview.jsx';
 import UserManagement from './UserManagement.jsx';
 import CounterManagement from './CounterManagement.jsx';
-import ParkingManagement from './ParkingManagement.jsx';
+import ParkingManagement from '../Organizer/Parking/ParkingManagement.jsx';
 
 
 const Admin = () => {
@@ -15,7 +15,7 @@ const Admin = () => {
         { name: 'overview', icon: <User size={20} />, to: '/Admin/AdminOverview' },
         { name: 'User Management', icon: <UserPlus />, to: '/Admin/UserManagement' },
         { name: 'Counter Management', icon: <Loader2Icon />, to: '/Admin/CounterManagement' },
-        { name: 'Parking Management', icon: <Car />, to: '/Admin/parkingManagement' },
+        { name: ' Management', icon: <Car />, to: '/Admin/parkingManagement' },
         {name:'Service Management',icon:<Settings />,to:'/Admin/service'}
       ];
 
@@ -39,7 +39,7 @@ const Admin = () => {
                 <Route path="/AdminOverview" element={<AdminOverview/>}/>
                 <Route path="/UserManagement" element={<UserManagement/>} />
                 <Route path="/CounterManagement" element={<CounterManagement/>} />
-                <Route path="/ParkingManagement" element={<ParkingManagement/>} />
+               
               </Routes>
             
            </div>
