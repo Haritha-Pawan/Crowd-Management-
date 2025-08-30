@@ -7,9 +7,11 @@ import Attendee from './Components/AttendeeDashbord.jsx'
 import Admin from './Components/Admin/Admin.jsx'
 import Overview from './Components/Attendee/Overview.jsx'
 import Parking from './Components/Organizer/Parking/Parking.jsx'
+
 import Profile from './Components/Attendee/Profile.jsx'
 import Organizer from './Components/Organizer/Organizer.jsx'
 import Reserve from './Components/Organizer/Parking/Reserve.jsx'
+import Login from './Pages/Login.jsx'
 
 
 const App = () => {
@@ -18,19 +20,24 @@ const App = () => {
      <>
 
 
+            
+   
 
-
-             <Routes path='/'>
+             <Routes>
 
               <Route path='/' element={<Home/>}/>
               <Route path='/register' element={<Register />}/>
+               <Route path='/Login' element={<Login />}/>
               <Route path='/parking' element={<Parking />}/>
               
               <Route path='/attendee/*' element={<Attendee/>}/>
                <Route path='/overview' element={<Overview/>}/>
               <Route path='/profile' element={<Profile/>}/>
+             
 
               <Route path='/admin/*' element={<Admin/>}/>
+
+
 
               <Route path='/Organizer/*' element={<Organizer/>} />
               <Route path="/reserve" element={<Reserve/>}/>
