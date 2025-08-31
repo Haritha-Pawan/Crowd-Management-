@@ -16,7 +16,7 @@ mongoose.connect(process.env.MONGO_URI)
 .catch(err => console.log(err));
 
 // Routes
-const taskRoutes = require('./routes/taskRoutes');
+const taskRoutes = require('./routes/');
 app.use('/api', taskRoutes);
 
 // Default route
