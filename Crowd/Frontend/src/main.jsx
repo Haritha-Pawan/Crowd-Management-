@@ -10,7 +10,7 @@ import Parking from './Components/Organizer/Parking/Parking.jsx'
 createRoot(document.getElementById('root')).render(
  
  <BrowserRouter>
-  <Parking />
+  <App />
  </BrowserRouter>
    
 
