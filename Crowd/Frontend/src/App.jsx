@@ -12,6 +12,7 @@ import Profile from './Components/Attendee/Profile.jsx'
 import Organizer from './Components/Organizer/Organizer.jsx'
 import Reserve from './Components/Organizer/Parking/Reserve.jsx'
 import Login from './Pages/Login.jsx'
+import ParkingZone from './Components/Organizer/Parking/parkingZone.jsx'
 
 
 const App = () => {
