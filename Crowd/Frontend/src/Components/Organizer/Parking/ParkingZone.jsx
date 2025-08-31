@@ -117,9 +117,9 @@ const ZoneCard = ({ name, available, total, updatedAt, onView }) => {
 const ParkingZone = () => {
   const zones = [
     { name: "Kandy",   available: 56, total: 80, updatedAt: "2 min ago" },
-    { name: "Colombo", available: 22, total: 60, updatedAt: "Just now" },
-    { name: "Galle",   available: 44, total: 70, updatedAt: "5 min ago" },
-    { name: "Jaffna",  available: 12, total: 40, updatedAt: "1 min ago" },
+    { name: "Bogambara", available: 22, total: 60, updatedAt: "Just now" },
+    { name: " Weediya",   available: 44, total: 70, updatedAt: "5 min ago" },
+    { name: "zone-2",  available: 12, total: 40, updatedAt: "1 min ago" },
   ];
 
   return (
