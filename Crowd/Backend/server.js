@@ -1,3 +1,5 @@
+console.log("hellw ")
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -16,7 +18,7 @@ mongoose.connect(process.env.MONGO_URI)
 .catch(err => console.log(err));
 
 // Routes
-const taskRoutes = require('./routes/');
+const taskRoutes = require('./routes/taskRoutes');
 app.use('/api', taskRoutes);
 
 // Default route

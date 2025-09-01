@@ -25,7 +25,3 @@ node_modules/
 *.njsproj
 *.sln
 *.sw?
-
-# Ignore package lock file
-package-lock.json
-

@@ -16,7 +16,7 @@ const Organizer = () => {
       ];
 
   return (
- <div className='flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900  min-h-screen'>
+ <div className='flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 h-screen'>
           
           <SidebarDash 
           
@@ -33,7 +33,7 @@ const Organizer = () => {
                    <Routes>
                       <Route path='/Live' element={<Live/>}/>
                       <Route path='/task' element={<Task/>}/>
-                      <Route path="ParkingManagement/*" element={<ParkingManagement/>} />
+                      <Route path="/ParkingManagement" element={<ParkingManagement/>} />
                    </Routes>
 
                  
