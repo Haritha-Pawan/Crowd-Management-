@@ -21,7 +21,7 @@ mongoose.connect(process.env.MONGO_URI)
 const taskRoutes = require('./routes/taskRoutes');
 app.use('/api', taskRoutes);
 
-// Default route
+// Default routes
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Task Management API' });
 });
