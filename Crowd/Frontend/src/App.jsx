@@ -10,7 +10,7 @@ import Parking from './Components/Organizer/Parking/Parking.jsx'
 
 import Profile from './Components/Attendee/Profile.jsx'
 import Organizer from './Components/Organizer/Organizer.jsx'
-import Reserve from './Components/Organizer/Parking/Reserve.jsx'
+import Reserve from './Components/Organizer/Parking/ReserveForm.jsx'
 import Login from './Pages/Login.jsx'
 import ParkingZone from './Components/Organizer/Parking/parkingZone.jsx'
 
@@ -29,7 +29,9 @@ const App = () => {
               <Route path='/' element={<Home/>}/>
               <Route path='/register' element={<Register />}/>
                <Route path='/Login' element={<Login />}/>
+
               <Route path='/parking' element={<ParkingZone />}/>
+              <Route path='/zone' element={<Parking />}/>
               
               <Route path='/attendee/*' element={<Attendee/>}/>
                <Route path='/overview' element={<Overview/>}/>
