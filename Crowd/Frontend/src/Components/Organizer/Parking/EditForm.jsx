@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 
-const EditForm = ({ isOpen, onClose,OnCreated ,zoneId }) => {
+const EditForm = ({ isOpen, onClose,OnCreated ,zoneId,refresh }) => {
 
   const FACILITY_OPTIONS = [
   "EV charging",
@@ -19,7 +19,18 @@ const EditForm = ({ isOpen, onClose,OnCreated ,zoneId }) => {
 
   if (!isOpen) return null;
 
- useEffect(() => {
+
+  const[formData,setFormData] =useState({
+     name: "",
+    location: "",
+    capacity: "",
+    type: "Standard",
+    status: "active",
+    description: "",
+    facilities:[],
+  })
+
+   useEffect(() => {
   const fetchZone = async () => {
     if (!zoneId) return;
     try {
@@ -38,21 +49,6 @@ const EditForm = ({ isOpen, onClose,OnCreated ,zoneId }) => {
 
 
 
-
-
-
-
-
-  const[formData,setFormData] =useState({
-     name: "",
-    location: "",
-    capacity: "",
-    type: "Standard",
-    status: "active",
-    description: "",
-    facilities:[],
-  })
-
   const handlechange = (e)=>{
     const{name,value} =e.target;
     setFormData(prev => ({...prev, [name]:value}));
@@ -70,23 +66,18 @@ const EditForm = ({ isOpen, onClose,OnCreated ,zoneId }) => {
     });
   };
 
-
-  const handleSubmit = async(e)=>{
-        e.preventDefault();
-
-        try{
-            const response = await axios.put(`http://localhost:5000/api/parking-zone/${zoneId}`, formData);
-            
-            toast.success("Parking zone updated successfully"); 
-             OnCreated?.(response.data.zone); // Optional callback
-    onClose(); // Close modal           
-  
-
-        }catch(error){
-            console.error("There was an error creating the parking zone", error);
-            alert('There was an error creating the parking zone');
-        }
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`http://localhost:5000/api/parking-zone/${zoneId}`, formData);
+      toast.success("Parking zone updated successfully");
+      refresh?.();
+      onClose();
+    } catch (error) {
+      console.error("Error updating the parking zone", error);
+      toast.error("Failed to update parking zone");
+    }
+  };
 
 
   return (

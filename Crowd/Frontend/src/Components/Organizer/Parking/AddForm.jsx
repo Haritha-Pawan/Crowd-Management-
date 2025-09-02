@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 
-const AddForm = ({ isOpen, onClose,OnCreated }) => {
+const AddForm = ({ isOpen, onClose,OnCreated,refresh }) => {
 
   const FACILITY_OPTIONS = [
   "EV charging",
@@ -57,8 +57,10 @@ const AddForm = ({ isOpen, onClose,OnCreated }) => {
              OnCreated?.(res.data.zone);
             
 
-            onClose();
-            toast.success("Parking zone created successfully");            
+           
+            toast.success("Parking zone created successfully");   
+            refresh?.();      
+             onClose(); 
   
 
         }catch(error){

@@ -25,6 +25,23 @@ const ParkingManagement = () => {
 
   const buttons = ["Parking Zones", "Reservation", "Real-time View"];
 
+  const fetchParkingZones = async () => {
+  try {
+    const res = await axios.get("http://localhost:5000/api/parking-zone");
+    if (Array.isArray(res.data)) {
+      setParkingZones(res.data);
+    } else {
+      console.error("Invalid parking zone data");
+    }
+  } catch (error) {
+    console.error("Error fetching zones:", error);
+  }
+};
+
+
+
+
+
 
   //total parkingslot
 
@@ -163,9 +180,9 @@ const handleDelete = async (id) => {
             </button>
 
           
-            <AddForm isOpen={isAddPopupOpen} onClose={() => setAddIsPopupOpen(false)} />
+            <AddForm isOpen={isAddPopupOpen} onClose={() => setAddIsPopupOpen(false)}  refresh={fetchParkingZones}/>
 
-              <EditForm isOpen={isEditPopupOpen}  onClose={()=>setEditIsPopupOpen(false)} zoneId={selectedZoneId} />
+              <EditForm isOpen={isEditPopupOpen}  onClose={()=>setEditIsPopupOpen(false)} zoneId={selectedZoneId} refresh={fetchParkingZones} />
 
             {/* Parking Zones Info */}
             <div className="parking-slots mt-20 grid grid-cols-1 lg:grid-cols-2 gap-10">
