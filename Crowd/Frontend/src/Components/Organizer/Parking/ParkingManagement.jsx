@@ -16,7 +16,8 @@ import { toast } from "react-hot-toast";
 import EditForm from "./EditForm";
 
 const ParkingManagement = () => {
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isAddPopupOpen, setAddIsPopupOpen] = useState(false);
+  const [isEditPopupOpen, setEditIsPopupOpen] = useState(false);
   const [active, setActive] = useState("Parking Zones");
   const [parkingZones, setParkingZones] = useState([]); // Store fetched parking zones
   const [selectedZoneId, setSelectedZoneId] = useState(null);
@@ -155,15 +156,16 @@ const handleDelete = async (id) => {
 
             {/* Add Parking Button */}
             <button
-              onClick={() => setIsPopupOpen(true)}
+              onClick={() => setAddIsPopupOpen(true)}
               className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 px-10 cursor-pointer font-medium mt-5 absolute right-22 rounded-md hover:opacity-70 text-white"
             >
               + Add Parking Zone
             </button>
 
           
-            <AddForm isOpen={isPopupOpen} onClose={() => setIsPopupOpen(false)} />
-              <EditForm isOpen={isPopupOpen}  onClose={()=>setIsPopupOpen(false)} zoneId={selectedZoneId} />
+            <AddForm isOpen={isAddPopupOpen} onClose={() => setAddIsPopupOpen(false)} />
+
+              <EditForm isOpen={isEditPopupOpen}  onClose={()=>setEditIsPopupOpen(false)} zoneId={selectedZoneId} />
 
             {/* Parking Zones Info */}
             <div className="parking-slots mt-20 grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -233,7 +235,7 @@ const handleDelete = async (id) => {
                           Details
                         </button>
                         <button
-                          onClick={() => {setIsPopupOpen(true); setSelectedZoneId(zone._id)}}
+                          onClick={() => {setEditIsPopupOpen(true); setSelectedZoneId(zone._id)}}
                         className="flex items-center border border-white/10 px-4 py-1 bg-white/5 rounded-md text-white text-sm">
                           <Edit size={15} className="mr-2" />
                           Edit
