@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
 
-const AddForm = ({ isOpen, onClose,OnCreated }) => {
+const EditForm = ({ isOpen, onClose,OnCreated ,zoneId }) => {
 
   const FACILITY_OPTIONS = [
   "EV charging",
@@ -18,6 +18,29 @@ const AddForm = ({ isOpen, onClose,OnCreated }) => {
 
 
   if (!isOpen) return null;
+
+ useEffect(() => {
+  const fetchZone = async () => {
+    if (!zoneId) return;
+    try {
+      const res = await axios.get(`http://localhost:5000/api/parking-zone/${zoneId}`);
+      setFormData(res.data); // assuming res.data is the zone object
+    } catch (err) {
+      console.error("Error fetching zone for edit:", err);
+      toast.error("Failed to load parking zone data.");
+    }
+  };
+
+  if (isOpen) {
+    fetchZone();
+  }
+}, [zoneId, isOpen]);
+
+
+
+
+
+
 
 
   const[formData,setFormData] =useState({
@@ -52,13 +75,11 @@ const AddForm = ({ isOpen, onClose,OnCreated }) => {
         e.preventDefault();
 
         try{
-            const response = await axios.post("http://localhost:5000/api/parking-zone", formData);
-            console.log(response.data);
-             OnCreated?.(res.data.zone);
+            const response = await axios.put(`http://localhost:5000/api/parking-zone/${zoneId}`, formData);
             
-
-            onClose();
-            toast.success("Parking zone created successfully");            
+            toast.success("Parking zone updated successfully"); 
+             OnCreated?.(response.data.zone); // Optional callback
+    onClose(); // Close modal           
   
 
         }catch(error){
@@ -186,7 +207,7 @@ const AddForm = ({ isOpen, onClose,OnCreated }) => {
             <button
               type="submit"
               className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-md px-4 py-2 text-white font-semibold hover:opacity-80"
-            >Create
+            >Update
             </button>
           </div>
         </form>
@@ -195,4 +216,4 @@ const AddForm = ({ isOpen, onClose,OnCreated }) => {
   );
 };
 
-export default AddForm;
+export default EditForm;

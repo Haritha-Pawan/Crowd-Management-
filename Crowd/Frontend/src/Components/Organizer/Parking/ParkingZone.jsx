@@ -130,6 +130,8 @@ const ParkingZone = () => {
     { name: "zone-2",  available: 12, total: 40, updatedAt: "1 min ago" },
   ];
 
+  
+
   return (
     <div className="min-h-screen bg-[radial-gradient(1200px_600px_at_10%_-10%,rgba(59,130,246,0.15),transparent),radial-gradient(1200px_600px_at_90%_10%,rgba(16,185,129,0.12),transparent)] 
                     bg-slate-950">

@@ -14,13 +14,18 @@ import Reserve from './Components/Organizer/Parking/ReserveForm.jsx'
 import Login from './Pages/Login.jsx'
 import ParkingZone from './Components/Organizer/Parking/parkingZone.jsx'
 
+import { Toaster } from 'react-hot-toast'
+
 
 const App = () => {
   return (
 
      <>
 
-
+       <Toaster
+         position="top-right"
+       
+       />
             
    
 

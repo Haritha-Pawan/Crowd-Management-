@@ -16,7 +16,7 @@ const Organizer = () => {
       ];
 
   return (
- <div className='flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 h-screen'>
+ <div className='flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 h-auto min-h-screen'>
           
           <SidebarDash 
           
