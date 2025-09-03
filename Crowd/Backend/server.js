@@ -5,6 +5,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 
 import zoneRouter from './src/Modules/Parking/Route/zone.Route.js';
+import taskRoutes from './src/Modules/task/Route/task.Route.js';
 
 
 dotenv.config();
@@ -24,18 +25,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 
 app.use("/api/parking-zone",zoneRouter);
-
-
-
-/*
-// Routes
-const taskRoutes = require('./routes/taskRoutes');
-app.use('/api', taskRoutes);
-
-// Default routes
-app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to the Task Management API' });
-});*/
+app.use("/api/tasks", taskRoutes);
 
 // Start server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
