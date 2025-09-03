@@ -19,12 +19,13 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "admin"], // only allow these roles
+      enum: ["user", "admin","organizer"], // only allow these roles
       default: "user",
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
+    status: {
+      type: String,
+      enum: ["active", "pending", "banned"],
+      default: "active",
     },
   },
   { timestamps: true }

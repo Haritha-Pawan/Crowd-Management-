@@ -1,0 +1,6 @@
+.users-table-container {
+  max-height: 400px;   /* limit height */
+  overflow-y: auto;    /* scroll vertically when overflowing */
+  overflow-x: auto;    /* scroll horizontally if needed */
+  border-radius: 8px;  /* match your card style */
+}
