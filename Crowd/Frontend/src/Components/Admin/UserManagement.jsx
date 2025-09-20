@@ -1,13 +1,16 @@
 import { Circle, Filter, Search, User as UserIcon } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Eye, Edit, Trash } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import AddUserForm from "../Admin/addUser";
 import axios from "axios";
 import EditUser from "../Admin/updateUser";
+import { Link } from "react-router-dom";
 
 const API_URL = "http://localhost:5000/users";
 
 const UserManagement = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [editUser, setEditUser] = useState(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -16,15 +19,23 @@ const UserManagement = () => {
   const [selectedField, setSelectedField] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  
+
+  const handleViewAttendee = (userId) => {
+    navigate(`/admin/attendee/${userId}`);
+  };
+
   // Enhanced filter logic
   const filteredUsers = users.filter((user) => {
     // Search term filtering
-    const searchMatch = selectedField === "all"
-      ? Object.values(user).some(value => 
-          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      : user[selectedField]?.toString().toLowerCase().includes(searchTerm.toLowerCase());
+    const searchMatch =
+      selectedField === "all"
+        ? Object.values(user).some((value) =>
+            value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        : user[selectedField]
+            ?.toString()
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase());
 
     // Role filtering
     const roleMatch = roleFilter === "all" || user.role === roleFilter;
@@ -36,8 +47,8 @@ const UserManagement = () => {
   });
 
   // Get unique roles and statuses for filter dropdowns
-  const uniqueRoles = ["all", ...new Set(users.map(user => user.role))];
-  const uniqueStatuses = ["all", ...new Set(users.map(user => user.status))];
+  const uniqueRoles = ["all", ...new Set(users.map((user) => user.role))];
+  const uniqueStatuses = ["all", ...new Set(users.map((user) => user.status))];
 
   // Clear all filters
   const clearFilters = () => {
@@ -93,11 +104,21 @@ const UserManagement = () => {
   };
 
   const coordinators = ["Naveen", "Lahiru", "Kasun"];
+  // Dynamic counts based on users state
+  const totalUsers = users.length;
+  const activeUsers = users.filter((u) => u.status === "active").length;
+  const pendingUsers = users.filter((u) => u.status === "Pending").length;
+  const organizerUsers = users.filter((u) => u.role === "Organizer").length;
+
   const data = [
-    { title: "Total Users", count: "4", icon: <UserIcon /> },
-    { title: "Active Users", count: "4", icon: <Circle color="#facc15" /> },
-    { title: "Pending", count: "4", icon: "" },
-    { title: "Organizers", count: "4", icon: "" },
+    { title: "Total Users", count: totalUsers, icon: <UserIcon /> },
+    {
+      title: "Active Users",
+      count: activeUsers,
+      icon: <Circle color="#facc15" />,
+    },
+    { title: "Pending", count: pendingUsers, icon: "" },
+    { title: "Organizers", count: organizerUsers, icon: "" },
   ];
 
   return (
@@ -107,14 +128,19 @@ const UserManagement = () => {
       </div>
       <div className="gap-5">
         {/* Add user button */}
+        <Link to='/admin/AttendeDetails'>
         <button className="absolute top-12 right-50 p-3 px-8 mx-4  rounded-md cursor-pointer bg-green-500 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all">
           + View Attende
+          
         </button>
+       </Link>
         {/* view attende */}
+       
         <button
           onClick={() => setIsPopupOpen(true)}
           className="absolute top-12 right-12 p-3 px-8 rounded-md cursor-pointer bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
         >
+          
           + Add User
         </button>
       </div>
@@ -171,7 +197,7 @@ const UserManagement = () => {
               <select
                 value={selectedField}
                 onChange={(e) => setSelectedField(e.target.value)}
-                className="bg-white/5 p-2 rounded-md border border-white/10 text-gray-100 shadow-md"
+                className="bg-white/5 p-2 rounded-md border border-white/50 text-gray-500 shadow-md "
               >
                 <option value="all">All Fields</option>
                 <option value="name">Name</option>
@@ -180,18 +206,15 @@ const UserManagement = () => {
                 <option value="status">Status</option>
               </select>
             </div>
-            <Search
-              className="relative bottom-7 ml-2"
-              size={20}
-            />
+            <Search className="relative bottom-7 ml-2" size={20} />
           </div>
 
           <div className="flex flex-col">
             <label className="text-white">Status Filter</label>
-            <select 
+            <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-white/5 p-2 w-[250px] rounded-md border border-white/10 text-gray-100 shadow-md"
+              className="bg-white/5 p-2 w-[200px] rounded-md border border-white/10 text-gray-500 shadow-md"
             >
               {uniqueStatuses.map((status) => (
                 <option key={status} value={status}>
@@ -206,7 +229,7 @@ const UserManagement = () => {
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="bg-white/5 p-2 w-[250px] rounded-md border border-white/10 text-gray-100 shadow-md"
+              className="bg-white/5 p-2 w-[200px] rounded-md border border-white/10 text-gray-500 shadow-md"
             >
               {uniqueRoles.map((role) => (
                 <option key={role} value={role}>
@@ -217,7 +240,7 @@ const UserManagement = () => {
           </div>
 
           <div className="flex flex-col">
-            <button 
+            <button
               onClick={clearFilters}
               className="bg-white/5 p-2 text-white relative top-6 rounded-md px-4 cursor-pointer border border-white/10 shadow-md hover:bg-white/10 transition-colors"
             >
@@ -258,7 +281,10 @@ const UserManagement = () => {
                   </span>
                 </td>
                 <td className="py-3 flex gap-2">
-                  <button className="bg-blue-700 p-2 rounded hover:bg-blue-600">
+                  <button 
+                    onClick={() => handleViewAttendee(user._id)}
+                    className="bg-blue-700 p-2 rounded hover:bg-blue-600"
+                  >
                     <Eye size={16} />
                   </button>
                   <button

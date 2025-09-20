@@ -7,6 +7,7 @@ import AdminOverview from './AdminOverview.jsx';
 import UserManagement from './UserManagement.jsx';
 import CounterManagement from './CounterManagement.jsx';
 import ParkingManagement from '../Organizer/Parking/ParkingManagement.jsx';
+import AttendeDetails from './AttendeDetails.jsx';
 
 
 const Admin = () => {
@@ -40,7 +41,7 @@ const Admin = () => {
                 <Route path="/AdminOverview" element={<AdminOverview/>}/>
                 <Route path="/UserManagement" element={<UserManagement/>} />
                 <Route path="/CounterManagement" element={<CounterManagement/>} />
-               
+                <Route path="/AttendeDetails" element={<AttendeDetails/>} />
               </Routes>
             
            </div>
