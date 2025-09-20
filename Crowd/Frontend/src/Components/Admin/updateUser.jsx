@@ -22,7 +22,7 @@ const EditUser = ({ isOpen, onClose, user, onUserUpdated }) => {
       });
     }
   }, [user]);
-
+//open modal
   if (!isOpen) return null;
 
   const handleChange = (e) => {

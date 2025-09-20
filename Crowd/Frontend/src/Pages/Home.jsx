@@ -14,7 +14,7 @@ const Home = () => {
             
             crowdFlow</div>
 
-     
+      <h1>hi welcome</h1>
           <div className="hidden lg:flex space-x-6 text-sm font-medium items-center">
             <Link to='/parking'>
             <button className="hover:bg-white/10 hover:text-white transition px-4 py-2 rounded-md  cursor-pointer">

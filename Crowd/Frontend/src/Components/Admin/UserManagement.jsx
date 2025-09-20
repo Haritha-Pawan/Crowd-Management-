@@ -12,6 +12,40 @@ const UserManagement = () => {
   const [editUser, setEditUser] = useState(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedField, setSelectedField] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  
+  // Enhanced filter logic
+  const filteredUsers = users.filter((user) => {
+    // Search term filtering
+    const searchMatch = selectedField === "all"
+      ? Object.values(user).some(value => 
+          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : user[selectedField]?.toString().toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Role filtering
+    const roleMatch = roleFilter === "all" || user.role === roleFilter;
+
+    // Status filtering
+    const statusMatch = statusFilter === "all" || user.status === statusFilter;
+
+    return searchMatch && roleMatch && statusMatch;
+  });
+
+  // Get unique roles and statuses for filter dropdowns
+  const uniqueRoles = ["all", ...new Set(users.map(user => user.role))];
+  const uniqueStatuses = ["all", ...new Set(users.map(user => user.status))];
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedField("all");
+    setRoleFilter("all");
+    setStatusFilter("all");
+  };
 
   const fetchUsers = async () => {
     try {
@@ -125,39 +159,69 @@ const UserManagement = () => {
 
         <div className="flex gap-10 mt-3">
           <div className="flex flex-col">
-            <label className="text-white ">Search User</label>
-            <input
-              type="text"
-              placeholder="Serach by Name, Email or Nic"
-              className="bg-white/5  p-2 px-8 rounded-md border border-white/5  shadow-md text-white"
-            />
+            <label className="text-white">Search User</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search users..."
+                className="bg-white/5 p-2 px-8 rounded-md border border-white/5 shadow-md text-white w-[250px]"
+              />
+              <select
+                value={selectedField}
+                onChange={(e) => setSelectedField(e.target.value)}
+                className="bg-white/5 p-2 rounded-md border border-white/10 text-gray-100 shadow-md"
+              >
+                <option value="all">All Fields</option>
+                <option value="name">Name</option>
+                <option value="email">Email</option>
+                <option value="role">Role</option>
+                <option value="status">Status</option>
+              </select>
+            </div>
             <Search
-              className=" relative bottom-7 ml-2  color='#fffff "
+              className="relative bottom-7 ml-2"
               size={20}
             />
           </div>
 
           <div className="flex flex-col">
             <label className="text-white">Status Filter</label>
-            <select className="bg-white/5 p-2 w-[250px] rounded-md border border-white/10 text-gray-100 shadow-md">
-              <option className="text-gray/5 ">All Status</option>
-              <option>sd</option>
-              <option>All Status</option>
+            <select 
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-white/5 p-2 w-[250px] rounded-md border border-white/10 text-gray-100 shadow-md"
+            >
+              {uniqueStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="flex flex-col">
             <label className="text-white">Role Filter</label>
-            <select className="bg-white/5 p-2 w-[250px] rounded-md border border-white/10 text-gray-100 shadow-md">
-              <option className="text-gray/5 ">All Role</option>
-              <option>sd</option>
-              <option>All Status</option>
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="bg-white/5 p-2 w-[250px] rounded-md border border-white/10 text-gray-100 shadow-md"
+            >
+              {uniqueRoles.map((role) => (
+                <option key={role} value={role}>
+                  {role.charAt(0).toUpperCase() + role.slice(1)}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="flex flex-col">
-            <button className="bg-white/5 p-2 text-white relative top-6 rounded-md px-4 cursor-pointer border border-white/10 shadow-md">
-              Clear Filter
+            <button 
+              onClick={clearFilters}
+              className="bg-white/5 p-2 text-white relative top-6 rounded-md px-4 cursor-pointer border border-white/10 shadow-md hover:bg-white/10 transition-colors"
+            >
+              Clear Filters
             </button>
           </div>
         </div>
@@ -179,7 +243,7 @@ const UserManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map((user, idx) => (
+            {filteredUsers.map((user, idx) => (
               <tr key={user._id} className="border-b border-gray-600">
                 <td className="py-3">{user.name}</td>
                 <td className="py-3">
