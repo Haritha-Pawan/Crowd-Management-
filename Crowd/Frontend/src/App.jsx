@@ -13,7 +13,7 @@ import Organizer from './Components/Organizer/Organizer.jsx'
 import Reserve from './Components/Organizer/Parking/ReserveForm.jsx'
 import Login from './Pages/Login.jsx'
 import ParkingZone from './Components/Organizer/Parking/parkingZone.jsx'
-
+import Coordinator from './Components/Coordinator/Coordinator.jsx'
 import { Toaster } from 'react-hot-toast'
 
 
@@ -49,6 +49,7 @@ const App = () => {
 
               <Route path='/Organizer/*' element={<Organizer/>} />
               <Route path="/reserve" element={<Reserve/>}/>
+              <Route path="/Coordinator/*" element={<Coordinator/>}/>
               
              
                
