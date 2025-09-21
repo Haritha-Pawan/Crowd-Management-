@@ -28,9 +28,7 @@ const Role = () => {
                     Attendee
                     </div>
 
-                
-                
-
+               
                  <div className="description  text-white text-l text-center">
                       Register, get QR codes, find parking, report issues
                  </div>
@@ -51,7 +49,6 @@ const Role = () => {
                  </div>
 
                  
-
              </div>
      </Link>
 
@@ -68,8 +65,6 @@ const Role = () => {
                  <div className="description  text-white text-l text-center">
                      Create events, manage maps, handle sponsorships
                  </div>
-
-                 
 
              </div>
 
@@ -116,9 +111,6 @@ const Role = () => {
           </div>  
             
       </div>
-
-
-     
 
     </div>
   )
