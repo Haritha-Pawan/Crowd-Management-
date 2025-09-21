@@ -68,8 +68,11 @@ const Role = () => {
 
              </div>
 
-     </Link>
+     </Link >
 
+
+   <Link to ="/Coordinator">
+   
 
           <div className="role1 bg-white/5 p-5 h-55 rounded-md border-2 border-white/10 cursor-pointer hover:scale-95">
                 <div className="icon w-14 mx-auto mb-5 rounded-4xl ">
@@ -83,6 +86,7 @@ const Role = () => {
                  </div>
                  
           </div>
+          </Link>
 
           <div className="role1 bg-white/5 p-5 h-55 rounded-md border-2 border-white/10 cursor-pointer hover:scale-95">
                 <div className="icon w-14 mx-auto mb-5 rounded-4xl ">
