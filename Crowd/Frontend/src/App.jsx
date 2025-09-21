@@ -15,6 +15,7 @@ import Login from './Pages/Login.jsx'
 import ParkingZone from './Components/Organizer/Parking/parkingZone.jsx'
 
 import { Toaster } from 'react-hot-toast'
+import Coordinator from './Components/Coordinator/Coordinator.jsx'
 
 
 const App = () => {
@@ -48,6 +49,7 @@ const App = () => {
 
 
               <Route path='/Organizer/*' element={<Organizer/>} />
+              <Route path='/Coordinator/*' element={<Coordinator/>} />
               <Route path="/reserve" element={<Reserve/>}/>
               
              
