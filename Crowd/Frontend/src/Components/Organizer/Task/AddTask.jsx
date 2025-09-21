@@ -1,59 +1,67 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const API = "http://localhost:5000/api";
 
-const AddTask = ({ isOpen, onClose, onCreate }) => {
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    coordinator: "",
-    otherStaffs: "",
-    priority: "medium",
-    status: "todo",
-    dueDate: "",
-  });
+const emptyForm = {
+  title: "",
+  description: "",
+  coordinator: "",
+  otherStaffs: "",
+  priority: "medium",
+  status: "todo",
+  dueDate: "",
+};
+
+const AddTask = ({ isOpen, onClose, onCreate, onUpdate, initialData }) => {
+  const isEdit = !!initialData;
+  const [form, setForm] = useState(emptyForm);
+
+  useEffect(() => {
+    if (initialData) {
+      setForm({
+        ...emptyForm,
+        ...initialData,
+        // normalize for UI
+        status: String(initialData.status || "todo").replace("_", " "),
+        dueDate: initialData.dueDate ? initialData.dueDate.split("T")[0] : "",
+      });
+    } else {
+      setForm(emptyForm);
+    }
+  }, [initialData]);
 
   if (!isOpen) return null;
+
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const submit = async (e) => {
     e.preventDefault();
     if (!form.title.trim()) return alert("Title is required");
 
-    // normalize to match backend enums
+    // normalize to backend format
     const payload = {
-      ...form,
+      title: form.title,
+      description: form.description,
+      coordinator: form.coordinator,
+      otherStaffs: form.otherStaffs,
       priority: form.priority.toLowerCase(),
       status: form.status.toLowerCase().replace(" ", "_"),
       dueDate: form.dueDate || null,
     };
 
-    try {
-      const { data } = await axios.post(`${API}/tasks`, payload);
-      // notify parent (support either prop name)
-      onCreate?.(data);
-      onClose?.();
-      setForm({
-        title: "",
-        description: "",
-        coordinator: "",
-        otherStaffs: "",
-        priority: "medium",
-        status: "todo",
-        dueDate: "",
-      });
-    } catch (err) {
-      console.error(err);
-      alert("Failed to create task");
+    if (isEdit) {
+      onUpdate?.(payload);
+    } else {
+      onCreate?.(payload);
     }
   };
 
   return (
     <div className="fixed z-50 inset-0 flex justify-center items-center bg-black/60">
       <div className="w-[90%] max-w-2xl bg-[#0f172a] p-5 rounded-md border border-white/10">
-        <h2 className="text-white font-bold text-xl">Add New Task</h2>
-        <h6 className="text-gray-300 font-bold text-xs">Assign a new task for the event</h6>
+        <h2 className="text-white font-bold text-xl">{isEdit ? "Edit Task" : "Add New Task"}</h2>
+        <h6 className="text-gray-300 font-bold text-xs">{isEdit ? "Update task details" : "Assign a new task for the event"}</h6>
 
         <form onSubmit={submit} className="mt-4">
           <div className="flex gap-5 mt-2">
@@ -136,7 +144,7 @@ const AddTask = ({ isOpen, onClose, onCreate }) => {
             </button>
             <button type="submit"
               className="w-30 bg-gradient-to-r from-blue-500 to-purple-600 rounded-md px-4 py-1 text-white">
-              Create Task
+              {isEdit ? "Update Task" : "Create Task"}
             </button>
           </div>
         </form>
