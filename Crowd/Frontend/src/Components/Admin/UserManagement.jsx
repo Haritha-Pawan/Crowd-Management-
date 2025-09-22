@@ -259,7 +259,6 @@ const UserManagement = () => {
             <tr className="border-b border-gray-500">
               <th className="pb-3">Name</th>
               <th className="pb-3">Email</th>
-              <th className="pb-3">Password</th>
               <th className="pb-3">Role</th>
               <th className="pb-3">Status</th>
               <th className="pb-3">Action</th>
@@ -273,7 +272,7 @@ const UserManagement = () => {
                   <span className="font-bold">{user.email.split("@")[0]}</span>@
                   {user.email.split("@")[1]}
                 </td>
-                <td className="py-3">{user.password}</td>
+                
                 <td className="py-3">{user.role}</td>
                 <td className="py-3">
                   <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">
