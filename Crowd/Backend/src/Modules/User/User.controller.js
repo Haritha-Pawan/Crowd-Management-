@@ -1,5 +1,6 @@
 import User from "../User/User.model.js";
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 // Display all users
 export const getAllUsers = async (req, res, next) => {
@@ -27,7 +28,9 @@ export const createUser = async (req, res) => {
       return res.status(400).json({ message: "Email already exists" });
     }
 
-    const newUser = new User({ name, email, password, role });
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({ name, email, password: hashedPassword, role });
     await newUser.save();
 
     res

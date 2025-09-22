@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import userRouter from './src/Modules/User/User.routes.js';
+import AuthRoutes from './src/Modules/User/AuthRoutes.js';
 
 dotenv.config();
 
@@ -23,6 +24,9 @@ mongoose.connect(process.env.MONGO_URI)
 
 // User routes
 app.use('/users', userRouter);
+
+// Auth routes
+app.use('/auth', AuthRoutes);
 
 // Test route
 app.get('/', (req, res) => {
