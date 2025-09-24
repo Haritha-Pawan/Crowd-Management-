@@ -5,6 +5,7 @@ import {
   Edit,
   Locate,
   LocationEdit,
+  Search,
   Trash2Icon,
 } from "lucide-react";
 import React, { useState, useEffect ,useMemo} from "react";
@@ -130,9 +131,16 @@ const handleDelete = async (id) => {
  
   return (
     <div className="p-10 h-auto w-full">
+     
       <div className="header text-white text-3xl font-bold">Parking Management</div>
-      <div className="sub-heading text-gray-300 text-xl">
+      
+      <div className="sub-heading text-gray-300 text-xl ">
         Manage parking zones and reservations
+      </div>
+
+       <div className="flex justify-end relative bottom-8  ">
+        <Search color="white"className="absolute mt-2 mr-2"/>
+        <input type="text" placeholder="Serach" className="text-white p-2 border border-gray-300 rounded-md " />
       </div>
 
       <div className="flex gap-6 mt-6 justify-end">
@@ -227,7 +235,12 @@ const handleDelete = async (id) => {
 
                       <div className="text-sm mt-2 text-gray-300 font-normal">
                         Available Slot:{" "}
-                        <span className="text-green-400 font-bold">{zone.capacity} Spots</span>
+                        <span className="text-green-400 font-bold ">{zone.capacity} Spots
+                          
+                        </span>
+                          <span className=" ml-20 font-bold ">Rate :{zone.price}</span>  
+                           
+                        
                       </div>
 
                       <div className="text-sm mt-2 text-gray-300 font-normal">

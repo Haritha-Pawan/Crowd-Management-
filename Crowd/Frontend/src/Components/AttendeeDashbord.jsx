@@ -7,10 +7,6 @@ import Overview from './Attendee/Overview.jsx';
 import Profile from './Attendee/Profile.jsx';
 
 
-
-
-
-
 const AttendeeDashbord = () => {
 
   const [activeComponent,setActiveLink]=useState('overview');

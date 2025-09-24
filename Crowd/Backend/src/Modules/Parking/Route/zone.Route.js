@@ -21,7 +21,7 @@ router.post("/",validate([
     body("location").isString().trim().notEmpty(),
     body("capacity").isInt({min:1}),
     body("status").optional().isIn(["active","inactive"]),
-    body("description").isString().trim().isLength({min:1,max:300}),
+   
 ]),
 
 createZone

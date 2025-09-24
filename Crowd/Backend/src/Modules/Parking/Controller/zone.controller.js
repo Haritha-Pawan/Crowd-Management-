@@ -6,7 +6,7 @@ export const createZone = async (req,res) => {
 
     try{
 
-     const { name, location, capacity, type, status, description, facilities } = req.body;
+     const { name, location, capacity, type, status, description,price,distance, facilities } = req.body;
 
        const facilitiesArray = Array.isArray(facilities)
       ? facilities.map(String)
@@ -20,7 +20,8 @@ export const createZone = async (req,res) => {
       capacity: Number(capacity),
       type,
       status: status || "active",
-      description,
+      price,
+      distance,
       facilities: facilitiesArray,  
         });
         res.status(201).json({zone});
@@ -95,3 +96,5 @@ export const getParkingZoneById = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+

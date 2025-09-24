@@ -8,6 +8,16 @@ import zoneRouter from './src/Modules/Parking/Route/zone.Route.js';
 import taskRoutes from './src/Modules/task/Route/task.Route.js';
 
 
+import reservationRoutes from './src/Modules/Parking/Route/reservation.route.js';
+import spotRouter from './src/Modules/Parking/Route/spot.route.js';
+
+
+
+
+
+
+
+
 dotenv.config();
 
 const app = express();
@@ -26,6 +36,15 @@ mongoose.connect(process.env.MONGO_URI)
 
 app.use("/api/parking-zone",zoneRouter);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/spots", spotRouter);
+app.use('./api/reservations', reservationRoutes);
+
+
+
+
+
+
+
 
 // Start server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

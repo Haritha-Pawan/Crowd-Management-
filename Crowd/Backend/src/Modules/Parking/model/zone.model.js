@@ -13,6 +13,8 @@ const ParkingZoneSchema = new mongoose.Schema(
     location: {
       type: String,
       required: [true, "Location is required"],
+
+      
       trim: true,
     },
     capacity: {
@@ -26,12 +28,27 @@ const ParkingZoneSchema = new mongoose.Schema(
       enum: ["active", "inactive"],
       default: "active",
     },
+
+     distance: {
+      type: String, // e.g. "50m", "200m"
+      trim: true,
+    },
+
+    price:{
+     type: Number,
+      required: [true, "Price is required"],
+      min: [0, "Price must be positive"],
+    },
+
+
     description: {
       type: String,
-      required: [true, "Description is required"],
+     
       trim: true,
       maxlength: [300, "Description too long"],
     },
+
+
     facilities: { type: [String], default: [] }, 
   },
   { timestamps: true }
