@@ -114,3 +114,23 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({ message: "Server error while deleting user" });
   }
 };
+
+// display all attendees
+export const getAllAttendees = async (req, res) => {
+     try {
+    const attendees = await Attendee.find();
+    res.status(200).json(attendees);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+//delete all attendees
+export const deleteAllAttendees = async (req, res) => {
+  try { 
+    const result = await Attendee.deleteMany({});
+    res.status(200).json({ message: `${result.deletedCount} attendees deleted.` });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  } 
+};

@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-    },
+},
     email: {
       type: String,
       unique: true,
@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "admin","organizer"], // only allow these roles
+      enum: ["user", "admin","organizer"], 
       default: "user",
     },
     status: {
