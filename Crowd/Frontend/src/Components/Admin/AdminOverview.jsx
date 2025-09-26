@@ -1,5 +1,6 @@
 import { User, Users, LocateIcon, Car,LoaderPinwheel } from 'lucide-react';
 import React from 'react'
+import Barchart from './Barchart';
 
 const AdminOverview = () => {
 
@@ -17,6 +18,12 @@ const AdminOverview = () => {
          
          <div className="header text-white text-3xl font-bold">Admin Overview</div>
             <div className="sub-heading text-xl text-gray-300">Monitor and manage all system components</div>
+             <button
+          onClick={() => setIsPopupOpen(true)}
+          className="absolute top-12 right-12 p-3 px-8 rounded-md cursor-pointer bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
+        >
+          + generate report
+        </button>
 
             <div className="card mt-8 xl:grid grid-cols-4 xl:grid-cols-4   gap-18 mx-auto ">
                  
@@ -40,6 +47,16 @@ const AdminOverview = () => {
                  ))}
   
             </div>
+
+        <div className="card mt-8 xl:grid grid-cols-2 xl:grid-cols-2 gap-16 mx-auto h-80 " >
+                
+          <div className='chart1 bg-white/5 rounded-md p-4 h-full'>
+                <Barchart/>
+          </div>
+          
+          <div className=' bg-white/5 w-130 rounded-md'>lahiru</div>    
+  
+        </div>
      
     </div>
   )
