@@ -39,14 +39,36 @@ const AddForm = ({ isOpen, onClose, OnCreated, refresh }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:5000/api/parking-zone", formData);
-      OnCreated?.(response.data?.zone);       
-      toast.success("Parking zone created successfully");
-      refresh?.();
-      onClose();
+      // Transform the form data to match the backend API structure
+      const placeData = {
+        name: formData.name,
+        code: formData.name.toLowerCase().replace(/[^a-z0-9]/g, '-'), // Generate code from name
+        capacity: parseInt(formData.capacity),
+        location: formData.location,
+        type: formData.type,
+        status: formData.status,
+        price: parseFloat(formData.price),
+        distance: formData.distance,
+        description: formData.description,
+        facilities: formData.facilities,
+        coordinates: {
+          latitude: formData.latitude ? parseFloat(formData.latitude) : undefined
+        }
+      };
+
+      const response = await axios.post("http://localhost:5000/api/places", placeData);
+      
+      if (response.data.data) {
+        OnCreated?.(response.data.data);       
+        toast.success("Parking place created successfully");
+        refresh?.();
+        onClose();
+      } else {
+        throw new Error(response.data.error || "Failed to create parking place");
+      }
     } catch (error) {
       console.error(error);
-      toast.error("There was an error creating the parking zone");
+      toast.error(error.response?.data?.error || "There was an error creating the parking place");
     }
   };
 

@@ -12,6 +12,9 @@ import reservationRoutes from './src/Modules/Parking/Route/reservation.route.js'
 import spotRouter from './src/Modules/Parking/Route/spot.route.js';
 
 
+//new routes for places
+import places from './src/routes/place.routes.js'
+import spots from './src/routes/spot.routes.js'
 
 
 
@@ -35,9 +38,17 @@ mongoose.connect(process.env.MONGO_URI)
 
 
 app.use("/api/parking-zone",zoneRouter);
++app.use("/api/places", places);
 app.use("/api/tasks", taskRoutes);
-app.use("/api/spots", spotRouter);
 app.use('./api/reservations', reservationRoutes);
+
+
+
+
+
+//new rotes for zone zdding nd 
+app.use('/api/places', places);
+app.use('/api/parkingSpots', spots);
 
 
 

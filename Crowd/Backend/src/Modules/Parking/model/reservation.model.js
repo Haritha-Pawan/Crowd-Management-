@@ -15,7 +15,6 @@ const ReservationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// optional convenience
 ReservationSchema.pre("save", function(next) {
   if (!this.endTime && this.hours) {
     this.endTime = new Date(this.startTime.getTime() + this.hours * 60 * 60 * 1000);

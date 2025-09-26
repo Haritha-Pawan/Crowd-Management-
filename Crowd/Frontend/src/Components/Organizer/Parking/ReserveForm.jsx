@@ -13,14 +13,26 @@ export default function ReserveForm() {
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
   // spot from query
+  // Get spot data from navigation state
+  const { spotId, placeId, spotData } = location.state || {};
+
+  // Validate required data
+  if (!spotId || !placeId || !spotData) {
+    console.error('Missing required reservation data:', { spotId, placeId, spotData });
+    navigate('/parking');
+    return null;
+  }
+
+  // Combine spot data for the form
   const spot = {
-    spotId: query.get("spotId") ?? "",
-    name:   query.get("name") ?? "",
-    zone:   query.get("zone") ?? "",
-    price:  query.get("price") ?? "",
-    distance: query.get("distance") ?? "",
-    type:   query.get("type") ?? "",
-    status: query.get("status") ?? "available",
+    spotId: spotId,
+    placeId: placeId,
+    name: spotData.name,
+    zone: spotData.zone,
+    price: spotData.price,
+    distance: spotData.distance,
+    type: spotData.type,
+    status: 'available'
   };
 
   console.log

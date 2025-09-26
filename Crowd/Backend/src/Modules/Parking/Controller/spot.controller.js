@@ -71,6 +71,6 @@ export const occupySpot = async (req, res) => {
     if (!spot) return res.status(409).json({ message: "Spot is not available anymore." });
     res.json(spot);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(404).json({ message: err.message });
   }
 };

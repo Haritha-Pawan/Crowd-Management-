@@ -10,10 +10,6 @@ const getColorsByValue = (v) =>
   : v >= 40 ? { progress:"#f59e0b", trail:"rgba(245,158,11,0.20)" }
   : { progress:"#ef4444", trail:"rgba(239,68,68,0.20)" };
 
-const add=()=>{
-  console.log("hello");
-  localStorage.setItem("name","sachin");
-}
 
 const timeAgo = (iso) => {
   if (!iso) return "Just now";
@@ -54,7 +50,7 @@ const ProgressDonut = ({ value=70, subtitle="Available", size=220 }) => {
   );
 };
 
-const ZoneCard = ({ name, available, total, updatedAt, onView }) => {
+const ZoneCard = ({ name, available, total, updatedAt, onView, location, status, type, price, features, distance }) => {
   const percent = total > 0 ? Math.round((available/total)*100) : 0;
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-5 hover:bg-white/10 hover:shadow-xl transition-all">
@@ -63,9 +59,21 @@ const ZoneCard = ({ name, available, total, updatedAt, onView }) => {
           <MapPin size={18} className="text-sky-300" />
           <h3 className="text-white text-lg font-semibold">{name}</h3>
         </div>
-        <span className="text-[11px] text-gray-300 flex items-center gap-1">
-          <Info size={14} /> Updated {updatedAt}
+        <span className={`text-xs rounded-full px-2 py-0.5 ${
+          status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+        }`}>
+          {status}
         </span>
+      </div>
+
+      <div className="text-sm text-gray-300 mb-4">
+        <div className="flex items-center gap-1">
+          <MapPin size={14} className="text-gray-400" />
+          {location} ({distance})
+        </div>
+        <div className="text-sm text-gray-400 mt-1">
+          Type: {type}
+        </div>
       </div>
 
       <div className="flex justify-center">
@@ -87,6 +95,22 @@ const ZoneCard = ({ name, available, total, updatedAt, onView }) => {
         </div>
       </div>
 
+      <div className="mt-4">
+        <div className="text-sm font-medium text-gray-300 mb-2">Facilities:</div>
+        <div className="flex flex-wrap gap-2">
+          {features.map((feature, index) => (
+            <span key={index} className="text-xs bg-white/10 text-gray-200 px-2 py-1 rounded-full">
+              {feature}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 mb-4 text-center">
+        <span className="text-2xl font-bold text-white">{price}</span>
+        <span className="text-gray-300 text-sm ml-1">per slot</span>
+      </div>
+
       <button
         onClick={onView}
         className="group mt-6 w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-emerald-500
@@ -106,51 +130,72 @@ const ParkingZone = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/api/parking-zone");
-        const arr = Array.isArray(res.data) ? res.data : res.data?.zones;
+useEffect(() => {
+  (async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get("http://localhost:5000/api/places");
 
-        if (!arr) { setError("Invalid response from the server"); return; }
-
-        const normalized = arr.map((z) => {
-          const capacity = Number.isFinite(+z.capacity) ? +z.capacity
-                        : Number.isFinite(+z.total)    ? +z.total
-                        : 0;
-
-          let available;
-          if (Number.isFinite(+z.available)) available = +z.available;
-          else if (Number.isFinite(+z.occupied)) available = capacity - +z.occupied;
-          else available = capacity;
-
-          // NEW: price & features normalization (server field names may vary)
-          const price = z.price ?? z.defaultPrice ?? "Rs:300.00";
-          const features =
-            Array.isArray(z.features) ? z.features
-            : Array.isArray(z.facilities) ? z.facilities
-            : ["Covered"]; // sensible default
-
-          return {
-            id: z._id || z.id || z.name,
-            name: z.name || "Unnamed Zone",
-            available: Math.max(0, Math.min(capacity, available)),
-            total: capacity,
-            updatedAt: z.updatedAt ? timeAgo(z.updatedAt) : "Just now",
-            price,
-            features, // <— keep array
-          };
-        });
-
-        setZones(normalized);
-      } catch (e) {
-        console.error(e);
-        setError("Failed to load zones");
-      } finally {
-        setLoading(false);
+      // Accept multiple shapes:
+      // { data: [...] } | [...] | { zones: [...] } | { items: [...] }
+      let arr = res.data?.data;
+      if (!Array.isArray(arr)) {
+        if (Array.isArray(res.data)) arr = res.data;
+        else if (Array.isArray(res.data?.zones)) arr = res.data.zones;
+        else if (Array.isArray(res.data?.items)) arr = res.data.items;
       }
-    })();
-  }, []);
+
+      if (!Array.isArray(arr)) {
+        console.error("[ParkingZone] Unexpected response:", res.data);
+        setError("Invalid response from the server");
+        return;
+      }
+
+      const normalized = arr.map((z) => {
+        const capacity = Number(z.capacity ?? 0);
+        const occupied = Number(z.occupied ?? 0);
+
+        // prefer availableSpots; otherwise derive from capacity/occupied
+        const availableRaw =
+          z.availableSpots !== undefined ? Number(z.availableSpots) : capacity - occupied;
+        const available = Math.max(0, Math.min(capacity, isNaN(availableRaw) ? 0 : availableRaw));
+
+        const priceNum = Number(z.price);
+        const price = Number.isFinite(priceNum) ? `Rs:${priceNum.toFixed(2)}` : "Rs:300.00";
+
+        const features = Array.isArray(z.facilities)
+          ? z.facilities
+          : typeof z.facilities === "string" && z.facilities.trim()
+          ? z.facilities.split(",").map((s) => s.trim())
+          : [];
+
+        return {
+          id: z._id ?? z.id,
+          name: z.name || "Unnamed Zone",
+          available,
+          total: capacity,
+          updatedAt: z.updatedAt ? timeAgo(z.updatedAt) : "Just now",
+          price,
+          features,
+          location: z.location ?? "",
+          status: z.status ?? "active",
+          type: z.type ?? "Standard",
+          description: z.description ?? "",
+          distance: z.distance ?? "",
+        };
+      });
+
+      setZones(normalized);
+      setError("");
+    } catch (e) {
+      console.error("[ParkingZone] fetch error:", e);
+      setError("Failed to load zones");
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, []);
+
 
   if (loading) return <div className="min-h-screen bg-slate-950 text-white p-8">Loading…</div>;
   if (error) return <div className="min-h-screen bg-slate-950 text-red-300 p-8">{error}</div>;
@@ -182,16 +227,25 @@ const ParkingZone = () => {
                 available={z.available}
                 total={z.total}
                 updatedAt={z.updatedAt}
+                location={z.location}
+                status={z.status}
+                type={z.type}
+                price={z.price}
+                features={z.features}
+                distance={z.distance}
                 onView={() => {
-                 
-                  const url = `/zone?zone=${encodeURIComponent(z.name)}&capacity=${z.total}&occupied=${occupied}&price=${encodeURIComponent(z.price)}&features=${featuresQuery}`;
-                  navigate(url, {
+                  navigate('/zone', {
                     state: {
+                      placeId: z.id,
                       zone: z.name,
                       capacity: z.total,
                       occupied,
                       price: z.price,
                       features: z.features,
+                      location: z.location,
+                      status: z.status,
+                      type: z.type,
+                      distance: z.distance
                     },
                   });
                 }}

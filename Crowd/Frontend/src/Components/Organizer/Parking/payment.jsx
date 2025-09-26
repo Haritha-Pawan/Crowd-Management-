@@ -183,10 +183,7 @@ export default function Payment() {
                 <span className="text-white/70 text-sm">Spot</span>
                 <span className="text-white/90">{spotCode || "—"}</span>
               </li>
-              <li className="flex items-center justify-between">
-                <span className="text-white/70 text-sm">Spot ID</span>
-                <span className="text-white/90">{spotId || "—"}</span>
-              </li>
+             
               {plate ? (
                 <li className="flex items-center justify-between">
                   <span className="text-white/70 text-sm">Plate</span>
