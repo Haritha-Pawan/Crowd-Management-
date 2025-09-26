@@ -11,6 +11,41 @@ const AddUser = ({ isOpen, onClose }) => {
     status: "",
   });
 
+   const validate = () => {
+    let tempErrors = {};
+
+    // Name validation
+    if (!input.name.trim()) {
+      tempErrors.name = "Name is required";
+    } else if (input.name.length < 3) {
+      tempErrors.name = "Name must be at least 3 characters";
+    }
+
+    // Email validation
+    if (!input.email) {
+      tempErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(input.email)) {
+      tempErrors.email = "Email is invalid";
+    }
+
+    // Password validation
+    if (!formData.password) {
+      tempErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      tempErrors.password = "Password must be at least 6 characters";
+    }
+
+    // Phone number validation
+    if (!formData.phone) {
+      tempErrors.phone = "Phone number is required";
+    } else if (!/^\d{10}$/.test(formData.phone)) {
+      tempErrors.phone = "Phone number must be 10 digits";
+    }
+
+    setErrors(tempErrors);
+    return Object.keys(tempErrors).length === 0;
+  };
+
   const navigate = useNavigate();
 
   if (!isOpen) return null;
@@ -22,6 +57,7 @@ const AddUser = ({ isOpen, onClose }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log(input);
+    if (!validate()) return;
     sendRequest().then(() => navigate("/admin/UserManagement.jsx")); 
   };
 

@@ -1,6 +1,7 @@
 import React from 'react';
 
 function AttendeDetails() {
+  
   // Example attendee data — replace with your real data from API
   const attendees = [
     {
@@ -8,7 +9,6 @@ function AttendeDetails() {
       nic: "200012345678",
       phone: "0712345678",
       email: "lahirulakmal893@gmail.com",
-      password: "22113344",
       qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=lahiru"
     },
     {
@@ -16,7 +16,6 @@ function AttendeDetails() {
       nic: "199912345678",
       phone: "0771234567",
       email: "sadeepa123@gmail.com",
-      password: "1122334",
       qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=sadeepa"
     }
   ];
@@ -45,7 +44,6 @@ function AttendeDetails() {
               <th className="pb-3">NIC</th>
               <th className="pb-3">Phone Number</th>
               <th className="pb-3">Email</th>
-              <th className="pb-3">Password</th>
               <th className="pb-3">QR Code</th>
             </tr>
           </thead>
@@ -58,7 +56,6 @@ function AttendeDetails() {
                 <td className="py-3">
                   <span className="font-bold">{attendee.email.split("@")[0]}</span>@{attendee.email.split("@")[1]}
                 </td>
-                 <td className="py-3">{"*".repeat(attendee.password.length)}</td>
                 <td className="py-3">
                   <img src={attendee.qrCode} alt="QR Code" className="w-12 h-12" />
                 </td>
