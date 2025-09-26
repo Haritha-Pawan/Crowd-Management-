@@ -1,6 +1,7 @@
 import React, { useId } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { MapPin, Car, Info, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 /* ---------- Reusable Donut (centered text overlay) ---------- */
 const getColorsByValue = (value) => {
@@ -98,6 +99,9 @@ const ZoneCard = ({ name, available, total, updatedAt, onView }) => {
         </div>
       </div>
 
+
+<Link to='/zone'>
+
       <button
         onClick={onView}
         className="group mt-6 w-full inline-flex items-center justify-center gap-2
@@ -109,6 +113,10 @@ const ZoneCard = ({ name, available, total, updatedAt, onView }) => {
         View Spots
         <ChevronRight size={18} className="transition-transform group-hover:translate-x-0.5" />
       </button>
+
+     </Link> 
+
+
     </div>
   );
 };
@@ -121,6 +129,8 @@ const ParkingZone = () => {
     { name: " Weediya",   available: 44, total: 70, updatedAt: "5 min ago" },
     { name: "zone-2",  available: 12, total: 40, updatedAt: "1 min ago" },
   ];
+
+  
 
   return (
     <div className="min-h-screen bg-[radial-gradient(1200px_600px_at_10%_-10%,rgba(59,130,246,0.15),transparent),radial-gradient(1200px_600px_at_90%_10%,rgba(16,185,129,0.12),transparent)] 

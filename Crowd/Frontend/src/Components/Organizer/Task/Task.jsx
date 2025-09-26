@@ -1,31 +1,60 @@
-import { ClipboardList,
-  CheckCircle2,AlertTriangle,TimerReset,UserRound,Edit,Locate,Trash2Icon} from 'lucide-react';
-import React, { useState } from 'react'
-import AddTask from '../Task/AddTask';
+import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import { ClipboardList, CheckCircle2, AlertTriangle, TimerReset, UserRound } from "lucide-react";
+import AddTask from "../Task/AddTask";
+
+const API = "http://localhost:5000/api";
 
 const Task = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  
+  const [editingTask, setEditingTask] = useState(null);
+  const [tasks, setTasks] = useState([]);
 
-  // Example summary cards (like your parking cards)
-  const cards = [
-    { title: "Total Tasks", icon: <ClipboardList color="#2f80ed" size={30} />, count: "42" },
-    { title: "In Progress", icon: <TimerReset color="#f59e0b" size={30} />, count: "18" },
-    { title: "Completed", icon: <CheckCircle2 color="#4ade80" size={30} />, count: "20" },
-    { title: "Overdue", icon: <AlertTriangle color="#ef4444" size={30} />, count: "4" },
-  ];
+  // Load tasks once
+  useEffect(() => {
+    (async () => {
+      const { data } = await axios.get(`${API}/tasks`);
+      setTasks(data);
+    })();
+  }, []);
 
-  // Example coordinators for the AddForm dropdown
-  const coordinators = [
-    { id: "c1", name: "Aisha Perera", email: "aisha@example.com" },
-    { id: "c2", name: "Nimal Silva", email: "nimal@example.com" },
-  ];
+  // Derived lists
+  const pendingTasks = useMemo(() => tasks.filter(t => t.status !== "done"), [tasks]);
+  const completedTasks = useMemo(() => tasks.filter(t => t.status === "done"), [tasks]);
 
-  // Handle create from the popup (frontend-only for now)
-  function handleCreate(task) {
-    console.log("New task created:", task);
-    // later: push to your state or call backend API
-  }
+  // Cards
+  const total = tasks.length;
+  const inProgress = tasks.filter(t => t.status === "in_progress").length;
+  const completed = completedTasks.length;
+  const overdue = tasks.filter(t => {
+    if (!t.dueDate || t.status === "done") return false;
+    const due = new Date(t.dueDate);
+    const today = new Date(); today.setHours(0,0,0,0);
+    return due < today;
+  }).length;
+
+  // CRUD handlers (API lives here)
+  const createTask = async (payload) => {
+    const { data } = await axios.post(`${API}/tasks`, payload);
+    setTasks(prev => [data, ...prev]);
+    setIsPopupOpen(false);
+  };
+
+  const updateTask = async (id, payload) => {
+    const { data } = await axios.put(`${API}/tasks/${id}`, payload);
+    setTasks(prev => prev.map(t => (t._id === id ? data : t)));
+    setEditingTask(null);
+  };
+
+  const markDone = async (id) => {
+    const { data } = await axios.put(`${API}/tasks/${id}`, { status: "done" });
+    setTasks(prev => prev.map(t => (t._id === id ? data : t)));
+  };
+
+  const removeTask = async (id) => {
+    await axios.delete(`${API}/tasks/${id}`);
+    setTasks(prev => prev.filter(t => t._id !== id));
+  };
 
   return (
     <div className="p-12 2xl:h-screen">
@@ -34,21 +63,13 @@ const Task = () => {
 
       {/* Cards */}
       <div className="card grid 2xl:grid-cols-4 lg:grid-cols-4 mt-8 md:grid-cols-2 gap-3 mx-auto">
-        {cards.map((data, index) => (
-          <div
-            key={index}
-            className="bg-white/5 border border-white/10 lg:w-58 md:w-76 text-white rounded-md p-5"
-          >
-            <div className="icon flex justify-between ">
-              <div className="title text-[18px] ">{data.title}</div>
-              <div className="icon relative top-5 ">{data.icon}</div>
-            </div>
-            <div className="count text-2xl mt-1 font-bold">{data.count}</div>
-          </div>
-        ))}
+        <Card title="Total Tasks" icon={<ClipboardList color="#2f80ed" size={30} />} count={String(total)} />
+        <Card title="In Progress" icon={<TimerReset color="#f59e0b" size={30} />} count={String(inProgress)} />
+        <Card title="Completed" icon={<CheckCircle2 color="#4ade80" size={30} />} count={String(completed)} />
+        <Card title="Overdue" icon={<AlertTriangle color="#ef4444" size={30} />} count={String(overdue)} />
       </div>
 
-      {/* Add Task button */}
+      {/* Add Task */}
       <button
         onClick={() => setIsPopupOpen(true)}
         className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 px-10 cursor-pointer font-medium mt-5 rounded-md hover:opacity-70 text-white"
@@ -56,109 +77,160 @@ const Task = () => {
         + Add Task
       </button>
 
-      {/* Add Task Form (popup) */}
+      {/* Create modal */}
       <AddTask
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
-        onCreate={handleCreate}
-        coordinators={coordinators}
+        onCreate={createTask}
       />
 
-      {/* Example task blocks (like your parking zones) */}
-      <div className="mt-20 grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* Task 1 */}
-        <div className="p-5 bg-white/5 border border-white/10 rounded-md text-white text-2xl font-medium">
-          <div className="title flex gap-3 items-start">
-            <span>Sound arrangements</span>
-            <div className="bg-yellow-500/20 text-xs rounded-full border border-yellow-300/20 w-auto px-3 h-5 flex items-center">
-              in progress
-            </div>
-          </div>
+      {/* Edit modal */}
+      <AddTask
+        isOpen={!!editingTask}
+        onClose={() => setEditingTask(null)}
+        initialData={editingTask}
+        onUpdate={(payload) => updateTask(editingTask._id, payload)}
+      />
 
-          <div className="sub-heading flex mt-2 text-gray-300 items-center gap-2 text-sm">
-            <UserRound size={18} />
-            <div>Coordinator: <span className="text-white">Aisha Perera</span></div>
+      {/* Lists */}
+      <div className="mt-20 space-y-10">
+        {/* Pending */}
+        <div>
+          <div className="text-white text-2xl font-semibold mb-4">
+            Pending Tasks ({pendingTasks.length})
           </div>
-
-           <div className="mt-3 text-sm text-gray-300 space-y-1">
-            <div>
-              Priority: <span className="text-white font-medium">High</span>
+          {pendingTasks.length === 0 ? (
+            <div className="text-gray-400 text-sm">No pending tasks.</div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+              {pendingTasks.map((t) => (
+                <TaskCard
+                  key={t._id}
+                  t={t}
+                  onDone={() => markDone(t._id)}
+                  onEdit={() => setEditingTask(t)}
+                  onDelete={() => removeTask(t._id)}
+                />
+              ))}
             </div>
-            <div className="text-gray-300">
-              Description: <span className="text-white/90">Microphones, mixer, stage monitors</span>
-            </div>
-            <div>
-              Due: <span className="text-white">2025-09-05</span>
-            </div>
-          </div>
-
-          <div className="progress mt-3 h-2.5 w-full overflow-hidden rounded-full bg-black/40">
-            <div className="h-full w-0 rounded-full bg-yellow-400"></div>
-          </div>
-
-          <div className="btn mt-4 flex gap-6">
-            <button className="flex text-lg border border-white/10 px-4 p-1 bg-white/5 rounded-md text-[17px] cursor-pointer text-white">
-              <Locate size={15} className="relative top-[6px] mr-2" />
-              Details
-            </button>
-            <button className="flex text-lg border border-white/10 px-4 p-1 bg-white/5 rounded-md text-[17px] cursor-pointer text-white">
-              <Edit size={15} className="relative top-[6px] mr-2" />
-              Edit
-            </button>
-            <button className="flex text-lg border border-white/10 px-4 p-1 bg-white/5 rounded-md text-[17px] cursor-pointer text-red-400">
-              <Trash2Icon size={15} className="relative top-[6px] mr-2" />
-              Delete
-            </button>
-          </div>
+          )}
         </div>
 
-        {/* Task 2 */}
-        <div className="p-5 bg-white/5 border border-white/10 rounded-md text-white text-2xl font-medium">
-          <div className="title flex gap-3 items-start">
-            <span>Light arrangements</span>
-            <div className="bg-gray-500/20 text-xs rounded-full border border-gray-300/20 w-auto px-3 h-5 flex items-center">
-              todo
+        {/* Completed */}
+        <div>
+          <div className="text-white text-2xl font-semibold mb-4">
+            Completed Tasks ({completedTasks.length})
+          </div>
+          {completedTasks.length === 0 ? (
+            <div className="text-gray-400 text-sm">No completed tasks yet.</div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+              {completedTasks.map((t) => (
+                <TaskCard
+                  key={t._id}
+                  t={t}
+                  done
+                  onDelete={() => removeTask(t._id)}
+                />
+              ))}
             </div>
-          </div>
-
-          <div className="sub-heading flex mt-2 text-gray-300 items-center gap-2 text-sm">
-            <UserRound size={18} />
-            <div>Coordinator: <span className="text-white">Nimal Silva</span></div>
-          </div>
-
-          <div className="mt-3 text-sm text-gray-300 space-y-1">
-            <div>
-              Priority: <span className="text-white font-medium">High</span>
-            </div>
-            <div className="text-gray-300">
-              Description: <span className="text-white/90">Microphones, mixer, stage monitors</span>
-            </div>
-            <div>
-              Due: <span className="text-white">2025-09-05</span>
-            </div>
-          </div>
-
-          <div className="progress mt-3 h-2.5 w-full overflow-hidden rounded-full bg-black/40">
-            <div className="h-full w-0 rounded-full bg-yellow-400"></div>
-          </div>
-
-          <div className="btn mt-4 flex gap-6">
-            <button className="flex text-lg border border-white/10 px-4 p-1 bg-white/5 rounded-md text-[17px] cursor-pointer text-white">
-              <Locate size={15} className="relative top-[6px] mr-2" />
-              Details
-            </button>
-            <button className="flex text-lg border border-white/10 px-4 p-1 bg-white/5 rounded-md text-[17px] cursor-pointer text-white">
-              <Edit size={15} className="relative top-[6px] mr-2" />
-              Edit
-            </button>
-            <button className="flex text-lg border border-white/10 px-4 p-1 bg-white/5 rounded-md text-[17px] cursor-pointer text-red-400">
-              <Trash2Icon size={15} className="relative top-[6px] mr-2" />
-              Delete
-            </button>
-          </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
-export default Task
+
+function TaskCard({ t, done = false, onDone, onEdit, onDelete }) {
+  return (
+    <div className="p-5 bg-white/5 border border-white/10 rounded-md text-white text-2xl font-medium">
+      <div className="title flex gap-3 items-start">
+        <span>{t.title}</span>
+        <StatusPill value={done ? "done" : t.status} />
+      </div>
+
+      <div className="sub-heading flex mt-2 text-gray-300 items-center gap-2 text-sm">
+        <UserRound size={18} />
+        <div>Coordinator: <span className="text-white">{t.coordinator || "—"}</span></div>
+      </div>
+
+      <div className="mt-3 text-sm text-gray-300 space-y-1">
+        <div>Priority: <span className="text-white font-medium">{t.priority || "medium"}</span></div>
+        <div>Description: <span className="text-white/90">{t.description || "—"}</span></div>
+        <div>Due: <span className="text-white">{t.dueDate ? t.dueDate.split("T")[0] : "—"}</span></div>
+        {t.otherStaffs ? <div>Other Staffs: <span className="text-white/90">{t.otherStaffs}</span></div> : null}
+      </div>
+
+      <div className="progress mt-3 h-2.5 w-full overflow-hidden rounded-full bg-black/40">
+        <div
+          className={
+            "h-full rounded-full " +
+            (done
+              ? "bg-green-500 w-full"
+              : t.status === "in_progress"
+              ? "bg-blue-600 w-1/2"
+              : t.status === "blocked"
+              ? "bg-red-500 w-1/4"
+              : "bg-yellow-400 w-0")
+          }
+        />
+      </div>
+
+      <div className="btn mt-4 flex gap-3">
+        {!done && (
+          <button
+            onClick={onDone}
+            className="border border-white/10 px-4 py-1 bg-white/5 rounded-md text-[16px] cursor-pointer text-white"
+          >
+            Mark Done
+          </button>
+        )}
+
+        {!done && (
+          <button
+            onClick={onEdit}
+            className="border border-white/10 px-4 py-1 bg-white/5 rounded-md text-[16px] cursor-pointer text-blue-400"
+          >
+            Edit
+          </button>
+        )}
+
+        <button
+          onClick={onDelete}
+          className="border border-white/10 px-4 py-1 bg-white/5 rounded-md text-[16px] cursor-pointer text-red-400"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Card({ title, icon, count }) {
+  return (
+    <div className="bg-white/5 border border-white/10 text-white rounded-md p-5">
+      <div className="flex justify-between">
+        <div className="text-[18px]">{title}</div>
+        <div className="relative top-5">{icon}</div>
+      </div>
+      <div className="text-2xl mt-1 font-bold">{count}</div>
+    </div>
+  );
+}
+
+function StatusPill({ value }) {
+  const map = {
+    todo: "bg-gray-500/20 border-gray-300/20",
+    in_progress: "bg-yellow-500/20 border-yellow-300/20",
+    done: "bg-green-500/20 border-green-300/20",
+    blocked: "bg-red-500/20 border-red-300/20",
+  };
+  const label = String(value || "todo").replace("_", " ");
+  return (
+    <div className={`text-xs rounded-full border w-auto px-3 h-5 flex items-center ${map[value] || map.todo}`}>
+      {label}
+    </div>
+  );
+}
+
+export default Task;
