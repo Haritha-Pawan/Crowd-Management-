@@ -7,12 +7,13 @@ import {
   LocationEdit,
   Trash2Icon
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState ,useMemo} from 'react';
 import AddForm from './AddForm';
 
 const ReservationTable = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [active, setActive] = useState('Parking Zones');
+  
 
   const buttons = ['Parking Zones', 'Reservation', 'Real-time View'];
 
@@ -29,8 +30,11 @@ const ReservationTable = () => {
   ,
   ];
 
+ 
+  
+
   const card = [
-    { title: 'Total Counters', icon: <Car color='#2f80ed' size={30} />, count: '630' },
+    { title: 'Total Counters', icon: <Car color='#2f80ed' size={30} />, count: '66' },
     { title: 'Total Occupied', icon: <CircleDotIcon color='#FF3535' size={30} />, count: '460' },
     { title: 'Available', icon: <CircleDotIcon color='#4ade80' size={30} />, count: '170' },
     { title: 'Occupancy Rate', icon: <ChartNoAxesCombined color='#facc15' size={30} />, count: '73%' }

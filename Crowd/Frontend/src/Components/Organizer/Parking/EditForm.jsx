@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
 
-const AddForm = ({ isOpen, onClose,OnCreated,refresh }) => {
+const EditForm = ({ isOpen, onClose,OnCreated ,zoneId,refresh }) => {
 
   const FACILITY_OPTIONS = [
   "EV charging",
@@ -30,6 +30,25 @@ const AddForm = ({ isOpen, onClose,OnCreated,refresh }) => {
     facilities:[],
   })
 
+   useEffect(() => {
+  const fetchZone = async () => {
+    if (!zoneId) return;
+    try {
+      const res = await axios.get(`http://localhost:5000/api/parking-zone/${zoneId}`);
+      setFormData(res.data); // assuming res.data is the zone object
+    } catch (err) {
+      console.error("Error fetching zone for edit:", err);
+      toast.error("Failed to load parking zone data.");
+    }
+  };
+
+  if (isOpen) {
+    fetchZone();
+  }
+}, [zoneId, isOpen]);
+
+
+
   const handlechange = (e)=>{
     const{name,value} =e.target;
     setFormData(prev => ({...prev, [name]:value}));
@@ -47,27 +66,18 @@ const AddForm = ({ isOpen, onClose,OnCreated,refresh }) => {
     });
   };
 
-
-  const handleSubmit = async(e)=>{
-        e.preventDefault();
-
-        try{
-            const response = await axios.post("http://localhost:5000/api/parking-zone", formData);
-            console.log(response.data);
-             OnCreated?.(res.data.zone);
-            
-
-           
-            toast.success("Parking zone created successfully");   
-            refresh?.();      
-             onClose(); 
-  
-
-        }catch(error){
-            console.error("There was an error creating the parking zone", error);
-            alert('There was an error creating the parking zone');
-        }
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`http://localhost:5000/api/parking-zone/${zoneId}`, formData);
+      toast.success("Parking zone updated successfully");
+      refresh?.();
+      onClose();
+    } catch (error) {
+      console.error("Error updating the parking zone", error);
+      toast.error("Failed to update parking zone");
+    }
+  };
 
 
   return (
@@ -188,7 +198,7 @@ const AddForm = ({ isOpen, onClose,OnCreated,refresh }) => {
             <button
               type="submit"
               className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-md px-4 py-2 text-white font-semibold hover:opacity-80"
-            >Create
+            >Update
             </button>
           </div>
         </form>
@@ -197,4 +207,4 @@ const AddForm = ({ isOpen, onClose,OnCreated,refresh }) => {
   );
 };
 
-export default AddForm;
+export default EditForm;
