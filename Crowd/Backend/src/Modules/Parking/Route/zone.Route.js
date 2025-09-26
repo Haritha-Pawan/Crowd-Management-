@@ -16,18 +16,24 @@ const validate = (rules) =>[
     },
 ];
 
-router.post("/",validate([
-    body("name").isString().trim().isLength({min:2,max:100}),
+
+
+router.post(
+  "/",
+  validate([
+    body("name").isString().trim().isLength({ min: 2, max: 100 }),
     body("location").isString().trim().notEmpty(),
-    body("capacity").isInt({min:1}),
-    body("status").optional().isIn(["active","inactive"]),
-    body("description").isString().trim().isLength({min:1,max:300}),
-]),
-
-createZone
-
+    body("capacity").isInt({ min: 1 }),
+    body("type").optional().isString().trim(), // add .isIn([...]) if you use an enum
+    body("status").optional().isIn(["active", "inactive"]),
+    body("price").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("distance").optional({ nullable: true }).isFloat({ min: 0 }),
+    body("facilities")
+      .optional()
+      .custom((v) => Array.isArray(v) || typeof v === "string"),
+  ]),
+  createZone
 );
-
 
 router.get("/",getallZones);
 router.get('/:id', getParkingZoneById);

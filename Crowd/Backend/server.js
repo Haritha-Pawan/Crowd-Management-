@@ -9,6 +9,19 @@ import counterRoutes from './src/Modules/Counter/Routes/counter.Route.js';
 import userRouter from './src/Modules/User/User.routes.js';
 import AuthRoutes from './src/Modules/User/AuthRoutes.js';
 
+import reservationRoutes from './src/Modules/Parking/Route/reservation.route.js';
+import spotRouter from './src/Modules/Parking/Route/spot.route.js';
+
+
+//new routes for places
+import places from './src/routes/place.routes.js'
+import spots from './src/routes/spot.routes.js'
+
+
+
+
+
+
 dotenv.config();
 
 const app = express();
@@ -35,8 +48,24 @@ app.get('/', (req, res) => {
 
 
 app.use("/api/parking-zone",zoneRouter);
++app.use("/api/places", places);
 app.use("/api/tasks", taskRoutes);
+
+
+
+
+
+
+//new rotes for zone zdding nd 
+app.use('/api/places', places);
+app.use('/api/parkingSpots', spots);
+
+
+
+
+
 app.use("/api/counter",counterRoutes);
+
 
 
 // Start server

@@ -1,102 +1,127 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import {
-  Car,
-  CreditCard,
-  Calendar,
-  User,
-  MoveLeft,
-  MapPin,
-  CircleDollarSign,
-  Clock3,
+  Car, CreditCard, Calendar as CalendarIcon, User, MoveLeft,
+  MapPin, CircleDollarSign, Clock3,
 } from "lucide-react";
 
 export default function ReserveForm() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
-  // demo spot (replace with real data if needed)
+  // spot from query
+  // Get spot data from navigation state
+  const { spotId, placeId, spotData } = location.state || {};
+
+  // Validate required data
+  if (!spotId || !placeId || !spotData) {
+    console.error('Missing required reservation data:', { spotId, placeId, spotData });
+    navigate('/parking');
+    return null;
+  }
+
+  // Combine spot data for the form
   const spot = {
-    id: "A001",
-    name: "Kandy",
-    zone: "Zone A — Main Entrance",
-    type: "Standard",
-    ratePerHour: 300,
-    distance: "100m",
+    spotId: spotId,
+    placeId: placeId,
+    name: spotData.name,
+    zone: spotData.zone,
+    price: spotData.price,
+    distance: spotData.distance,
+    type: spotData.type,
+    status: 'available'
   };
 
-  // default date inline (no utils)
+  console.log
+("ReserveForm spot:", spot);
+
+  const priceNumber = useMemo(() => {
+    const m = String(spot.price).match(/[\d.]+/g);
+    return m ? parseFloat(m.join("")) : 0;
+  }, [spot.price]);
+
   const now = new Date();
-  const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2,"0")}-${String(
-    now.getDate()
-  ).padStart(2,"0")}`;
+  const [startAt, setStartAt] = useState(now);
+  const [endAt, setEndAt] = useState(() => new Date(now.getTime() + 60 * 60 * 1000)); // +1h
+
+  const isSameDay = (a, b) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+
+  const minEndDate = startAt;
+  const minutes = Math.max(0, Math.round((endAt - startAt) / (60 * 1000)));
+  const billableHours = minutes <= 0 ? 0 : Math.max(1, Math.ceil(minutes / 60));
+  const total = billableHours * priceNumber;
+  const durationLabel =
+    minutes <= 0 ? "—" : `${Math.floor(minutes / 60) > 0 ? Math.floor(minutes / 60) + "h " : ""}${minutes % 60}m`;
+
+  const [errors, setErrors] = useState({});
+  const [msg, setMsg] = useState("");
 
   const [form, setForm] = useState({
-    date: todayISO,
-    start: "09:00",
-    end: "10:00",
     plate: "",
+    vehicleType: "Car",
     name: "",
     email: "",
     phone: "",
     notes: "",
   });
-  const [errors, setErrors] = useState({});
-  const [msg, setMsg] = useState("");
-
-  // derived values inline (no useMemo)
-  const [sh, sm] = form.start.split(":").map(Number);
-  const [eh, em] = form.end.split(":").map(Number);
-  const minutes = eh * 60 + em - (sh * 60 + sm);
-  const billableHours = minutes <= 0 ? 0 : Math.max(1, Math.ceil(minutes / 60));
-  const total = billableHours * Number(spot.ratePerHour || 0);
-  const humanDate =
-    form.date && !Number.isNaN(new Date(form.date).getTime())
-      ? new Date(form.date).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
-      : "";
-  const durationLabel =
-    minutes <= 0
-      ? "—"
-      : `${Math.floor(minutes / 60) > 0 ? Math.floor(minutes / 60) + "h " : ""}${minutes % 60}m`;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // simple inline validation (no helpers)
     const eobj = {};
-    if (!/^[A-Za-z]{2,3}-?\d{3,4}$/.test(form.plate.trim())) eobj.plate = "Use a format like ABC-1234";
+
+    // validations (same as yours)
+    if (!form.plate.trim() || !/^[A-Za-z]{2,3}-?\d{3,4}$/.test(form.plate.trim()))
+      eobj.plate = "Use a format like ABC-1234";
     if (form.name.trim().length < 2) eobj.name = "Enter your full name";
     if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) eobj.email = "Enter a valid email";
     if (!/^\d{9,11}$/.test(form.phone.trim())) eobj.phone = "Enter 9–11 digit number";
-    if (!form.date) eobj.date = "Pick a date";
-    if (minutes <= 0) eobj.time = "End must be after start";
+    if (startAt < new Date()) eobj.time = "Start must be in the future";
+    if (endAt <= startAt) eobj.time = "End must be after start";
+
     setErrors(eobj);
     if (Object.keys(eobj).length > 0) return;
 
-    // payload (frontend only)
-    const payload = {
-      spotId: spot.id,
-      location: spot.name,
+    // 👉 build the booking we’ll pass to /payment
+    const booking = {
+      spotId: spot.spotId,
+      name: spot.name,
       zone: spot.zone,
-      ratePerHour: spot.ratePerHour,
-      date: form.date,
-      start: form.start,
-      end: form.end,
-      minutes,
+      type: spot.type,
+      price: Number(priceNumber),                 // numeric
+      startISO: startAt.toISOString(),
+      endISO: endAt.toISOString(),
+      plate: form.plate,
       billableHours,
       total,
-      vehicle: { plate: form.plate },
-      driver: { name: form.name, email: form.email, phone: form.phone },
-      notes: form.notes,
     };
-    console.log("Reservation (frontend only):", payload);
-    setMsg("Reservation submitted! (frontend demo) ✅");
-    setTimeout(() => navigate("/parking"), 900);
+
+    // query fallback (so refresh on /payment keeps data)
+    const qs = new URLSearchParams({
+      spotId: booking.spotId,
+      name: booking.name,
+      zone: booking.zone,
+      type: booking.type,
+      price: String(booking.price),
+      startISO: booking.startISO,
+      endISO: booking.endISO,
+      plate: booking.plate,
+      billableHours: String(booking.billableHours),
+      total: String(booking.total),
+    }).toString();
+
+    // ✅ Go to Payment page (state + query)
+    navigate(`/payment?${qs}`, { state: booking, replace: true });
   };
 
   return (
     <div className="min-h-screen bg-[radial-gradient(1200px_600px_at_10%_-10%,rgba(59,130,246,0.15),transparent),radial-gradient(1200px_600px_at_90%_10%,rgba(16,185,129,0.12),transparent)] bg-slate-950">
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-8">
-        {/* Back */}
         <button
           onClick={() => navigate(-1)}
           className="inline-flex items-center gap-2 bg-white/5 border border-white/10 text-white/90 hover:text-white hover:bg-white/10 px-3 py-1.5 rounded-lg backdrop-blur-sm"
@@ -107,7 +132,6 @@ export default function ReserveForm() {
 
         <header className="mt-6">
           <h1 className="text-white text-3xl md:text-4xl font-bold">Reserve a Spot</h1>
-          <p className="text-white/70 mt-1">Same colors + glass UI. Frontend only.</p>
         </header>
 
         {msg && (
@@ -117,7 +141,7 @@ export default function ReserveForm() {
         )}
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Spot summary */}
+          {/* Spot Summary */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
             <h2 className="text-white text-xl font-semibold mb-4 flex items-center gap-2">
               <MapPin className="h-5 w-5 text-sky-300" /> Spot Summary
@@ -126,7 +150,7 @@ export default function ReserveForm() {
             <ul className="space-y-3">
               <li className="flex items-center justify-between">
                 <span className="text-white/70 text-sm">Location</span>
-                <span className="text-white/90">{spot.name}</span>
+                <span className="text-white/90">{spot.spotId}</span>
               </li>
               <li className="flex items-center justify-between">
                 <span className="text-white/70 text-sm">Zone</span>
@@ -135,7 +159,7 @@ export default function ReserveForm() {
               <li className="flex items-center justify-between">
                 <span className="text-white/70 text-sm">Spot ID</span>
                 <span className="text-white text-xs font-semibold px-3 py-1 rounded-full border border-white/15 bg-white/5">
-                  {spot.id}
+                  {spot.spotId}
                 </span>
               </li>
               <li className="flex items-center justify-between">
@@ -147,7 +171,7 @@ export default function ReserveForm() {
               <li className="flex items-center justify-between">
                 <span className="text-white/70 text-sm">Rate per hour</span>
                 <span className="text-green-400 font-semibold inline-flex items-center gap-1">
-                  <CircleDollarSign className="h-4 w-4" /> Rs {Number(spot.ratePerHour).toFixed(2)}
+                  <CircleDollarSign className="h-4 w-4" /> Rs {priceNumber.toFixed(2)}
                 </span>
               </li>
               <li className="flex items-center justify-between">
@@ -162,8 +186,8 @@ export default function ReserveForm() {
                 <span>Billable: {billableHours || 0}h</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-white/80 px-2.5 py-1 rounded-full border border-white/10 bg-white/5">
-                <Calendar className="h-3.5 w-3.5" />
-                <span>{humanDate || form.date}</span>
+                <CalendarIcon className="h-3.5 w-3.5" />
+                <span>{startAt.toLocaleDateString()}</span>
               </div>
             </div>
           </div>
@@ -173,62 +197,86 @@ export default function ReserveForm() {
             onSubmit={handleSubmit}
             className="lg:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md"
           >
-            {/* Time */}
             <div className="flex items-center gap-2 text-white text-sm font-semibold mb-2">
-              <Calendar className="h-4 w-4" />
+              <CalendarIcon className="h-4 w-4" />
               <span>Reservation Time</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <label className="block">
-                <span className="text-white/70 text-xs mb-1 block">Date</span>
-                <input
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  className={`w-full rounded-xl border ${
-                    errors.date ? "border-rose-400/60" : "border-white/10"
-                  } bg-white/5 text-white/90 placeholder-white/40 outline-none px-3 py-2 focus:ring-2 ${
-                    errors.date
-                      ? "focus:ring-rose-400/40 focus:border-rose-400/60"
-                      : "focus:ring-cyan-400/50 focus:border-cyan-400/40"
-                  } transition`}
-                />
-                {errors.date && <p className="text-rose-300 text-xs mt-1">{errors.date}</p>}
-              </label>
-
+            {/* Start/End pickers (unchanged from yours) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-start">
               <label className="block">
                 <span className="text-white/70 text-xs mb-1 block">Start</span>
-                <input
-                  type="time"
-                  value={form.start}
-                  onChange={(e) => setForm({ ...form, start: e.target.value })}
-                  className={`w-full rounded-xl border ${
-                    errors.time ? "border-rose-400/60" : "border-white/10"
-                  } bg-white/5 text-white/90 placeholder-white/40 outline-none px-3 py-2 focus:ring-2 ${
-                    errors.time
-                      ? "focus:ring-rose-400/40 focus:border-rose-400/60"
-                      : "focus:ring-cyan-400/50 focus:border-cyan-400/40"
-                  } transition`}
-                />
+                <div className="relative ">
+                  <DatePicker
+                    selected={startAt}
+                    onChange={(d) => {
+                      if (!d) return;
+                      setStartAt(d);
+                      if (endAt <= d) setEndAt(new Date(d.getTime() + 60 * 60 * 1000));
+                    }}
+                    showTimeSelect
+                    timeIntervals={5}
+                    minDate={new Date()}
+                    minTime={isSameDay(startAt, now) ? now : new Date(0, 0, 0, 0, 0)}
+                    maxTime={new Date(0, 0, 0, 23, 55)}
+                    dateFormat="MMM d, yyyy h:mm aa"
+                    className="w-full lg:w-82 sm:w-80 md:w-96 h-11 rounded-xl border border-white/10 bg-white/5 text-white/90 outline-none px-3 py-2.5 text-sm"
+                    calendarClassName="!bg-slate-100 !border !border-white/10 !rounded-xl !shadow-xl"
+                    popperClassName="!z-[9999]"
+                    popperPlacement="bottom-start"
+                    popperModifiers={[
+                      {
+                        name: "sameWidth",
+                        enabled: true,
+                        phase: "beforeWrite",
+                        requires: ["computeStyles"],
+                        fn: ({ state }) => {
+                          state.styles.popper.width = `${state.rects.reference.width}px`;
+                        },
+                      },
+                    ]}
+                    weekDayClassName={() => "text-slate-400"}
+                    dayClassName={() => "text-slate-200 hover:bg-white/10 hover:text-white rounded-md"}
+                    timeClassName={() => "text-slate-800 hover:bg-white/10 hover:text-white rounded-md"}
+                  />
+                </div>
               </label>
 
               <label className="block">
                 <span className="text-white/70 text-xs mb-1 block">End</span>
-                <input
-                  type="time"
-                  value={form.end}
-                  onChange={(e) => setForm({ ...form, end: e.target.value })}
-                  className={`w-full rounded-xl border ${
-                    errors.time ? "border-rose-400/60" : "border-white/10"
-                  } bg-white/5 text-white/90 placeholder-white/40 outline-none px-3 py-2 focus:ring-2 ${
-                    errors.time
-                      ? "focus:ring-rose-400/40 focus:border-rose-400/60"
-                      : "focus:ring-cyan-400/50 focus:border-cyan-400/40"
-                  } transition`}
-                />
+                <div className="relative">
+                  <DatePicker
+                    selected={endAt}
+                    onChange={(d) => d && setEndAt(d)}
+                    showTimeSelect
+                    timeIntervals={5}
+                    minDate={startAt}
+                    minTime={isSameDay(endAt, startAt) ? startAt : new Date(0, 0, 0, 0, 0)}
+                    maxTime={new Date(0, 0, 0, 23, 55)}
+                    dateFormat="MMM d, yyyy h:mm aa"
+                    className="w-full lg:w-82 sm:w-80 md:w-96  h-11 rounded-xl border border-white/10 bg-white/5 text-white/90 outline-none px-3 py-2.5 text-sm"
+                    calendarClassName="!bg-slate-900 !border !border-white/10 !rounded-xl !shadow-xl"
+                    popperClassName="!z-[9999]"
+                    popperPlacement="bottom-start"
+                    popperModifiers={[
+                      {
+                        name: "sameWidth",
+                        enabled: true,
+                        phase: "beforeWrite",
+                        requires: ["computeStyles"],
+                        fn: ({ state }) => {
+                          state.styles.popper.width = `${state.rects.reference.width}px`;
+                        },
+                      },
+                    ]}
+                    weekDayClassName={() => "text-slate-400"}
+                    dayClassName={() => "text-slate-200 hover:bg-white/10 hover:text-white rounded-md"}
+                    timeClassName={() => "text-slate-800  hover:text-white rounded-md"}
+                  />
+                </div>
               </label>
             </div>
+
             {errors.time && <p className="text-rose-300 text-xs mt-1">{errors.time}</p>}
 
             <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -251,7 +299,6 @@ export default function ReserveForm() {
               <Car className="h-4 w-4" />
               <span>Vehicle</span>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <label className="block">
                 <span className="text-white/70 text-xs mb-1 block">Plate Number</span>
@@ -260,13 +307,7 @@ export default function ReserveForm() {
                   placeholder="ABC-1234"
                   value={form.plate}
                   onChange={(e) => setForm({ ...form, plate: e.target.value })}
-                  className={`w-full rounded-xl border ${
-                    errors.plate ? "border-rose-400/60" : "border-white/10"
-                  } bg-white/5 text-white/90 placeholder-white/40 outline-none px-3 py-2 focus:ring-2 ${
-                    errors.plate
-                      ? "focus:ring-rose-400/40 focus:border-rose-400/60"
-                      : "focus:ring-cyan-400/50 focus:border-cyan-400/40"
-                  } transition`}
+                  className={`w-full rounded-xl border ${errors.plate ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 outline-none px-3 py-2`}
                 />
                 {errors.plate && <p className="text-rose-300 text-xs mt-1">{errors.plate}</p>}
               </label>
@@ -274,23 +315,15 @@ export default function ReserveForm() {
               <label className="block">
                 <span className="text-white/70 text-xs mb-1 block">Type</span>
                 <select
-                  className="w-full rounded-xl border border-white/10 bg-white/5 text-white/90 outline-none px-3 py-2 focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/40 transition"
-                  defaultValue="Car"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 text-white/90 outline-none px-3 py-2"
+                  value={form.vehicleType}
+                  onChange={(e) => setForm({ ...form, vehicleType: e.target.value })}
                 >
                   <option>Car</option>
                   <option>Bike</option>
                   <option>Van</option>
                   <option>EV</option>
                 </select>
-              </label>
-
-              <label className="block">
-                <span className="text-white/70 text-xs mb-1 block">Color</span>
-                <input
-                  type="text"
-                  placeholder="Blue"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 text-white/90 outline-none px-3 py-2 focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/40 transition"
-                />
               </label>
             </div>
 
@@ -299,7 +332,6 @@ export default function ReserveForm() {
               <User className="h-4 w-4" />
               <span>Driver</span>
             </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <label className="block">
                 <span className="text-white/70 text-xs mb-1 block">Full Name</span>
@@ -308,13 +340,7 @@ export default function ReserveForm() {
                   placeholder="Haritha Pawan"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className={`w-full rounded-xl border ${
-                    errors.name ? "border-rose-400/60" : "border-white/10"
-                  } bg-white/5 text-white/90 outline-none px-3 py-2 focus:ring-2 ${
-                    errors.name
-                      ? "focus:ring-rose-400/40 focus:border-rose-400/60"
-                      : "focus:ring-cyan-400/50 focus:border-cyan-400/40"
-                  } transition`}
+                  className={`w-full rounded-xl border ${errors.name ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 outline-none px-3 py-2`}
                 />
                 {errors.name && <p className="text-rose-300 text-xs mt-1">{errors.name}</p>}
               </label>
@@ -326,13 +352,7 @@ export default function ReserveForm() {
                   placeholder="you@mail.com"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className={`w-full rounded-xl border ${
-                    errors.email ? "border-rose-400/60" : "border-white/10"
-                  } bg-white/5 text-white/90 outline-none px-3 py-2 focus:ring-2 ${
-                    errors.email
-                      ? "focus:ring-rose-400/40 focus:border-rose-400/60"
-                      : "focus:ring-cyan-400/50 focus:border-cyan-400/40"
-                  } transition`}
+                  className={`w-full rounded-xl border ${errors.email ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 outline-none px-3 py-2`}
                 />
                 {errors.email && <p className="text-rose-300 text-xs mt-1">{errors.email}</p>}
               </label>
@@ -346,13 +366,7 @@ export default function ReserveForm() {
                   placeholder="0770589643"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className={`w-full rounded-xl border ${
-                    errors.phone ? "border-rose-400/60" : "border-white/10"
-                  } bg-white/5 text-white/90 outline-none px-3 py-2 focus:ring-2 ${
-                    errors.phone
-                      ? "focus:ring-rose-400/40 focus:border-rose-400/60"
-                      : "focus:ring-cyan-400/50 focus:border-cyan-400/40"
-                  } transition`}
+                  className={`w-full rounded-xl border ${errors.phone ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 outline-none px-3 py-2`}
                 />
                 {errors.phone && <p className="text-rose-300 text-xs mt-1">{errors.phone}</p>}
               </label>
@@ -367,7 +381,7 @@ export default function ReserveForm() {
                   placeholder="Any special requests?"
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 text-white/90 placeholder-white/40 outline-none px-3 py-2 focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/40 transition resize-y min-h-[90px]"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 text-white/90 outline-none px-3 py-2"
                 />
               </label>
             </div>
