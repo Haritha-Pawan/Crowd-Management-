@@ -10,43 +10,10 @@ const AddUser = ({ isOpen, onClose }) => {
     role: "",
     status: "",
   });
-
-   const validate = () => {
-    let tempErrors = {};
-
-    // Name validation
-    if (!input.name.trim()) {
-      tempErrors.name = "Name is required";
-    } else if (input.name.length < 3) {
-      tempErrors.name = "Name must be at least 3 characters";
-    }
-
-    // Email validation
-    if (!input.email) {
-      tempErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(input.email)) {
-      tempErrors.email = "Email is invalid";
-    }
-
-    // Password validation
-    if (!formData.password) {
-      tempErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      tempErrors.password = "Password must be at least 6 characters";
-    }
-
-    // Phone number validation
-    if (!formData.phone) {
-      tempErrors.phone = "Phone number is required";
-    } else if (!/^\d{10}$/.test(formData.phone)) {
-      tempErrors.phone = "Phone number must be 10 digits";
-    }
-
-    setErrors(tempErrors);
-    return Object.keys(tempErrors).length === 0;
-  };
-
+  const [errors, setErrors] = useState({}); // 👈 new state for errors
   const navigate = useNavigate();
+
+  
 
   if (!isOpen) return null;
 
@@ -75,6 +42,45 @@ const AddUser = ({ isOpen, onClose }) => {
       console.error("Error adding user:", err.response?.data || err.message);
     }
   };
+   // 🟩 Validation function
+  const validate = () => {
+    const tempErrors = {};
+
+    // Name
+    if (!input.name.trim()) {
+      tempErrors.name = "Full name is required";
+    } else if (input.name.length < 5) {
+      tempErrors.name = "Name must be at least 3 characters";
+    }
+
+    // Email
+    if (!input.email.trim()) {
+      tempErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(input.email)) {
+      tempErrors.email = "Invalid email format";
+    }
+
+    // Password
+    if (!input.password) {
+      tempErrors.password = "Password is required";
+    } else if (input.password.length < 6) {
+      tempErrors.password = "Password must be at least 6 characters";
+    }
+
+    // Role
+    if (!input.role) {
+      tempErrors.role = "Please select a role";
+    }
+
+    // Status
+    if (!input.status) {
+      tempErrors.status = "Please select a status";
+    }
+
+    setErrors(tempErrors);
+    return Object.keys(tempErrors).length === 0; // true if no errors
+  };
+
 
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-center bg-black/20 backdrop-blur-sm">
@@ -98,6 +104,9 @@ const AddUser = ({ isOpen, onClose }) => {
               placeholder="Enter full name"
               className="text-white bg-[#272f40] border border-white/20 rounded-md p-2 w-full placeholder:text-gray-500"
             />
+            
+            {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+          
           </div>
 
           {/* Email */}
@@ -113,10 +122,12 @@ const AddUser = ({ isOpen, onClose }) => {
               placeholder="Enter email"
               className="text-white bg-[#272f40] border border-white/20 rounded-md p-2 w-full placeholder:text-gray-500"
             />
+            <br />
+               {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
           </div>
 
           {/* Password */}
-          <div className="flex gap-5 mt-4">
+          <div className="flex  gap-5 mt-4">
             <label className="text-white flex mb-1 font-bold w-[120px]">
               Password *
             </label>
@@ -128,16 +139,20 @@ const AddUser = ({ isOpen, onClose }) => {
               placeholder="Enter password"
               className="text-white bg-[#272f40] border border-white/20 rounded-md p-2 w-full placeholder:text-gray-500"
             />
+          
+               {errors.password && (
+              <p className="text-red-500 text-sm">{errors.password}</p>
+            )}
           </div>
 
           {/* Role */}
-          <div className="flex gap-5 mt-4">
+          <div className="flex  gap-5 mt-4">
             <label className="text-white flex mb-1 font-bold w-[120px]">
               Role *
             </label>
             <select
               name="role"
-                value={input.role}
+              value={input.role}
               onChange={handleChange}
               className="text-white bg-[#272f40] border border-white/20 rounded-md p-2 w-full"
             >
@@ -146,6 +161,9 @@ const AddUser = ({ isOpen, onClose }) => {
               <option value="admin">Admin</option>
               <option value="organizer">organizer</option>
             </select>
+            
+             {errors.role && <p className="text-red-500 text-sm ">{errors.role}</p>}
+            
           </div>
 
           {/* Status */}
@@ -164,6 +182,10 @@ const AddUser = ({ isOpen, onClose }) => {
               <option value="pending">pending</option>
               <option value="banned">Banned</option>
             </select>
+            
+             {errors.status && (
+              <p className="text-red-500 text-sm flex flex-col">{errors.status}</p>
+            )}
           </div>
 
           {/* Buttons */}
