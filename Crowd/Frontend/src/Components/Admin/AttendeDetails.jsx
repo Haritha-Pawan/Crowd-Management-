@@ -63,7 +63,6 @@ function AttendeDetails() {
           />
         </div>
 
-        <h2 className="text-xl font-semibold mb-4">Attendees</h2>
         <table className="w-full text-left">
           <thead>
             <tr className="border-b border-gray-500">
