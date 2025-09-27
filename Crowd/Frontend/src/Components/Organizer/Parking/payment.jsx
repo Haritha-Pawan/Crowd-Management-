@@ -118,7 +118,7 @@ export default function Payment() {
 
     try {
       setLoading(true);
-      await new Promise((r) => setTimeout(r, 200)); // small UX delay
+      await new Promise((r) => setTimeout(r, 500)); // UX delay for payment simulation
 
       // Always update by _id. If we only have a code, look up its _id first.
       let idToUse = spotId;
@@ -129,13 +129,50 @@ export default function Payment() {
         throw new Error(`Spot not found for code "${spotCode}". Check your database codes.`);
       }
 
-      await axios.patch(`${SPOTS_API}/${idToUse}/status`, { status: "occupied" });
+      // 1. Process payment (simulated)
+      const paymentId = 'pm_' + Math.random().toString(36).substr(2, 9);
+      
+      // 2. Create reservation
+      const reservationData = {
+        spotId: idToUse,
+        placeId: state.placeId || query.get("placeId"),
+        startTime: startISO,
+        endTime: endISO,
+        status: 'confirmed',
+        priceCents: total * 100,
+        currency: 'USD',
+        paymentId: paymentId,
+        driverName: driver,
+        plateNumber: plate
+      };
 
-      setMessage("Success! Your spot has been reserved.");
-      const zoneFromUrl = query.get("zoneId") || "";
-      navigate(`/parking?zoneId=${encodeURIComponent(zoneFromUrl)}`, { replace: true });
+      // Create reservation
+      const reservationRes = await axios.post('http://localhost:5000/api/reservations', reservationData);
+      
+      if (reservationRes.data._id) {
+        // 3. Update spot status to occupied with the reservation ID
+        await axios.patch(`${SPOTS_API}/${idToUse}`, {
+          status: "occupied",
+          currentReservation: reservationRes.data._id
+        });
+
+        setMessage("Success! Your spot has been reserved.");
+        
+        // Navigate back with success message
+        const zoneFromUrl = query.get("zoneId") || "";
+        setTimeout(() => {
+          navigate(`/parking?zoneId=${encodeURIComponent(zoneFromUrl)}`, { 
+            replace: true,
+            state: { 
+              success: true,
+              message: 'Parking spot reserved successfully!'
+            }
+          });
+        }, 2000);
+      }
     } catch (err) {
-      const msg = err?.response?.data?.message || err?.message || "Failed to reserve the spot.";
+      console.error('Payment/Reservation error:', err);
+      const msg = err?.response?.data?.message || err?.message || "Failed to process payment and reserve the spot.";
       setErrors({ general: msg });
       setMessage(msg);
     } finally {

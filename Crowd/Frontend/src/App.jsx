@@ -11,12 +11,13 @@ import Profile from './Components/Attendee/Profile.jsx'
 import Organizer from './Components/Organizer/Organizer.jsx'
 import Reserve from './Components/Organizer/Parking/ReserveForm.jsx'
 import Login from './Pages/Login.jsx'
-import ParkingZone from './Components/Organizer/Parking/parkingZone.jsx'
+import ParkingZone from './Components/Organizer/Parking/ParkingZone.jsx'
 import AttendeDetails from './Components/Admin/AttendeDetails.jsx'
 import Coordinator from './Components/Coordinator/Coordinator.jsx'
 import { Toaster } from 'react-hot-toast'
 import Payment from './Components/Organizer/Parking/payment.jsx'
 import CounterDashboard from './Components/Counter/CounterDashboard.jsx'
+import QRScanner from './Components/Counter/QRScanner.jsx'
 
 
 
@@ -57,6 +58,8 @@ const App = () => {
           <Route path='/admin/*' element={<Admin />} />
           <Route path='/organizer/*' element={<Organizer />} />
           <Route path='/reserve' element={<Reserve />} />
+
+          <Route path="/QRScanner" element={<QRScanner/>}/>
         </Routes>
       
     </>
