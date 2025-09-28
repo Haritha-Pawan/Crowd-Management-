@@ -1,27 +1,4 @@
 
-import React from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
-
-import Home from './Pages/Home.jsx'
-import Register from './Pages/Register.jsx'
-import Attendee from './Components/AttendeeDashbord.jsx'
-import Admin from './Components/Admin/Admin.jsx'
-import Overview from './Components/Attendee/Overview.jsx'
-import Parking from './Components/Organizer/Parking/Parking.jsx'
-import Profile from './Components/Attendee/Profile.jsx'
-import Organizer from './Components/Organizer/Organizer.jsx'
-import Reserve from './Components/Organizer/Parking/ReserveForm.jsx'
-import Login from './Pages/Login.jsx'
-import ParkingZone from './Components/Organizer/Parking/ParkingZone.jsx'
-import AttendeDetails from './Components/Admin/AttendeDetails.jsx'
-import Coordinator from './Components/Coordinator/Coordinator.jsx'
-import { Toaster } from 'react-hot-toast'
-import Payment from './Components/Organizer/Parking/payment.jsx'
-import CounterDashboard from './Components/Counter/CounterDashboard.jsx'
-import QRScanner from './Components/Counter/QRScanner.jsx'
-
-
-
 import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
@@ -35,7 +12,7 @@ import Profile from "./Components/Attendee/Profile.jsx";
 import Organizer from "./Components/Organizer/Organizer.jsx";
 import Reserve from "./Components/Organizer/Parking/ReserveForm.jsx";
 import Login from "./Pages/Login.jsx";
-import ParkingZone from "./Components/Organizer/Parking/parkingZone.jsx";
+import ParkingZone from "./Components/Organizer/Parking/ParkingZone.jsx";
 import AttendeDetails from "./Components/Admin/AttendeDetails.jsx";
 import Coordinator from "./Components/Coordinator/Coordinator.jsx";
 import { Toaster } from "react-hot-toast";
@@ -43,6 +20,7 @@ import Payment from "./Components/Organizer/Parking/payment.jsx";
 import CounterDashboard from "./Components/Counter/CounterDashboard.jsx";
 import ForgotPassword from "./Pages/ForgotPassword.jsx";
 import ResetPassword from "./Pages/ResetPassword.jsx";
+import QRScanner from "./Components/Counter/QRScanner.jsx";
 
 
 const App = () => {
@@ -71,7 +49,6 @@ const App = () => {
 
 
           <Route path='/attendee/*' element={<Attendee />} />
-          <Route path='/CounterDashboard/*' element={<CounterDashboard/>}/>
           
           <Route path='/overview' element={<Overview />} />
           <Route path='/profile' element={<Profile />} />
@@ -80,7 +57,7 @@ const App = () => {
           <Route path='/reserve' element={<Reserve />} />
 
           <Route path="/QRScanner" element={<QRScanner/>}/>
-        </Routes>
+        
       
 
         <Route path="/overview" element={<Overview />} />
@@ -91,7 +68,9 @@ const App = () => {
         <Route path="/" element={<AttendeDetails />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-      </Routes>
+
+        </Routes>
+      
 
     </>
   );
