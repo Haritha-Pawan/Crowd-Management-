@@ -1,9 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 function AttendeDetails() {
-  
   // Example attendee data — replace with your real data from API
-  const attendees = [
+  const initialAttendees = [
     {
       fullName: "Lahiru Lakmal",
       nic: "200012345678",
@@ -20,24 +19,51 @@ function AttendeDetails() {
     }
   ];
 
+  // state for attendees shown in the table
+  const [attendees, setAttendees] = useState(initialAttendees);
+
+  // search function
+  const handleSearch = (e) => {
+    const query = e.target.value.toLowerCase();
+
+    // filter from original array to avoid cumulative filtering
+    const filteredAttendees = initialAttendees.filter(attendee =>
+      attendee.fullName.toLowerCase().includes(query) ||
+      attendee.nic.toLowerCase().includes(query) ||
+      attendee.phone.toLowerCase().includes(query) || 
+      attendee.email.toLowerCase().includes(query)
+    );
+
+    // update state
+    setAttendees(filteredAttendees);
+  };
+
   return (
     <div className='p-12 h-screen w-full'>
-      <div className="header text-white text-3xl font-bold">Attende Overview</div>
+      <div className="header text-white text-3xl font-bold">Attendee Overview</div>
       <div className="sub-heading text-xl text-gray-300">
-        Monitor and manage all register attende
+        Monitor and manage all registered attendees
       </div>
 
       <button
-        
         className="absolute top-12 right-12 p-3 px-8 rounded-md cursor-pointer bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
       >
-        + Remove All 
+        + Remove All
       </button>
 
       {/* Attendee Table */}
-      <div className="users-table-container bg-white/5 border-white/10  p-5 mt-10 rounded-md w-full text-white ">
-        <h2 className="text-xl font-semibold mb-4">Attendees</h2>
-        <table className="w-full text-left ali ">
+      <div className="users-table-container bg-white/5 border-white/10 p-5 mt-10 rounded-md w-full text-white">
+        <div className="mb-4 ">
+          Search: 
+          <input
+            type="text"
+            onChange={handleSearch}
+            className="ml-6 p-1 rounded-md bg-white/5  border border-gray-600 text-white w-2/3"
+            placeholder="Search by name, NIC, phone, or email"
+          />
+        </div>
+
+        <table className="w-full text-left">
           <thead>
             <tr className="border-b border-gray-500">
               <th className="pb-3">Full Name</th>

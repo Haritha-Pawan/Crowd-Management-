@@ -111,7 +111,11 @@ function Login() {
 
           <div className='flex justify-between'>
             <label className='text-slate-300 block mb-1 '>Remember me *</label>
-            <label className='text-slate-300 block mb-1 '>Forgot Password</label>
+            <Link to="/forgot-password">
+              <span className='text-slate-300 block mb-1 hover:text-blue-400 cursor-pointer'>
+                Forgot Password?
+              </span>
+            </Link>
           </div>
 
           {error && <p className="text-red-500 text-sm">{error}</p>}
