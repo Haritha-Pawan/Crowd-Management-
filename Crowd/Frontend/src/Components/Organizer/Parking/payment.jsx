@@ -1,4 +1,4 @@
-// src/pages/payment.jsx
+
 import React, { useState } from "react";
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -12,7 +12,8 @@ import {
   MoveLeft,
 } from "lucide-react";
 
-const SPOTS_API = "http://localhost:5000/api/spots";
+const PARKING_SPOTS_API = "http://localhost:5000/api/parkingSpots"; // uses models/ParkingSpot.js
+const RESERVATIONS_API = "http://localhost:5000/api/reservations";
 
 // ----------------- helpers -----------------
 function isObjectId(value) {
@@ -53,8 +54,9 @@ export default function Payment() {
   const state = location.state || {};
 
   // Spot/booking info
-  const spotId = state.spotId || query.get("spotId") || ""; // Mongo _id, if you have it
-  const spotCode = state.name || query.get("name") || "";   // human code like "B002"
+  const spotId = state.spotId || query.get("spotId") || "";       // Mongo _id, if you have it
+  const spotCode = state.name || query.get("name") || "";          // human label like "kalutara-001"
+  const placeId = state.placeId || query.get("placeId") || "";     // required to resolve by label
   const zoneName = state.zone || query.get("zone") || "";
   const spotType = state.type || query.get("type") || "Standard";
 
@@ -97,15 +99,17 @@ export default function Payment() {
     return Object.keys(e).length === 0;
   }
 
-  // NEW: resolve _id from code if needed (case-insensitive)
-  async function resolveSpotIdFromCode(code) {
+  // Resolve ParkingSpot _id from its label (case-insensitive) via /api/parkingSpots
+  async function resolveSpotIdFromLabel(label, placeId, startISO, endISO) {
     try {
-      const res = await axios.get(`${SPOTS_API}?q=${encodeURIComponent(code)}`);
-      const list = Array.isArray(res.data) ? res.data : [];
-      // Try exact match ignoring case
-      const exact = list.find((s) => String(s.code).toLowerCase() === String(code).toLowerCase());
-      const pick = exact || list[0]; // fallback to first match if any
-      return pick ? pick._id : null;
+      const res = await axios.get(PARKING_SPOTS_API, {
+        params: { placeId, start: startISO, end: endISO },
+      });
+      const list = Array.isArray(res.data?.data) ? res.data.data : [];
+      const exact = list.find(
+        (s) => String(s.label).toLowerCase() === String(label).toLowerCase()
+      );
+      return exact ? exact._id : null;
     } catch {
       return null;
     }
@@ -118,61 +122,52 @@ export default function Payment() {
 
     try {
       setLoading(true);
-      await new Promise((r) => setTimeout(r, 500)); // UX delay for payment simulation
+      await new Promise((r) => setTimeout(r, 500)); // simulate payment UX
 
-      // Always update by _id. If we only have a code, look up its _id first.
+      // Always use _id. If only label is available, resolve via /api/parkingSpots
       let idToUse = spotId;
       if (!isObjectId(idToUse)) {
-        idToUse = await resolveSpotIdFromCode(spotCode);
+        if (!placeId) throw new Error("Missing placeId to resolve the spot by label.");
+        idToUse = await resolveSpotIdFromLabel(spotCode, placeId, startISO, endISO);
       }
       if (!isObjectId(idToUse)) {
-        throw new Error(`Spot not found for code "${spotCode}". Check your database codes.`);
+        throw new Error(`Spot not found for label "${spotCode}". Check your database labels.`);
       }
 
-      // 1. Process payment (simulated)
-      const paymentId = 'pm_' + Math.random().toString(36).substr(2, 9);
-      
-      // 2. Create reservation
+      // 1) Process payment (simulated)
+      const paymentId = "pm_" + Math.random().toString(36).substr(2, 9);
+
+      // 2) Create reservation (server will flip spot → occupied atomically)
       const reservationData = {
         spotId: idToUse,
-        placeId: state.placeId || query.get("placeId"),
         startTime: startISO,
         endTime: endISO,
-        status: 'confirmed',
-        priceCents: total * 100,
-        currency: 'USD',
-        paymentId: paymentId,
+        priceCents: Math.round(total * 100),
+        currency: "LKR",
+        paymentId,
+        paymentMethod: "mock",
         driverName: driver,
-        plateNumber: plate
+        plateNumber: plate,
       };
 
-      // Create reservation
-      const reservationRes = await axios.post('http://localhost:5000/api/reservations', reservationData);
-      
-      if (reservationRes.data._id) {
-        // 3. Update spot status to occupied with the reservation ID
-        await axios.patch(`${SPOTS_API}/${idToUse}`, {
-          status: "occupied",
-          currentReservation: reservationRes.data._id
-        });
+      const reservationRes = await axios.post(RESERVATIONS_API, reservationData);
 
+      if (reservationRes.data?._id) {
         setMessage("Success! Your spot has been reserved.");
-        
-        // Navigate back with success message
         const zoneFromUrl = query.get("zoneId") || "";
         setTimeout(() => {
-          navigate(`/parking?zoneId=${encodeURIComponent(zoneFromUrl)}`, { 
+          navigate(`/parking?zoneId=${encodeURIComponent(zoneFromUrl)}`, {
             replace: true,
-            state: { 
-              success: true,
-              message: 'Parking spot reserved successfully!'
-            }
+            state: { success: true, message: "Parking spot reserved successfully!" },
           });
-        }, 2000);
+        }, 1500);
       }
     } catch (err) {
-      console.error('Payment/Reservation error:', err);
-      const msg = err?.response?.data?.message || err?.message || "Failed to process payment and reserve the spot.";
+      console.error("Payment/Reservation error:", err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to process payment and reserve the spot.";
       setErrors({ general: msg });
       setMessage(msg);
     } finally {
@@ -220,7 +215,7 @@ export default function Payment() {
                 <span className="text-white/70 text-sm">Spot</span>
                 <span className="text-white/90">{spotCode || "—"}</span>
               </li>
-             
+
               {plate ? (
                 <li className="flex items-center justify-between">
                   <span className="text-white/70 text-sm">Plate</span>
@@ -399,14 +394,14 @@ export default function Payment() {
             </div>
 
             <div className="mt-3 text-white/50 text-xs">
-              Demo only — no real payment request. On submit, we find the spot’s <b>_id</b> and mark it <b>occupied</b>.
+              Demo only — no real payment request. On submit, we create a reservation; the server flips the spot to <b>occupied</b>.
             </div>
           </form>
         </div>
 
         <div className="mt-8 flex items-center gap-2 text-white/50 text-xs text-center">
           <Car className="h-4 w-4" />
-          <span>Smart Parking — secure & simple checkout</span>
+          <span>Smart Parking — secure &amp; simple checkout</span>
         </div>
       </div>
     </div>

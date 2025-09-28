@@ -90,7 +90,8 @@ export default function ReserveForm() {
     // 👉 build the booking we’ll pass to /payment
     const booking = {
       spotId: spot.spotId,
-      name: spot.name,
+       name: spot.name || spotData.label,  // ensure this is the ParkingSpot label
+      placeId,                            // ⬅️ add this so Payment can resolve by label if needed
       zone: spot.zone,
       type: spot.type,
       price: Number(priceNumber),                 // numeric
@@ -105,6 +106,7 @@ export default function ReserveForm() {
     const qs = new URLSearchParams({
       spotId: booking.spotId,
       name: booking.name,
+      placeId: placeId,
       zone: booking.zone,
       type: booking.type,
       price: String(booking.price),
@@ -117,6 +119,7 @@ export default function ReserveForm() {
 
     // ✅ Go to Payment page (state + query)
     navigate(`/payment?${qs}`, { state: booking, replace: true });
+   // If your route is /organizer/parking/payment, use that path instead.
   };
 
   return (
