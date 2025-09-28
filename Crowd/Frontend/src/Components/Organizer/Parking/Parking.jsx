@@ -75,6 +75,7 @@ function ProgressDonut({ value = 70, subtitle = "Available", size = 220 }) {
 
 // ---------- try both spots endpoints & normalize ----------
 async function fetchSpotsForPlace(placeId, startISO, endISO) {
+  debugger;
   const candidates = [`${API}/spots`, `${API}/parkingSpots`]; // old and new
   for (const url of candidates) {
     try {
@@ -159,8 +160,8 @@ export default function Parking() {
                   .toString()
                   .replace(/\s+/g, "-")
                   .toUpperCase()}-${String(i + 1).padStart(3, "0")}`,
-                status: "available",
-                available: true,
+                status: place.status === "available" ? "available" : "occupied",
+                // available: true,
                 type: place.type || "Standard",
                 price: Number(place.price ?? 0),
                 facilities: Array.isArray(place.facilities)
@@ -185,8 +186,7 @@ export default function Parking() {
           spots: spots.map((s) => ({
             id: s._id ?? s.id,
             label: s.label || `Spot ${s.spotNumber ?? "?"}`,
-            status:
-              s.status || (s.available === false ? "occupied" : "available"),
+            status: s.status,
             available:
               s.available !== undefined
                 ? Boolean(s.available)
@@ -255,6 +255,7 @@ export default function Parking() {
       },
     });
   };
+
 
   if (loading)
     return (
@@ -418,3 +419,6 @@ export default function Parking() {
     </div>
   );
 }
+
+
+// src/pages/Parking.jsx

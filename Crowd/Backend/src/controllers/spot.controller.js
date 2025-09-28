@@ -23,34 +23,52 @@ export const getSpots = async (req, res) => {
       });
     }
 
-    // Get all spots for the place
-    const spots = await Spot.find({ placeId });
+    // 1) Spots for this place
+    const spots = await Spot.find({ placeId }).lean();
+    const spotIds = spots.map(s => s._id);
 
-    // Find overlapping reservations
+    // 2) Overlapping reservations for those spots
+    //    - use the correct field name: "spot" (not "spotId")
+    //    - use the same spelling as your reservation controller: "canceled"
     const reservations = await Reservation.find({
-      placeId,
-      status: { $ne: 'cancelled' },
-      $or: [
-        {
-          startTime: { $lt: endTime },
-          endTime: { $gt: startTime }
-        }
-      ]
-    });
+      spot: { $in: spotIds },
+      status: { $ne: 'canceled' },
+      startTime: { $lt: endTime },
+      endTime:   { $gt: startTime }
+    }).select('spot').lean();
 
-    // Create a Set of occupied spotIds
-    const occupiedSpotIds = new Set(
-      reservations.map(reservation => reservation.spotId.toString())
-    );
+    const occupiedByTime = new Set(reservations.map(r => String(r.spot)));
 
-    // Add availability information to each spot
-    const spotsWithAvailability = spots.map(spot => ({
-      ...spot.toObject(),
-      available: !occupiedSpotIds.has(spot._id.toString())
+    // 3) A spot is unavailable if:
+    //    - its current status is 'occupied' OR
+    //    - it has an overlapping reservation (occupiedByTime)
+    const spotsWithAvailability = spots.map(s => ({
+      ...s,
+      available: !(s.status === 'occupied' || occupiedByTime.has(String(s._id)))
     }));
 
-    res.json({ data: spotsWithAvailability, error: null });
+    return res.json({ data: spotsWithAvailability, error: null });
   } catch (error) {
-    res.status(500).json({ data: null, error: error.message });
+    return res.status(500).json({ data: null, error: error.message });
+  }
+};
+
+// controllers/spot.controller.js
+export const updateSpotStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    // must match models/ParkingSpot.js enum exactly
+    if (!["available", "occupied", "maintenance"].includes(status)) {
+      return res.status(422).json({ message: "Invalid status" });
+    }
+    const spot = await Spot.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true, runValidators: true }
+    );
+    if (!spot) return res.status(404).json({ message: "Spot not found" });
+    res.json(spot);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };
