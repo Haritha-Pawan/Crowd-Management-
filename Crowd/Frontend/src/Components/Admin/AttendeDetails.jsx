@@ -1,41 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 function AttendeDetails() {
-  // Example attendee data — replace with your real data from API
-  const initialAttendees = [
-    {
-      fullName: "Lahiru Lakmal",
-      nic: "200012345678",
-      phone: "0712345678",
-      email: "lahirulakmal893@gmail.com",
-      qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=lahiru"
-    },
-    {
-      fullName: "Sadeepa Gayanath",
-      nic: "199912345678",
-      phone: "0771234567",
-      email: "sadeepa123@gmail.com",
-      qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=sadeepa"
-    }
-  ];
+  // state for all attendees (original from backend)
+  const [allAttendees, setAllAttendees] = useState([]);
+  // state for attendees shown in the table (filtered)
+  const [attendees, setAttendees] = useState([]);
 
-  // state for attendees shown in the table
-  const [attendees, setAttendees] = useState(initialAttendees);
+  // fetch attendees from backend when component mounts
+  useEffect(() => {
+    const fetchAttendees = async () => {
+      try {
+        // 🔹 Replace URL with your real API endpoint
+        const res = await axios.get('http://localhost:5000/other/attendance'); 
+        // ensure data matches your backend structure
+        setAllAttendees(res.data); 
+        setAttendees(res.data); // initially show all
+      } catch (err) {
+        console.error('Error fetching attendees:', err);
+      }
+    };
+
+    fetchAttendees();
+  }, []);
 
   // search function
   const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
-
-    // filter from original array to avoid cumulative filtering
-    const filteredAttendees = initialAttendees.filter(attendee =>
+    const filteredAttendees = allAttendees.filter((attendee) =>
       attendee.fullName.toLowerCase().includes(query) ||
       attendee.nic.toLowerCase().includes(query) ||
-      attendee.phone.toLowerCase().includes(query) || 
+      attendee.phone.toLowerCase().includes(query) ||
       attendee.email.toLowerCase().includes(query)
     );
-
-    // update state
     setAttendees(filteredAttendees);
+  };
+
+  // delete all attendees
+  const handleDeleteAll = async () => {
+    if (window.confirm("Are you sure you want to delete all attendees?")) {
+      try {
+        await axios.delete('http://localhost:5000/other/attendance/delete"'); // adjust route to your backend
+        setAllAttendees([]);
+        setAttendees([]);
+      } catch (err) {
+        console.error("Error deleting all attendees:", err);
+      }
+    }
   };
 
   return (
@@ -46,6 +57,7 @@ function AttendeDetails() {
       </div>
 
       <button
+        onClick={handleDeleteAll}
         className="absolute top-12 right-12 p-3 px-8 rounded-md cursor-pointer bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
       >
         + Remove All
@@ -54,11 +66,11 @@ function AttendeDetails() {
       {/* Attendee Table */}
       <div className="users-table-container bg-white/5 border-white/10 p-5 mt-10 rounded-md w-full text-white">
         <div className="mb-4 ">
-          Search: 
+          Search:
           <input
             type="text"
             onChange={handleSearch}
-            className="ml-6 p-1 rounded-md bg-white/5  border border-gray-600 text-white w-2/3"
+            className="ml-6 p-1 rounded-md bg-white/5 border border-gray-600 text-white w-2/3"
             placeholder="Search by name, NIC, phone, or email"
           />
         </div>
@@ -80,10 +92,18 @@ function AttendeDetails() {
                 <td className="py-3">{attendee.nic}</td>
                 <td className="py-3">{attendee.phone}</td>
                 <td className="py-3">
-                  <span className="font-bold">{attendee.email.split("@")[0]}</span>@{attendee.email.split("@")[1]}
+                  <span className="font-bold">{attendee.email?.split("@")[0]}</span>@{attendee.email?.split("@")[1]}
                 </td>
                 <td className="py-3">
-                  <img src={attendee.qrCode} alt="QR Code" className="w-12 h-12" />
+                  {/* If backend already sends QR code URL, use it directly */}
+                  <img
+                    src={
+                      attendee.qrCode ||
+                      `https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=${attendee.fullName}`
+                    }
+                    alt="QR Code"
+                    className="w-12 h-12"
+                  />
                 </td>
               </tr>
             ))}
