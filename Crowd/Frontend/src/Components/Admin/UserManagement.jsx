@@ -108,7 +108,9 @@ const UserManagement = () => {
   const totalUsers = users.length;
   const activeUsers = users.filter((u) => u.status === "active").length;
   const pendingUsers = users.filter((u) => u.status === "Pending").length;
-  const organizerUsers = users.filter((u) => u.role === "Organizer").length;
+  const organizerUsers = users.filter((u) => u.role === "organizer").length;
+
+ 
 
   const data = [
     { title: "Total Users", count: totalUsers, icon: <UserIcon /> },
@@ -252,7 +254,7 @@ const UserManagement = () => {
 
       {/* End of Serac */}
 
-      <div className="users-table-container bg-white/5 border-white/10  p-5 mt-5 rounded-md w-full text-white ">
+      <div className="users-table-container bg-white/5 border-white/10  p-5 mt-5 rounded-md w-full text-white h-70 overflow-y-auto scroll-m-0">
         <h2 className="text-xl font-semibold mb-4">Users</h2>
         <table className="w-full text-left ">
           <thead>
