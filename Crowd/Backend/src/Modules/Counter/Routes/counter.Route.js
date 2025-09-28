@@ -4,7 +4,9 @@ import {
     createCounter,
     deleteCounter,
     getallCounter, 
-    updateCounter,getCounterById 
+    updateCounter,getCounterById,
+    totalCounter
+    
 }  from '../Controller/counter.controller.js';
 
 
@@ -39,10 +41,16 @@ createCounter
 );
 
 
+//get total count of counters(created by lahiru)
+router.get("/totalCount",totalCounter);
+
 router.get("/",getallCounter);
 router.get('/:id', getCounterById);
 router.put("/:id",updateCounter);
 router.delete("/:id",deleteCounter);
+
+
+
 
 
 export default router;

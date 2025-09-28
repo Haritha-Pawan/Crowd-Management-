@@ -5,15 +5,17 @@ import {
   getUserById,
   updateUser,
   deleteUser,
-  deleteAllAttendees,
-  getAllAttendees,
+  getAllAttendees2
   
 } from "../User/User.controller.js";
 
 const router = express.Router();
+//get attendees count
+router.post("/attendees/new", getAllAttendees2);
 
 // GET all users
 router.get("/", getAllUsers);
+
 
 // POST new user
 router.post("/", createUser);
@@ -28,10 +30,11 @@ router.put("/:id", updateUser);
 // DELETE user
 router.delete("/:id", deleteUser);
 
-//delete all attendees
-router.delete("/", deleteAllAttendees);  
 
-//disable all attendees
-router.get("/",getAllAttendees );
+
+
+
+
+
 
 export default router;

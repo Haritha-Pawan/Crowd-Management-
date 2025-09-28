@@ -23,6 +23,7 @@ export const createCounter = async(req,res) => {
 
 
 export const getallCounter = async(req,res) => {
+  
     try{
         const counterT = await Counter.find();
         res.json(counterT);
@@ -68,6 +69,8 @@ export const deleteCounter = async(req,res) => {
 
 
 export const getCounterById = async (req, res) => {
+
+  
   const { id } = req.params;
 
   try {
@@ -82,4 +85,16 @@ export const getCounterById = async (req, res) => {
     console.error("Error fetching counter by ID:", error);
     res.status(500).json({ message: "Server error" });
   }
+};
+
+// Get total count of counters (create by lahiru dont touch it devindi)
+export const totalCounter = async (req, res) => {
+  
+  try {
+    const count = await Counter.countDocuments();
+    res.status(200).json({ count });
+  } catch (error) {
+    console.error("Error counting counters:", error);
+    res.status(500).json({ message: "Server error" });
+  }   
 };

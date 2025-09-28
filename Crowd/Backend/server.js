@@ -8,6 +8,7 @@ import taskRoutes from './src/Modules/task/Route/task.Route.js';
 import counterRoutes from './src/Modules/Counter/Routes/counter.Route.js';
 import userRouter from './src/Modules/User/User.routes.js';
 import AuthRoutes from './src/Modules/User/AuthRoutes.js';
+import OtherRoutes from './src/Modules/User/Other.routes.js';
 
 import reservationRoutes from './src/Modules/Parking/Route/reservation.route.js';
 import spotRouter from './src/Modules/Parking/Route/spot.route.js';
@@ -41,6 +42,10 @@ app.use('/users', userRouter);
 
 app.use('/auth', AuthRoutes);
 
+//other routes
+app.use('/other', OtherRoutes);
+
+
 // Test route
 app.get('/', (req, res) => {
   res.json({ message: "Welcome to Event Management API" });
@@ -61,10 +66,9 @@ app.use('/api/places', places);
 app.use('/api/parkingSpots', spots);
 
 
-
-
-
 app.use("/api/counter",counterRoutes);
+
+
 
 
 
