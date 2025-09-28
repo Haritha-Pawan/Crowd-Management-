@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Pencil, RefreshCcw, Trash2 } from "lucide-react";
 import axios from "axios";
 import { ClipboardList, CheckCircle2, AlertTriangle, TimerReset, UserRound } from "lucide-react";
 import AddTask from "../Task/AddTask";
@@ -57,7 +58,7 @@ const Task = () => {
   };
 
   return (
-    <div className="p-12 2xl:h-screen">
+    <div className="p-12 2xl:h-screen w-full">
       <div className="header text-white text-3xl font-bold">Task Management</div>
       <div className="sub-heading text-gray-300 text-xl">Create tasks and assign a coordinator</div>
 
@@ -102,9 +103,9 @@ const Task = () => {
           {pendingTasks.length === 0 ? (
             <div className="text-gray-400 text-sm">No pending tasks.</div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div className="space-y-4">
               {pendingTasks.map((t) => (
-                <TaskCard
+                <TaskRow
                   key={t._id}
                   t={t}
                   onDone={() => markDone(t._id)}
@@ -124,14 +125,9 @@ const Task = () => {
           {completedTasks.length === 0 ? (
             <div className="text-gray-400 text-sm">No completed tasks yet.</div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div className="space-y-4">
               {completedTasks.map((t) => (
-                <TaskCard
-                  key={t._id}
-                  t={t}
-                  done
-                  onDelete={() => removeTask(t._id)}
-                />
+                <TaskRow key={t._id} t={t} done onDelete={() => removeTask(t._id)} />
               ))}
             </div>
           )}
@@ -141,65 +137,83 @@ const Task = () => {
   );
 };
 
-function TaskCard({ t, done = false, onDone, onEdit, onDelete }) {
+function TaskRow({ t, done = false, onDone, onEdit, onDelete }) {
   return (
-    <div className="p-5 bg-white/5 border border-white/10 rounded-md text-white text-2xl font-medium">
-      <div className="title flex gap-3 items-start">
-        <span>{t.title}</span>
-        <StatusPill value={done ? "done" : t.status} />
+    <div className="rounded-xl border border-white/10 bg-gradient-to-br from-slate-800/60 to-slate-900/60 p-4 text-white shadow-sm">
+      {/* Title + badges */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="font-semibold hover:underline truncate">
+            {t.title}
+          </div>
+
+          {/* Assigned + Category */}
+          <div className="mt-1 text-sm text-slate-300">
+            Assigned to:{" "}
+            <span className="text-white">
+              {t.coordinator ? `${t.coordinator} (Coordinator)` : "—"}
+            </span>
+            <br />
+            Description:{" "}
+            <span className="text-white">
+              {t.description || "—"}
+            </span>
+            <br />
+            Other Staffs:{" "}
+            <div className="text-white flex-col">
+              {t.otherStaffs || "—"}
+            </div>
+          </div>
+        </div>
+
+        {/* Right side: Due + pills */}
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <div className="text-sm text-slate-300">
+            <span className="mr-1">Due:</span>
+            <span className="text-white">
+              {t.dueDate ? t.dueDate.split("T")[0] : "—"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Pill
+              label={priorityLabel(t.priority)}
+              color={priorityColor(t.priority)}
+            />
+            <Pill
+              label={statusLabel(done ? "done" : t.status)}
+              color={statusColor(done ? "done" : t.status)}
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="sub-heading flex mt-2 text-gray-300 items-center gap-2 text-sm">
-        <UserRound size={18} />
-        <div>Coordinator: <span className="text-white">{t.coordinator || "—"}</span></div>
-      </div>
-
-      <div className="mt-3 text-sm text-gray-300 space-y-1">
-        <div>Priority: <span className="text-white font-medium">{t.priority || "medium"}</span></div>
-        <div>Description: <span className="text-white/90">{t.description || "—"}</span></div>
-        <div>Due: <span className="text-white">{t.dueDate ? t.dueDate.split("T")[0] : "—"}</span></div>
-        {t.otherStaffs ? <div>Other Staffs: <span className="text-white/90">{t.otherStaffs}</span></div> : null}
-      </div>
-
-      <div className="progress mt-3 h-2.5 w-full overflow-hidden rounded-full bg-black/40">
-        <div
-          className={
-            "h-full rounded-full " +
-            (done
-              ? "bg-green-500 w-full"
-              : t.status === "in_progress"
-              ? "bg-blue-600 w-1/2"
-              : t.status === "blocked"
-              ? "bg-red-500 w-1/4"
-              : "bg-yellow-400 w-0")
-          }
-        />
-      </div>
-
-      <div className="btn mt-4 flex gap-3">
-        {!done && (
-          <button
-            onClick={onDone}
-            className="border border-white/10 px-4 py-1 bg-white/5 rounded-md text-[16px] cursor-pointer text-white"
-          >
-            Mark Done
-          </button>
-        )}
-
+      {/* Actions (small icon buttons like the mock) */}
+      <div className="mt-3 flex items-center gap-3 text-slate-300">
         {!done && (
           <button
             onClick={onEdit}
-            className="border border-white/10 px-4 py-1 bg-white/5 rounded-md text-[16px] cursor-pointer text-blue-400"
+            className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1 text-xs hover:bg-white/10"
+            title="Edit"
           >
-            Edit
+            <Pencil size={14} /> Edit
           </button>
         )}
-
+        {!done && (
+          <button
+            onClick={onDone}
+            className="inline-flex items-center gap-1 rounded-md border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-xs text-emerald-300 hover:bg-emerald-400/15"
+            title="Mark Done"
+          >
+            <RefreshCcw size={14} /> Complete
+          </button>
+        )}
         <button
           onClick={onDelete}
-          className="border border-white/10 px-4 py-1 bg-white/5 rounded-md text-[16px] cursor-pointer text-red-400"
+          className="ml-auto inline-flex items-center gap-1 rounded-md border border-rose-400/20 bg-rose-400/10 px-2 py-1 text-xs text-rose-300 hover:bg-rose-400/15"
+          title="Delete"
         >
-          Delete
+          <Trash2 size={14} /> Delete
         </button>
       </div>
     </div>
@@ -208,14 +222,64 @@ function TaskCard({ t, done = false, onDone, onEdit, onDelete }) {
 
 function Card({ title, icon, count }) {
   return (
-    <div className="bg-white/5 border border-white/10 text-white rounded-md p-5">
-      <div className="flex justify-between">
-        <div className="text-[18px]">{title}</div>
-        <div className="relative top-5">{icon}</div>
+    <div className="flex flex-col justify-between bg-gradient-to-br from-slate-800/60 to-slate-900/60 border border-white/10 rounded-xl p-6 w-full h-32 shadow-lg">
+      <div className="flex justify-between items-center">
+        <div className="text-white text-lg font-medium">{title}</div>
+        <div>{icon}</div>
       </div>
-      <div className="text-2xl mt-1 font-bold">{count}</div>
+      <div className="text-3xl font-bold text-white mt-2">{count}</div>
     </div>
   );
+}
+
+function Pill({ label, color }) {
+  return (
+    <span
+      className={`inline-flex h-6 items-center rounded-full border px-2 text-xs font-medium
+      ${color.bg} ${color.text} ${color.border}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function priorityLabel(p = "medium") {
+  const v = String(p || "medium").toLowerCase();
+  if (v === "high") return "High";
+  if (v === "low") return "Low";
+  if (v === "urgent") return "Urgent";
+  return "Medium";
+}
+function priorityColor(p = "medium") {
+  const v = String(p || "medium").toLowerCase();
+  if (v === "urgent")
+    return { bg: "bg-rose-500/15", text: "text-rose-300", border: "border-rose-400/25" };
+  if (v === "high")
+    return { bg: "bg-amber-500/15", text: "text-amber-300", border: "border-amber-400/25" };
+  if (v === "low")
+    return { bg: "bg-sky-500/15", text: "text-sky-300", border: "border-sky-400/25" };
+  return { bg: "bg-indigo-500/15", text: "text-indigo-300", border: "border-indigo-400/25" }; // medium
+}
+
+function statusLabel(s = "todo") {
+  const v = String(s || "todo").toLowerCase().replace("_", " ");
+  if (v === "in progress") return "In Progress";
+  if (v === "pending") return "Pending";
+  if (v === "done") return "Completed";
+  if (v === "blocked") return "Blocked";
+  return "Todo";
+}
+function statusColor(s = "todo") {
+  const v = String(s || "todo").toLowerCase().replace("_", " ");
+  if (v === "in progress")
+    return { bg: "bg-sky-500/15", text: "text-sky-300", border: "border-sky-400/25" };
+  if (v === "pending")
+    return { bg: "bg-amber-500/15", text: "text-amber-300", border: "border-amber-400/25" };
+  if (v === "done")
+    return { bg: "bg-emerald-500/15", text: "text-emerald-300", border: "border-emerald-400/25" };
+  if (v === "blocked")
+    return { bg: "bg-rose-500/15", text: "text-rose-300", border: "border-rose-400/25" };
+  return { bg: "bg-slate-500/15", text: "text-slate-300", border: "border-slate-400/25" };
 }
 
 function StatusPill({ value }) {
