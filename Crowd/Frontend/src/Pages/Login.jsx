@@ -54,7 +54,10 @@ function Login() {
         navigate("/organizer/Organizer");
       } else if (role === "Attendee") {
         navigate("/attendee/dashboard");
-      } else {
+      }else if (role === "Coordinator") {
+        navigate("/organizer/Organizer");
+      }
+       else {
         navigate("/");
       }
     } catch (err) {

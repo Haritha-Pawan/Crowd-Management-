@@ -1,20 +1,55 @@
-import { User, Users, LocateIcon, Car,LoaderPinwheel } from 'lucide-react';
+import { User, Users, LocateIcon, Car, LoaderPinwheel } from 'lucide-react';
 import React from 'react'
 import Barchart from './Barchart';
+import { useEffect, useState } from 'react';
 
 const AdminOverview = () => {
 
+  const [attendeeCount, setAttendeeCount] = useState(0);
+  const [totalCounters, setTotalCounters] = useState(0);
+ 
+
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/other/attendance/count");
+        const data = await res.json();
+        setAttendeeCount(data.count);
+      } catch (err) {
+        console.error("Error fetching attendee count:", err);
+      }
+    };
+    fetchCount();
+  }, []);
+
+  useEffect(() => {
+    const fetchTotalCounters = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/counter/totalCount");   
+        const data = await res.json();
+        setTotalCounters(data.count);
+      }
+      catch (err) {
+        console.error("Error fetching total counters:", err);
+      }
+    };
+    fetchTotalCounters();
+
+  }, []);
+ 
+
     const card = [
     
-         {title:"Total Users",icon:<Users color='#2f80ed'/>,count:"1,247" ,summary:"+12% from last event"},
-         {title:"Active Counters",icon:<LocateIcon color='#4ade80'/>,count:"8" ,summary:"3 at capacity"},
-         {title:"Parking Usage",icon:<Car color='#facc15'/>,count:"78%" ,summary:"415/530 spaces occupied"},
-         {title:"Service",icon:<LoaderPinwheel color='#c084fc'/>,count:"12" ,summary:"Food courts & stalls"},
+         {title:"Total Users",icon:<Users color='#2f80ed'/>,count:attendeeCount ,summary:"+12% from last event"},
+         {title:"Active Counters",icon:<LocateIcon color='#4ade80'/>,count:totalCounters ,summary:"3 at capacity"},
+         {title:"Parking Usage",icon:<Car color='#facc15'/>,count:attendeeCount ,summary:"415/530 spaces occupied"},
+         {title:"Service",icon:<LoaderPinwheel color='#c084fc'/>,count:attendeeCount ,summary:"Food courts & stalls"},
 
     ];
 
   return (
-    <div className='p-12 h-screen'>
+    <div className='p-12 h-full max-h-screen overflow-y-auto'>
          
          <div className="header text-white text-3xl font-bold">Admin Overview</div>
             <div className="sub-heading text-xl text-gray-300">Monitor and manage all system components</div>
@@ -26,6 +61,7 @@ const AdminOverview = () => {
         </button>
 
             <div className="card mt-8 xl:grid grid-cols-4 xl:grid-cols-4   gap-18 mx-auto ">
+          
                  
 
                  {card.map((data,index)=>(

@@ -1,6 +1,7 @@
 import User from "../User/User.model.js";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import Attendee from "../User/AttendeModel.js";
 
 // Display all users
 export const getAllUsers = async (req, res, next) => {
@@ -115,13 +116,18 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-// display all attendees
 export const getAllAttendees = async (req, res) => {
-     try {
-    const attendees = await Attendee.find();
+  try {
+    const attendees = await Attendee.find().sort({ createdAt: -1 });
+
+    if (!attendees.length) {
+      return res.status(404).json({ message: 'No attendees found' });
+    }
+
     res.status(200).json(attendees);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err); // good for debugging
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -134,3 +140,25 @@ export const deleteAllAttendees = async (req, res) => {
     res.status(500).json({ message: err.message });
   } 
 };
+
+// Get total attendee count
+export const getAttendeeCount = async (req, res) => {
+  try {
+    // Counts all attendee documents in your DB
+    const count = await Attendee.countDocuments();
+    res.status(200).json({ count });
+  } catch (err) {
+    console.error("Error getting attendee count:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+//get all attendees -2
+export const getAllAttendees2 = async (req, res) => {
+  try {
+    const attendees = await Attendee.find();
+    res.status(200).json(attendees);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+

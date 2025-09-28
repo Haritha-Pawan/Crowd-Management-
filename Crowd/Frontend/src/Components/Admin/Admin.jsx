@@ -22,9 +22,9 @@ const Admin = () => {
       ];
 
   return (
-        <div className='flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 h-auto'>
+        <div className='flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 max-h-screen h-fit overflow-scroll scrol/l-m-0'>
           
-          <Sidebar 
+          <Sidebar  className=""
           
           title={"Admin Dashboard"}
           subtitle={"Your event experience hub"}
