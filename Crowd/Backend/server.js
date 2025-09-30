@@ -21,24 +21,8 @@ import spots from './src/routes/spot.routes.js'
 
 
 
-import express from "express";
-import mongoose from "mongoose";
-import cors from "cors";
-import dotenv from "dotenv";
 
 
-import zoneRouter from "./src/Modules/Parking/Route/zone.Route.js";
-import taskRoutes from "./src/Modules/task/Route/task.Route.js";
-import counterRoutes from "./src/Modules/Counter/Routes/counter.Route.js";
-import userRouter from "./src/Modules/User/User.routes.js";
-import AuthRoutes from "./src/Modules/User/AuthRoutes.js";
-
-import reservationRoutes from "../Backend/src/Modules/Parking/Route/reservation.route.js"; // uses ParkingSpot model under the hood
-import spotRouter from "./src/routes/spot.routes.js";   // (Modules) legacy/admin spot routes
-
-// “ParkingSpot” stack (lives outside Modules/)
-import places from "./src/routes/place.routes.js";
-import spots from "./src/routes/spot.routes.js";                       // uses models/ParkingSpot.js
 
 dotenv.config();
 
@@ -64,8 +48,6 @@ app.use('/auth', AuthRoutes);
 app.use('/other', OtherRoutes);
 
 
-// Test route
-app.get('/', (req, res) => {
 
 // DB
 mongoose
