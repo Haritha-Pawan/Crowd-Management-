@@ -107,7 +107,7 @@ export const createReservation = async (req, res) => {
 /** GET /api/reservations/:id */
 export const getReservation = async (req, res) => {
   try {
-    const doc = await Reservation.findById(req.params.id).populate("spot");
+    const doc = await Reservation.find().populate("spot");
     if (!doc) return res.status(404).json({ message: "Not found" });
     res.json(doc);
   } catch {

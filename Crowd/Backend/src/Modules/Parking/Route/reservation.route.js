@@ -50,7 +50,7 @@ router.post(
   createReservation
 );
 
-router.get("/:id", getReservation);
+router.get("/", getReservation);
 router.patch("/:id/cancel", cancelReservation);
 
 export default router;
