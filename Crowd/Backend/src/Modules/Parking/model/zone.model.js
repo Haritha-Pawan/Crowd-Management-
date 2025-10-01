@@ -1,20 +1,32 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-const ParkingZoneSchema = new mongoose.Schema(
+const ZoneSchema = new mongoose.Schema(
   {
-    name: {type: String ,unique: true,required: [true, "Zone name is required"],trim: true,minlength: [2, "Zone name must be at least 2 characters"], maxlength: [100, "Zone name too long"],},
-    location: {type: String,required: [true, "Location is required"],trim: true,},
-    capacity: {type: Number,required: [true, "Capacity is required"], min: [1, "Capacity must be greater than zero"],},
-    status: {type: String,enum: ["active", "inactive"],default: "active",},
-     distance: {type: String,trim: true,},
-    price:{type: Number,required: [true, "Price is required"],min: [0, "Price must be positive"],},
-    description: {type: String,trim: true,maxlength: [300, "Description too long"],},
-    facilities: { type: [String], default: [] }, 
+    name: { type: String, required: true, trim: true },
+    code: { type: String, required: true, trim: true, unique: true },
+    location: { type: String, required: true, trim: true },
+    capacity: { type: Number, required: true, min: 0 },
+    type: { type: String, required: true, default: 'Standard', trim: true },
+    status: { type: String, required: true, enum: ['active', 'inactive'], default: 'active' },
+    price: { type: Number, required: true, min: 0, default: 0 },
+    distance: { type: String, trim: true },
+    description: { type: String, trim: true },
+    facilities: [{ type: String, trim: true }],
+
+    // no coordinates (latitude/longitude) per your request
+
+    availableSpots: {
+      type: Number,
+      default: function () {
+        return this.capacity;
+      },
+    },
   },
   { timestamps: true }
 );
 
-// Create and export the ParkingZone model
-const ParkingZone = mongoose.model("ParkingZone", ParkingZoneSchema);
+// unique index on code
+ZoneSchema.index({ code: 1 }, { unique: true });
 
-export default ParkingZone;
+const Zone = mongoose.model('Zone', ZoneSchema);
+export default Zone;

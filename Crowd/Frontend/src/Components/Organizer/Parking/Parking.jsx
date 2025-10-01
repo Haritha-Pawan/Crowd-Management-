@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 const API = "http://localhost:5000/api";
 
-// ---------- small UI helpers ----------
+/* ---------- small UI helpers ---------- */
 const badgeClasses = (status) =>
   status === "available"
     ? "text-emerald-300 border-emerald-400/25 bg-emerald-500/10"
@@ -31,32 +31,32 @@ const getColorsByValue = (v) =>
 
 const timeAgo = (iso) => {
   if (!iso) return "Just now";
-  const diffMin = Math.max(
-    Math.floor((Date.now() - new Date(iso).getTime()) / 60000),
-    0
-  );
+  const diffMin = Math.max(Math.floor((Date.now() - new Date(iso).getTime()) / 60000), 0);
   if (diffMin < 1) return "Just now";
   if (diffMin === 1) return "1 min ago";
   return `${diffMin} min ago`;
 };
 
+/* ---------- currency helpers ---------- */
+const currencyToNumber = (raw) => {
+  if (raw === null || raw === undefined) return null;
+  const m = String(raw).match(/-?\d+(\.\d+)?/);
+  if (!m) return null;
+  const n = Number(m[0]);
+  return Number.isFinite(n) ? n : null;
+};
+const numberToCurrency = (n) => `Rs:${Number(n).toFixed(2)}`;
+
+/* ---------- Optional donut (kept UI parity) ---------- */
 function ProgressDonut({ value = 70, subtitle = "Available", size = 220 }) {
   const colors = getColorsByValue(value);
   const gradId = useId();
-  const data = [
-    { name: "Progress", value },
-    { name: "Remaining", value: Math.max(0, 100 - value) },
-  ];
-
   return (
     <div className="relative mx-auto" style={{ width: size, height: size }}>
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <span className="text-white font-bold text-3xl leading-none">
-          {value}%
-        </span>
+        <span className="text-white font-bold text-3xl leading-none">{value}%</span>
         <span className="text-slate-300 text-xs mt-1">{subtitle}</span>
       </div>
-
       <svg viewBox="0 0 200 200" width="100%" height="100%">
         <defs>
           <linearGradient id={`progressGradient-${gradId}`} x1="0" y1="0" x2="1" y2="1">
@@ -65,189 +65,117 @@ function ProgressDonut({ value = 70, subtitle = "Available", size = 220 }) {
           </linearGradient>
         </defs>
       </svg>
-
-      {/* Simple donut with two arcs using divs for simplicity */}
-      <div className="pointer-events-none absolute inset-0 rounded-full blur-2xl"
-           style={{ boxShadow: "0 0 40px rgba(56,189,248,0.18)" }} />
+      <div
+        className="pointer-events-none absolute inset-0 rounded-full blur-2xl"
+        style={{ boxShadow: "0 0 40px rgba(56,189,248,0.18)" }}
+      />
     </div>
   );
 }
 
-// ---------- try both spots endpoints & normalize ----------
-async function fetchSpotsForPlace(placeId, startISO, endISO) {
-  debugger;
-  const candidates = [`${API}/spots`, `${API}/parkingSpots`]; // old and new
-  for (const url of candidates) {
-    try {
-      console.log("[Parking] GET spots:", url, { placeId, startISO, endISO });
-      const res = await axios.get(url, {
-        params: { placeId, start: startISO, end: endISO },
-      });
-
-      // normalize: array | {data:[]} | {spots:[]} | {items:[]}
-      const raw =
-        res?.data?.data ??
-        res?.data?.spots ??
-        res?.data?.items ??
-        res?.data;
-
-      if (Array.isArray(raw)) {
-        console.log("[Parking] Spots found:", raw.length, "from", url);
-        return raw;
-      }
-    } catch (e) {
-      if (e?.response?.status === 404) {
-        // try next candidate
-        continue;
-      }
-      console.warn("[Parking] spots fetch error from", url, e);
-    }
-  }
-  console.warn("[Parking] No spots endpoint returned a list. Using empty array.");
-  return [];
+/* ---------- API helpers ---------- */
+async function fetchAllSpots() {
+  const res = await axios.get(`${API}/spots`);
+  const raw = res?.data?.data ?? res?.data ?? [];
+  return Array.isArray(raw) ? raw : [];
+}
+async function fetchSpotsByZone(zoneId) {
+  const res = await axios.get(`${API}/spots`, { params: { zoneId } });
+  const raw = res?.data?.data ?? res?.data ?? [];
+  return Array.isArray(raw) ? raw : [];
 }
 
-// ---------- component ----------
 export default function Parking() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { placeId } = location.state || {};
+
+  // 🔹 Received from ParkingZone.jsx
+  const { placeId, zone, zonePrice, zonePriceText } = location.state || {};
+
+  // 🔹 Resolve to a single numeric base price from what was passed
+  const basePriceNumber =
+    currencyToNumber(zonePrice) ?? currencyToNumber(zonePriceText) ?? 0;
+  const basePriceText = numberToCurrency(basePriceNumber);
 
   const [parkingData, setParkingData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Fetch place + spots
   useEffect(() => {
     let mounted = true;
-
     (async () => {
-      if (!placeId) {
-        setError("No place ID provided");
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
-        const now = new Date();
-        const endOfDay = new Date(now);
-        endOfDay.setHours(23, 59, 59, 999);
 
-        // 1) place
-        console.log("[Parking] GET place:", `${API}/places/${placeId}`);
-        const placeRes = await axios.get(`${API}/places/${placeId}`);
-        const payload = placeRes?.data?.data ?? placeRes?.data ?? {};
-        const place = Array.isArray(payload) ? payload[0] : payload;
-        if (!place?._id) throw new Error("Invalid place payload");
-
-        // 2) spots (try both endpoints)
-        const rawSpots = await fetchSpotsForPlace(
-          placeId,
-          now.toISOString(),
-          endOfDay.toISOString()
-        );
-
+        const rawSpots = placeId ? await fetchSpotsByZone(placeId) : await fetchAllSpots();
         if (!mounted) return;
 
-        // if none returned, synthesize from capacity
-        const capacity = Number(place.capacity ?? 0);
-        const spots =
-          rawSpots.length === 0
-            ? Array.from({ length: capacity }, (_, i) => ({
-                _id: `temp-${i + 1}`,
-                label: `${(place.code || place.name || "SPOT")
-                  .toString()
-                  .replace(/\s+/g, "-")
-                  .toUpperCase()}-${String(i + 1).padStart(3, "0")}`,
-                status: place.status === "available" ? "available" : "occupied",
-                // available: true,
-                type: place.type || "Standard",
-                price: Number(place.price ?? 0),
-                facilities: Array.isArray(place.facilities)
-                  ? place.facilities
-                  : [],
-              }))
-            : rawSpots;
+        // Prefer the zone name we passed; otherwise a generic label
+        const zoneName = zone || (placeId ? "Selected Zone" : "All Zones");
+        const capacity = rawSpots.length;
+
+        // ✅ USE ONLY the price we got from ParkingZone for every spot
+        const spots = rawSpots.map((s, i) => {
+          const availableByBool =
+            s.available !== undefined ? (s.available ? "available" : "occupied") : null;
+          const status = availableByBool || s.status || "available";
+
+          return {
+            id: s._id ?? s.id ?? String(i),
+            name: s.label || `Spot ${s.spotNumber ?? i + 1}`,
+            status,
+            zone: s.zoneName || zoneName,
+            price: basePriceText,              // ← this is the displayed price
+            distance: `${30 + i * 2}m`,
+            type: s.type ?? "Standard",
+            features: Array.isArray(s.facilities) ? s.facilities : [],
+          };
+        });
 
         setParkingData({
           place: {
-            id: place._id,
-            name: place.name,
+            id: placeId || "all",
+            name: zoneName,
             capacity,
-            location: place.location ?? "",
-            type: place.type ?? "Standard",
-            price: Number(place.price ?? 0),
-            facilities: Array.isArray(place.facilities)
-              ? place.facilities
-              : [],
-            updatedAt: place.updatedAt,
+            location: "",
+            type: "Mixed",
+            price: basePriceNumber,            // header “Base price”
+            facilities: [],
+            updatedAt: new Date().toISOString(),
           },
-          spots: spots.map((s) => ({
-            id: s._id ?? s.id,
-            label: s.label || `Spot ${s.spotNumber ?? "?"}`,
-            status: s.status,
-            available:
-              s.available !== undefined
-                ? Boolean(s.available)
-                : s.status !== "occupied",
-            type: s.type ?? place.type ?? "Standard",
-            price: Number(s.price ?? place.price ?? 0),
-            facilities: Array.isArray(s.facilities)
-              ? s.facilities
-              : Array.isArray(place.facilities)
-              ? place.facilities
-              : [],
-          })),
+          spots,
         });
         setError("");
       } catch (err) {
         console.error("[Parking] fetch error:", err);
-        setError(
-          err?.response?.data?.error || err.message || "Failed to load parking data"
-        );
+        setError(err?.response?.data?.error || err.message || "Failed to load parking data");
       } finally {
         if (mounted) setLoading(false);
       }
     })();
-
     return () => {
       mounted = false;
     };
-  }, [placeId]);
+  }, [placeId, zone, basePriceNumber, basePriceText]);
 
-  // stats
   const stats = useMemo(() => {
     if (!parkingData?.spots) return { capacity: 0, occupied: 0, available: 0 };
     const capacity = parkingData.place.capacity;
-    const occupied = parkingData.spots.filter((s) => !s.available).length;
+    const occupied = parkingData.spots.filter((s) => s.status !== "available").length;
     const available = capacity - occupied;
     return { capacity, occupied, available };
   }, [parkingData]);
 
-  // transformed for UI
-  const spots = useMemo(() => {
-    if (!parkingData?.spots) return [];
-    return parkingData.spots.map((s, i) => ({
-      id: s.id,
-      name: s.label,
-      status: s.available ? "available" : "occupied",
-      zone: parkingData.place.name,
-      price: `Rs:${s.price}`,
-      distance: `${30 + i * 2}m`,
-      type: s.type,
-      features: s.facilities,
-    }));
-  }, [parkingData]);
+  const spots = useMemo(() => parkingData?.spots ?? [], [parkingData]);
 
-  const handleNavigateToReserve = (spot) => {
+  const navigateToReserve = (spot) => {
     navigate("/reserve", {
       state: {
         spotId: spot.id,
         placeId,
         spotData: {
           name: spot.name,
-          price: spot.price,
+          price: spot.price, // already formatted (same base price)
           type: spot.type,
           distance: spot.distance,
           zone: spot.zone,
@@ -256,37 +184,21 @@ export default function Parking() {
     });
   };
 
-
-  if (loading)
-    return (
-      <div className="min-h-screen bg-slate-950 text-white p-8">Loading…</div>
-    );
-
-  if (error)
-    return (
-      <div className="min-h-screen bg-slate-950 text-red-300 p-8">{error}</div>
-    );
+  if (loading) return <div className="min-h-screen bg-slate-950 text-white p-8">Loading…</div>;
+  if (error) return <div className="min-h-screen bg-slate-950 text-red-300 p-8">{error}</div>;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(1200px_600px_at_10%_-10%,rgba(59,130,246,0.18),transparent),radial-gradient(1000px_500px_at_90%_0%,rgba(16,185,129,0.14),transparent)] bg-slate-950">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
         <div className="text-white text-4xl font-bold">Smart Parking System</div>
         <div className="text-white/70 mt-1">
-          Zone:{" "}
-          <span className="text-white">
-            {parkingData?.place?.name || "Loading..."}
-          </span>
-          {parkingData?.place && (
-            <>
-              {" "}
-              — Capacity: <span className="text-white">{stats.capacity}</span>
-            </>
-          )}
+          Zone: <span className="text-white">{parkingData?.place?.name || "Loading..."}</span>
+          {parkingData?.place && <> — Capacity: <span className="text-white">{stats.capacity}</span></>}
           {parkingData?.place?.updatedAt && (
-            <span className="text-white/40">
-              {" "}
-              — updated {timeAgo(parkingData.place.updatedAt)}
-            </span>
+            <span className="text-white/40"> — updated {timeAgo(parkingData.place.updatedAt)}</span>
+          )}
+          {basePriceNumber > 0 && (
+            <span className="text-white/60"> — Base price {basePriceText}</span>
           )}
         </div>
 
@@ -294,59 +206,45 @@ export default function Parking() {
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md">
             <div className="text-white/80 text-sm">Available Spots</div>
             <div className="flex items-end justify-between mt-2">
-              <div className="text-emerald-400 text-4xl font-bold">
-                {stats.available}
-              </div>
+              <div className="text-emerald-400 text-4xl font-bold">{stats.available}</div>
               <Car size={48} className="text-emerald-400/80" />
             </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md">
             <div className="text-white/80 text-sm">Occupied Spots</div>
             <div className="flex items-end justify-between mt-2">
-              <div className="text-rose-400 text-4xl font-bold">
-                {stats.occupied}
-              </div>
+              <div className="text-rose-400 text-4xl font-bold">{stats.occupied}</div>
               <Car size={48} className="text-rose-400/80" />
             </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-md">
             <div className="text-white/80 text-sm">Total Spots</div>
             <div className="flex items-end justify-between mt-2">
-              <div className="text-sky-400 text-4xl font-bold">
-                {stats.capacity}
-              </div>
+              <div className="text-sky-400 text-4xl font-bold">{stats.capacity}</div>
               <Car size={48} className="text-sky-400/80" />
             </div>
           </div>
         </div>
 
         <div className="mt-10">
-          {spots && spots.length > 0 ? (
+          {spots.length > 0 ? (
             <div className="grid 2xl:grid-cols-4 xl:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-6">
               {spots.map((spot) => (
                 <div
                   key={spot.id}
-                  className={`rounded-2xl border border-white/10 ${cardAccent(
-                    spot.status
-                  )} bg-white/5 p-5 backdrop-blur-md transition-all hover:bg-gradient-to-b hover:scale-[1.02] cursor-pointer`}
-                  onClick={() => handleNavigateToReserve(spot)}
+                  className={`rounded-2xl border border-white/10 ${cardAccent(spot.status)} bg-white/5 p-5 backdrop-blur-md transition-all hover:bg-gradient-to-b hover:scale-[1.02] cursor-pointer`}
+                  onClick={() => navigateToReserve(spot)}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/10 text-white">
                       {firstWordInitial(spot.name)}
                     </div>
-                    <div
-                      className={`text-xs border rounded-full px-2 py-0.5 ${badgeClasses(
-                        spot.status
-                      )}`}
-                    >
+                    <div className={`text-xs border rounded-full px-2 py-0.5 ${badgeClasses(spot.status)}`}>
                       {spot.status}
                     </div>
                   </div>
 
-                  <div className="text-white text-lg font-semibold">
-                    {spot.name}
-                  </div>
+                  <div className="text-white text-lg font-semibold">{spot.name}</div>
                   <div className="text-white/60 mt-1 text-sm">{spot.zone}</div>
 
                   <div className="mt-4 flex items-start gap-4">
@@ -365,10 +263,7 @@ export default function Parking() {
                       <div className="text-white/40 text-xs mb-2">Features</div>
                       <div className="flex flex-wrap gap-1">
                         {spot.features.map((feature) => (
-                          <div
-                            key={feature}
-                            className="text-white/60 text-xs px-2 py-1 rounded-md bg-white/5"
-                          >
+                          <div key={feature} className="text-white/60 text-xs px-2 py-1 rounded-md bg-white/5">
                             {feature}
                           </div>
                         ))}
@@ -391,7 +286,7 @@ export default function Parking() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleNavigateToReserve(spot);
+                          navigateToReserve(spot);
                         }}
                         className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-white font-medium py-2 transition"
                       >
@@ -410,15 +305,10 @@ export default function Parking() {
               ))}
             </div>
           ) : (
-            <div className="text-center text-white/50">
-              {loading ? "Loading spots..." : "No spots available."}
-            </div>
+            <div className="text-center text-white/50">No spots available.</div>
           )}
         </div>
       </div>
     </div>
   );
 }
-
-
-// src/pages/Parking.jsx

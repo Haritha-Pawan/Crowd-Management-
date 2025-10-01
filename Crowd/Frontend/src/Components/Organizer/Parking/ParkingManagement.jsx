@@ -29,7 +29,7 @@ const ParkingManagement = () => {
   // ---- single fetcher for /api/places ----
   const fetchPlaces = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/places`);
+      const res = await axios.get(`http://localhost:5000/api/zone`);
       console.log("[PM] GET /places:", res.data);
       const list = res?.data?.data ?? res?.data ?? [];
       if (Array.isArray(list)) setPlaces(list);
@@ -73,8 +73,8 @@ const ParkingManagement = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this place?")) return;
     try {
-      const res = await axios.delete(`http://localhost:5000/api/parking-zone/${id}`);
-      console.log("[PM] DELETE /places/:id:", res.data);
+      const res = await axios.delete(`http://localhost:5000/api/zone/${id}`);
+      console.log("[PM] DELETE /zone/:id:", res.data);
 
       toast.success(res?.data?.message ?? "Place deleted");
       setPlaces((prev) => prev.filter((z) => z._id !== id));

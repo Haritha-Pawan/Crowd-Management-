@@ -39,7 +39,7 @@ export default function EditForm({ isOpen, onClose, id, refresh }) {
       try {
         setLoading(true);
        
-        const res = await axios.get(`${API}/parking-zone/${id}`);
+        const res = await axios.get(`${API}/zone/${id}`);
         console.log("[EditForm] Raw response:", res);
 
         // Normalize possible shapes: {data}, {place}, direct obj, or [obj]
@@ -105,8 +105,8 @@ export default function EditForm({ isOpen, onClose, id, refresh }) {
       return;
     }
     try {
-      console.log("[EditForm] PUT", `${API}/parking-zone/${id}`, formData);
-      await axios.put(`${API}/parking-zone/${id}`, formData);
+      console.log("[EditForm] PUT", `${API}/zone/${id}`, formData);
+      await axios.put(`${API}/zone/${id}`, formData);
       toast.success("Place updated successfully");
       refresh?.();
       onClose?.();
