@@ -4,12 +4,12 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
-import zoneRouter from './src/Modules/Parking/Route/zone.Route.js';
 import taskRoutes from './src/Modules/task/Route/task.Route.js';
 import counterRoutes from './src/Modules/Counter/Routes/counter.Route.js';
 import userRouter from './src/Modules/User/User.routes.js';
 import AuthRoutes from './src/Modules/User/AuthRoutes.js';
 import OtherRoutes from './src/Modules/User/Other.routes.js';
+
 
 
 import reservationRoutes from './src/Modules/Parking/Route/reservation.route.js';
@@ -19,6 +19,18 @@ import spotRouter from './src/Modules/Parking/Route/spot.route.js';
 //new routes for places
 import places from './src/routes/place.routes.js'
 import spots from './src/routes/spot.routes.js'
+
+
+
+
+
+import zoneRouter from './src/Modules/Parking/Route/zone.Route.js';
+import spotRouter from './src/Modules/Parking/Route/spot.Route.js';
+import reservationRoutes from './src/Modules/Parking/Route/reservation.Route.js';
+
+
+
+
 
 
 dotenv.config();
@@ -45,7 +57,7 @@ app.use('/auth', AuthRoutes);
 app.use('/other', OtherRoutes);
 
 
-// Test route
+
 app.get('/', (req, res) => {
   // DB
   mongoose
@@ -57,9 +69,19 @@ app.get('/', (req, res) => {
       console.error("Mongo connection error:", err);
     });
 
-  // Health
-  res.json({ message: "Welcome to Event Management API" });
-});
+
+
+// DB
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB Connected:", mongoose.connection.name);
+  })
+  .catch((err) => {
+    console.error("Mongo connection error:", err);
+  });
+
+
 
 // Auth & Users
 app.use("/auth", AuthRoutes);
@@ -68,30 +90,17 @@ app.use("/users", userRouter);
 // Core Modules
 app.use("/api/tasks", taskRoutes);
 app.use("/api/counter", counterRoutes);
-app.use("/api/parking-zone", zoneRouter);
-
-// Places & ParkingSpot (new stack)
-app.use("/api/places", places);
-app.use("/api/parkingSpots", spots);   // GET /api/parkingSpots (availability by time window)
-
-// Spots (Modules stack - keep if other parts rely on it, e.g. PATCH /api/spots/:id/status)
-app.use("/api/spots", spotRouter);
-
-// Reservations (uses ParkingSpot model under the hood)
-app.use("/api/reservations", reservationRoutes);
-
-
-
-
-//new rotes for zone zdding nd 
-app.use('/api/places', places);
-app.use('/api/parkingSpots', spots);
 
 
 app.use("/api/counter",counterRoutes);
 
 
 
+
+//Parking Routes
+app.use("/api/zone",zoneRouter);
+app.use("/api/spots",spotRouter);
+app.use("/api/reservations",reservationRoutes);
 
 
 
