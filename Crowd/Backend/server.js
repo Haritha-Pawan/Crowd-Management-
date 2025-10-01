@@ -12,9 +12,22 @@ import OtherRoutes from './src/Modules/User/Other.routes.js';
 
 
 
+import reservationRoutes from './src/Modules/Parking/Route/reservation.route.js';
+import spotRouter from './src/Modules/Parking/Route/spot.route.js';
+
+
+//new routes for places
+import places from './src/routes/place.routes.js'
+import spots from './src/routes/spot.routes.js'
+
+
+
+
+
 import zoneRouter from './src/Modules/Parking/Route/zone.Route.js';
 import spotRouter from './src/Modules/Parking/Route/spot.Route.js';
 import reservationRoutes from './src/Modules/Parking/Route/reservation.Route.js';
+
 
 
 
@@ -45,6 +58,19 @@ app.use('/other', OtherRoutes);
 
 
 
+app.get('/', (req, res) => {
+  // DB
+  mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => {
+      console.log("MongoDB Connected:", mongoose.connection.name);
+    })
+    .catch((err) => {
+      console.error("Mongo connection error:", err);
+    });
+
+
+
 // DB
 mongoose
   .connect(process.env.MONGO_URI)
@@ -55,11 +81,7 @@ mongoose
     console.error("Mongo connection error:", err);
   });
 
-// Health
-app.get("/", (_req, res) => {
 
-  res.json({ message: "Welcome to Event Management API" });
-});
 
 // Auth & Users
 app.use("/auth", AuthRoutes);
@@ -79,6 +101,8 @@ app.use("/api/counter",counterRoutes);
 app.use("/api/zone",zoneRouter);
 app.use("/api/spots",spotRouter);
 app.use("/api/reservations",reservationRoutes);
+
+
 
 
 
