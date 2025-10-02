@@ -91,14 +91,7 @@ const ParkingManagement = () => {
         Manage parking places and reservations
       </div>
 
-      <div className="flex justify-end relative bottom-8">
-        <Search color="white" className="absolute mt-2 mr-2" />
-        <input
-          type="text"
-          placeholder="Search"
-          className="text-white p-2 border border-gray-300 rounded-md"
-        />
-      </div>
+   
 
       <div className="flex gap-6 mt-6 justify-end">
         {buttons.map((btn) => (

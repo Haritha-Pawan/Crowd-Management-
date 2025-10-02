@@ -6,6 +6,7 @@ import { MapPin, Car, ChevronRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const API = "http://localhost:5000/api";
+const LIVE_REFRESH_MS = 5000; // <— poll every 5s; tweak as you like
 
 /* ---------- helpers ---------- */
 const getColorsByValue = (v) =>
@@ -31,8 +32,18 @@ const currencyToNumber = (raw) => {
   return Number.isFinite(n) ? n : null;
 };
 
-/* ---------- compact donut ---------- */
-const ProgressDonut = ({ value = 70, subtitle = "Available", size = 140 }) => {
+/* ---------- API GET wrapper (with config) ---------- */
+const GET = async (url, config) => {
+  try {
+    const r = await axios.get(url, config);
+    return r?.data?.data ?? r?.data ?? null;
+  } catch {
+    return null;
+  }
+};
+
+/* ---------- compact donut (bit bigger) ---------- */
+const ProgressDonut = ({ value = 70, subtitle = "Available", size = 160 }) => {
   const colors = getColorsByValue(value);
   const gradId = useId();
   const data = [
@@ -75,7 +86,72 @@ const ProgressDonut = ({ value = 70, subtitle = "Available", size = 140 }) => {
   );
 };
 
-/* ---------- compact card ---------- */
+/* ---------- occupied logic from spot ---------- */
+const statusToOccupied = (spot) => {
+  // normalize status string (remove spaces/underscores)
+  const s = String(spot?.status || "")
+    .toLowerCase()
+    .replace(/\s|_/g, "");
+
+  // common "taken" statuses
+  const taken = new Set([
+    "occupied",
+    "reserved",
+    "busy",
+    "taken",
+    "unavailable",
+    "confirm",
+    "confirmed",
+    "booked",
+    "inuse",
+  ]);
+  if (taken.has(s)) return true;
+
+  // common "free" statuses
+  const free = new Set(["available", "free", "open"]);
+  if (free.has(s)) return false;
+
+  // boolean flags some models use
+  if (typeof spot?.isOccupied === "boolean") return spot.isOccupied;
+  if (typeof spot?.available === "boolean") return !spot.available;
+  if (typeof spot?.isAvailable === "boolean") return !spot.isAvailable;
+
+  // reservation-based fallback
+  const rs = spot?.currentReservation || spot?.activeReservation;
+  if (rs?.status) {
+    const rsStatus = String(rs.status).toLowerCase().replace(/\s|_/g, "");
+    return taken.has(rsStatus);
+  }
+
+  return false;
+};
+
+const computeCountsFromSpots = (spots) => {
+  const total = spots.length;
+  const occupied = spots.reduce((acc, s) => acc + (statusToOccupied(s) ? 1 : 0), 0);
+  const available = Math.max(0, total - occupied);
+  return { total, occupied, available };
+};
+
+/* ---------- fetch spots by zone (no caching; always fresh) ---------- */
+const fetchSpotsByZone = async (zoneId) => {
+  // Try a few common server param names; add t=Date.now() for cache-bust
+  const tryKey = async (key) => {
+    const data = await GET(`${API}/spots`, { params: { [key]: zoneId, t: Date.now() } });
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.items)) return data.items;
+    if (Array.isArray(data?.data)) return data.data;
+    return null;
+  };
+  return (
+    (await tryKey("zone")) ??
+    (await tryKey("zoneId")) ??
+    (await tryKey("placeId")) ??
+    []
+  );
+};
+
+/* ---------- zone card (taller) ---------- */
 const ZoneCard = ({
   name,
   available,
@@ -94,7 +170,7 @@ const ZoneCard = ({
   const shownFeatures = Array.isArray(features) ? features.slice(0, 2) : [];
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-3 hover:bg-white/10 transition-all">
+    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-4 hover:bg-white/10 transition-all min-h-[390px]">
       {/* top row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
@@ -120,29 +196,31 @@ const ZoneCard = ({
       </div>
 
       {/* donut */}
-      <div className="flex justify-center mt-2">
-        <ProgressDonut value={Math.max(0, Math.min(100, percent))} subtitle="Available" size={130} />
+      <div className="flex justify-center mt-3">
+        <ProgressDonut value={Math.max(0, Math.min(100, percent))} subtitle="Available" size={160} />
       </div>
 
       {/* counts row */}
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <div className="rounded-xl bg-white/5 border border-white/10 p-2 text-center">
-          <div className="text-lg font-bold text-white leading-none">{available}</div>
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
+          <div className="text-xl font-bold text-white leading-none">{available}</div>
           <div className="text-[10px] text-gray-300 mt-0.5">Avail</div>
         </div>
-        <div className="rounded-xl bg-white/5 border border-white/10 p-2 text-center">
-          <div className="text-lg font-bold text-white leading-none">{occupied}</div>
+        <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
+          <div className="text-xl font-bold text-white leading-none">{occupied}</div>
           <div className="text-[10px] text-gray-300 mt-0.5">Occ</div>
         </div>
-        <div className="rounded-xl bg-white/5 border border-white/10 p-2 text-center">
-          <div className="text-lg font-bold text-white leading-none">{total}</div>
+        <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
+          <div className="text-xl font-bold text-white leading-none">{total}</div>
           <div className="text-[10px] text-gray-300 mt-0.5">Cap</div>
         </div>
       </div>
 
       {/* compact details */}
-      <div className="mt-2 flex items-center justify-between text-[11px] text-gray-300">
-        <span className="truncate">Type: <span className="text-gray-200">{type}</span></span>
+      <div className="mt-3 flex items-center justify-between text-[11px] text-gray-300">
+        <span className="truncate">
+          Type: <span className="text-gray-200">{type}</span>
+        </span>
         {price && <span className="text-gray-200 font-semibold">{price}</span>}
       </div>
 
@@ -163,8 +241,8 @@ const ZoneCard = ({
       {/* action */}
       <button
         onClick={onView}
-        className="mt-3 w-full inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-sky-500 to-emerald-500
-                   hover:from-sky-400 hover:to-emerald-400 text-white py-2 rounded-xl text-sm font-medium"
+        className="mt-4 w-full inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-sky-500 to-emerald-500
+                   hover:from-sky-400 hover:to-emerald-400 text-white py-2.5 rounded-xl text-sm font-medium"
       >
         <Car size={16} />
         View Spots
@@ -186,27 +264,41 @@ export default function ParkingZone() {
     return Number.isFinite(n) ? n : null;
   };
 
-  const normalizeZone = (z) => {
-    // counts
+  const getCountsForZone = async (z) => {
+    // 1) try to use zone-provided counts
     let total = numOrNull(z.totalSpots);
-    if (total === null) total = numOrNull(z.capacity) ?? 0;
+    if (total === null) total = numOrNull(z.capacity);
 
     let available = numOrNull(z.availableSpotsLive);
     if (available === null) available = numOrNull(z.availableSpots);
 
     let occupied = numOrNull(z.occupiedSpots);
-    if (occupied === null && total !== null && available !== null) {
-      occupied = Math.max(0, total - available);
+
+    // 2) compute from live spots if missing OR for live accuracy
+    if (true /* force live */) {
+      const zoneId = z._id ?? z.id;
+      const spots = await fetchSpotsByZone(zoneId);
+      const calc = computeCountsFromSpots(spots);
+      // prefer live numbers
+      total = calc.total;
+      occupied = calc.occupied;
+      available = calc.available;
     }
 
+    // sanitize
     total = Math.max(0, total ?? 0);
     available = Math.min(total, Math.max(0, available ?? 0));
     occupied = Math.min(total, Math.max(0, occupied ?? 0));
+    return { total, available, occupied };
+  };
+
+  const normalizeZone = (z, counts) => {
+    const { total, available, occupied } = counts ?? { total: 0, available: 0, occupied: 0 };
 
     // price
     const rawPrice = z.price ?? z.pricePerHour ?? z.rate ?? z.zonePrice ?? z.basePrice ?? null;
     const priceValue = currencyToNumber(rawPrice);
-    const price = priceValue != null ? `Rs:${priceValue.toFixed(2)}` : (rawPrice || "");
+    const price = priceValue != null ? `Rs:${priceValue.toFixed(2)}` : rawPrice || "";
 
     return {
       id: z._id ?? z.id,
@@ -229,20 +321,28 @@ export default function ParkingZone() {
   const fetchZones = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API}/zone`, { params: { t: Date.now() } });
-      let arr = res?.data?.data;
+      const res = await GET(`${API}/zone`, { params: { t: Date.now() } });
+      let arr = res;
       if (!Array.isArray(arr)) {
-        if (Array.isArray(res?.data)) arr = res.data;
-        else if (Array.isArray(res?.data?.zones)) arr = res.data.zones;
-        else if (Array.isArray(res?.data?.items)) arr = res.data.items;
+        if (Array.isArray(res?.zones)) arr = res.zones;
+        else if (Array.isArray(res?.items)) arr = res.items;
+        else if (Array.isArray(res?.data)) arr = res.data;
       }
       if (!Array.isArray(arr)) {
         setError("Invalid response from the server");
         setZones([]);
-      } else {
-        setZones(arr.map(normalizeZone));
-        setError("");
+        return;
       }
+
+      // build with live counts
+      const enriched = await Promise.all(
+        arr.map(async (z) => {
+          const counts = await getCountsForZone(z);
+          return normalizeZone(z, counts);
+        })
+      );
+      setZones(enriched);
+      setError("");
     } catch (e) {
       console.error("[ParkingZone] fetch error:", e);
       setError("Failed to load zones");
@@ -256,28 +356,41 @@ export default function ParkingZone() {
     fetchZones();
   }, [fetchZones]);
 
+  // refresh after successful nav actions
   useEffect(() => {
     if (location.state?.success) {
       fetchZones();
+      // clear state
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, location.pathname, navigate, fetchZones]);
+
+  // LIVE POLLING so donut updates when spots change
+  useEffect(() => {
+    const id = setInterval(fetchZones, LIVE_REFRESH_MS);
+    // also refresh on window focus
+    const onFocus = () => fetchZones();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [fetchZones]);
 
   if (loading) return <div className="min-h-screen bg-slate-950 text-white p-6">Loading…</div>;
   if (error) return <div className="min-h-screen bg-slate-950 text-red-300 p-6">{error}</div>;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(1200px_600px_at_10%_-10%,rgba(59,130,246,0.15),transparent),radial-gradient(1200px_600px_at_90%_10%,rgba(16,185,129,0.12),transparent)] bg-slate-950">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-5">{/* tighter vertical padding */}
-        <header className="mb-3">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6">
+        <header className="mb-4">
           <h1 className="text-white text-2xl md:text-3xl font-bold">Parking Zones</h1>
           <p className="text-white/70 text-xs md:text-sm mt-1">
             Real-time parking availability and reservation system
           </p>
         </header>
 
-        {/* tighter grid and gap so more fits above the fold */}
-        <section className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <section className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {zones.map((z) => (
             <ZoneCard
               key={z.id}
@@ -293,7 +406,6 @@ export default function ParkingZone() {
               features={z.features}
               distance={z.distance}
               onView={() => {
-                // pass only the zone price details
                 navigate("/zone", {
                   state: {
                     placeId: z.id,
