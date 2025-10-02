@@ -1,14 +1,17 @@
 // src/components/ReservationTable.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import {
   Car,
   ChartNoAxesCombined,
   CircleDotIcon,
+  CalendarDays,
 } from "lucide-react";
 
 const API = "http://localhost:5000/api";
 const RES_API = `${API}/reservations`;
+
+console.log("Using RES_API:", RES_API);
 
 const fmtLKR = (n) =>
   Number.isFinite(Number(n))
@@ -32,7 +35,32 @@ const humanDuration = (start, end) => {
 
 const statusKey = (s) => String(s || "").trim().toLowerCase();
 
-const ReservationTable = () => {
+/* ------------------------- Owner display ------------------------- */
+const displayOwner = (r) => {
+  if (r?.driverName) return r.driverName; // your payload field
+  const user = r?.user || {};
+  const full =
+    user.fullName ||
+    user.name ||
+    [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
+    r?.ownerName ||
+    r?.owner ||
+    r?.customerName ||
+    r?.customer ||
+    "";
+  if (full) return full;
+  return r?.plate || user.email || user.phone || "—";
+};
+
+/* ------------------------- ID helpers ------------------------- */
+const readSpotId = (r) =>
+  r?.spotId ||
+  r?.spot_id ||
+  r?.spot?._id ||
+  (typeof r?.spot === "string" ? r.spot : null) ||
+  null;
+
+export default function ReservationTable() {
   const [reservations, setReservations] = useState([]);
   const [cards, setCards] = useState([
     { title: "Total Reservations", icon: <Car color="#2f80ed" size={30} />, count: "0" },
@@ -43,121 +71,102 @@ const ReservationTable = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // simple caches to avoid refetching same ids
-  const placeCache = React.useRef(new Map()); // placeId -> {name, ...}
-  const spotCache  = React.useRef(new Map()); // spotId  -> {label, placeId}
+  // Search
+  const [query, setQuery] = useState("");
 
-  // ---------- resolvers ----------
-  const fetchPlaceById = async (placeId) => {
-    if (!placeId) return null;
-    if (placeCache.current.has(placeId)) return placeCache.current.get(placeId);
+  // Caches
+  const spotCache = useRef(new Map()); // spotId -> spot
+  const zoneCache = useRef(new Map()); // zoneId/placeId -> zone
+
+  // Generic GET wrapper
+  const GET = async (url) => {
     try {
-      const r = await axios.get(`${API}/places/${placeId}`);
-      const place = r?.data?.data || r?.data || null;
-      if (place) placeCache.current.set(placeId, place);
-      return place;
-    } catch {
+      const r = await axios.get(url);
+      return r?.data?.data ?? r?.data ?? null;
+    } catch (e) {
       return null;
     }
   };
 
-  const fetchSpotById = async (spotId) => {
-    if (!spotId) return null;
-    if (spotCache.current.has(spotId)) return spotCache.current.get(spotId);
-
-    // Try /spots/:id then /parkingSpots/:id
-    const candidates = [`${API}/spots/${spotId}`, `${API}/parkingSpots/${spotId}`];
-    for (const url of candidates) {
-      try {
-        const r = await axios.get(url);
-        const spot = r?.data?.data || r?.data || null;
-        if (spot && spot._id) {
-          spotCache.current.set(spotId, spot);
-          return spot;
-        }
-      } catch {}
+  // Fetch spot, cache
+  const fetchSpotById = async (id) => {
+    if (!id) return null;
+    if (spotCache.current.has(id)) return spotCache.current.get(id);
+    const spot = await GET(`${API}/spots/${id}`);
+    if (spot && (spot._id || spot.id)) {
+      spotCache.current.set(id, spot);
+      return spot;
     }
+    console.warn("[spot] not found:", id);
     return null;
   };
 
-  // Fallback: if we know the placeId, load all its spots and find our spot
-  const fetchSpotViaPlace = async (placeId, spotId) => {
-    if (!placeId || !spotId) return null;
-    try {
-      const r = await axios.get(`${API}/places/${placeId}`, { params: { withSpots: true } });
-      const place = r?.data?.data;
-      const spots = Array.isArray(place?.spots) ? place.spots : [];
-      const hit = spots.find((s) => String(s._id) === String(spotId));
-      if (hit) {
-        const result = { ...hit, placeId };
-        spotCache.current.set(spotId, result);
-        return result;
-      }
-      return null;
-    } catch {
-      return null;
+  // Fetch zone, cache (your route: /api/zone/:id)
+  const fetchZoneById = async (id) => {
+    if (!id) return null;
+    if (zoneCache.current.has(id)) return zoneCache.current.get(id);
+    const zone = await GET(`${API}/zone/${id}`);
+    if (zone && (zone._id || zone.id)) {
+      zoneCache.current.set(id, zone);
+      return zone;
     }
+    console.warn("[zone] not found:", id);
+    return null;
   };
 
-  // Resolve missing names for an array of reservations
+  // Resolve Zone & Spot display names for rows
   const resolveNames = async (rows) => {
-    // 1) seed caches with any already-provided nested data
-    rows.forEach((r) => {
-      const pId = r.placeId || r?.place?._id;
-      if (pId && r?.place?.name) {
-        placeCache.current.set(String(pId), r.place);
-      }
-      const sId = r.spotId || r?.spot?._id;
-      if (sId && r?.spot?.label) {
-        spotCache.current.set(String(sId), r.spot);
-      }
+    // Step 1: ensure all spots loaded
+    const spotIds = [
+      ...new Set(
+        rows
+          .map((r) => readSpotId(r))
+          .filter(Boolean)
+          .map(String)
+      ),
+    ];
+    await Promise.all(spotIds.map((id) => fetchSpotById(id)));
+
+    // Step 2: gather zone ids from spots (support spot.zoneId or spot.placeId)
+    const zoneIds = new Set();
+    spotIds.forEach((sid) => {
+      const s = spotCache.current.get(sid);
+      const zId = s?.zoneId || s?.placeId || s?.place_id || s?.zone_id;
+      if (zId) zoneIds.add(String(zId));
     });
 
-    // 2) collect unresolved ids
-    const missingPlaceIds = new Set();
-    const missingSpotIds  = new Set();
-    rows.forEach((r) => {
-      const pId = String(r.placeId || r?.place?._id || "");
-      const sId = String(r.spotId || r?.spot?._id || "");
-      if (pId && !placeCache.current.has(pId)) missingPlaceIds.add(pId);
-      if (sId && !spotCache.current.has(sId))  missingSpotIds.add(sId);
-    });
+    // Step 3: ensure all zones loaded
+    await Promise.all([...zoneIds].map((id) => fetchZoneById(id)));
 
-    // 3) resolve places first
-    await Promise.all([...missingPlaceIds].map((id) => fetchPlaceById(id)));
-
-    // 4) resolve spots; prefer spot-by-id; fallback via place->spots
-    await Promise.all(
-      [...missingSpotIds].map(async (sId) => {
-        let spot = await fetchSpotById(sId);
-        if (spot) return spot;
-        // find any row that references this spot to get its placeId
-        const ref = rows.find((r) => String(r.spotId || r?.spot?._id) === String(sId));
-        const placeId = ref?.placeId || ref?.place?._id;
-        if (placeId) {
-          return await fetchSpotViaPlace(placeId, sId);
-        }
-        return null;
-      })
-    );
-
-    // 5) return rows with injected names
+    // Step 4: return rows with resolved names
     return rows.map((r) => {
-      const pId = String(r.placeId || r?.place?._id || "");
-      const sId = String(r.spotId || r?.spot?._id || "");
+      const sId = String(readSpotId(r) || "");
+      const spot = sId ? spotCache.current.get(sId) : null;
+      const zId = spot?.zoneId || spot?.placeId || spot?.place_id || spot?.zone_id || null;
+      const zone = zId ? zoneCache.current.get(String(zId)) : null;
 
-      const place = pId ? placeCache.current.get(pId) : null;
-      const spot  = sId ? spotCache.current.get(sId)   : null;
+      const zoneName =
+        zone?.name ||
+        r?.zone?.name ||
+        r?.place?.name ||
+        (zId ? `#${String(zId).slice(-6)}` : "—");
+
+      const spotName =
+        spot?.name ||
+        spot?.label ||
+        r?.spot?.name ||
+        r?.spot?.label ||
+        (sId ? `#${String(sId).slice(-6)}` : "—");
 
       return {
         ...r,
-        __resolvedPlaceName: place?.name || r?.place?.name || r?.placeName || r?.zone || "—",
-        __resolvedSpotLabel: spot?.label || r?.spot?.label || r?.spotLabel || "—",
+        __zoneName: zoneName,
+        __spotName: spotName,
       };
     });
   };
 
-  // ---------- fetch + normalize ----------
+  // Fetch + normalize
   useEffect(() => {
     (async () => {
       try {
@@ -176,51 +185,53 @@ const ReservationTable = () => {
           return;
         }
 
-        // normalize raw
-        const raw = arr.map((r, idx) => ({
-          _id: r?._id || r?.id || `row-${idx}`,
-          placeId: r?.placeId || r?.place?._id || r?.place_id,
-          spotId:  r?.spotId  || r?.spot?._id  || r?.spot_id,
-          vehicle: r?.vehicleType || r?.vehicle || "Car",
-          owner:
-            r?.user?.name ||
-            r?.ownerName ||
-            r?.owner ||
-            r?.customerName ||
-            "—",
-          startTime: r?.startTime,
-          endTime:   r?.endTime,
-          amount:
+        // Normalize rows from API
+        const raw = arr.map((r, idx) => {
+          const s = statusKey(r?.status);
+          const status =
+            s === "occupied" || s === "confirmed"
+              ? "Occupied"
+              : s === "reserved"
+              ? "Reserved"
+              : s === "cancelled"
+              ? "Cancelled"
+              : s === "completed"
+              ? "Completed"
+              : "Pending";
+
+          const amount =
             Number.isFinite(r?.amount)
               ? fmtLKR(r.amount)
               : Number.isFinite(r?.price)
               ? fmtLKR(r.price)
               : Number.isFinite(r?.amountCents)
               ? fmtLKR(r.amountCents / 100)
-              : "—",
-          status: (() => {
-            const s = statusKey(r?.status);
-            if (s === "occupied") return "Occupied";
-            if (s === "reserved") return "Reserved";
-            if (s === "cancelled") return "Cancelled";
-            if (s === "completed") return "Completed";
-            if (s === "confirmed") return "Occupied";
-            return "Pending";
-          })(),
-          place: r?.place, // keep any nested
-          spot:  r?.spot,  // keep any nested
-        }));
+              : "—";
 
-        // resolve names
+          return {
+            _id: r?._id || r?.id || `row-${idx}`,
+            spotId: readSpotId(r),
+            driverName: r?.driverName,
+            plate: r?.plate,
+            startTime: r?.startTime,
+            endTime: r?.endTime,
+            amount,
+            vehicle: r?.vehicleType || r?.vehicle || "Car",
+            status,
+            // keep any nested objects if present
+            zone: r?.zone || r?.place || null,
+            spot: r?.spot || null,
+          };
+        });
+
         const withNames = await resolveNames(raw);
 
-        // final render rows
-        const rows = withNames.map((r, i) => ({
+        const rows = withNames.map((r) => ({
           id: r._id,
-          vehicle: r.vehicle,
-          owner: r.owner,
-          zone: r.__resolvedPlaceName,
-          spot: r.__resolvedSpotLabel,
+          owner: displayOwner(r),                 // Owner = driverName (fallbacks)
+          plate: r.plate || "—",                  // Number plate column
+          zone: r.__zoneName,                     // Zone name
+          spot: r.__spotName,                     // Spot name
           time: r.startTime ? new Date(r.startTime).toLocaleString() : "—",
           duration: humanDuration(r.startTime, r.endTime),
           amount: r.amount,
@@ -229,11 +240,11 @@ const ReservationTable = () => {
 
         setReservations(rows);
 
-        // compute KPIs
+        // KPIs
         const total = rows.length;
         const occupied = rows.filter(
           (x) => x.status === "Occupied" || x.status === "Reserved"
-        ).length; // count reserved as taken in KPI
+        ).length;
         const available = rows.filter((x) => x.status === "Pending").length;
         const rate = total ? Math.round((occupied / total) * 100) : 0;
 
@@ -245,9 +256,7 @@ const ReservationTable = () => {
         ]);
       } catch (e) {
         console.error("[ReservationTable] fetch error:", e);
-        setError(
-          e?.response?.data?.error || e.message || "Failed to load reservations"
-        );
+        setError(e?.response?.data?.error || e.message || "Failed to load reservations");
         setReservations([]);
       } finally {
         setLoading(false);
@@ -255,8 +264,62 @@ const ReservationTable = () => {
     })();
   }, []);
 
+  /* ------------------------- Search ------------------------- */
+  const filteredReservations = useMemo(() => {
+    const term = (query || "").trim().toLowerCase();
+    if (!term) return reservations;
+    return reservations.filter((r) =>
+      [r.owner, r.plate, r.zone, r.spot, r.amount, r.status, r.time, r.duration]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(term))
+    );
+  }, [query, reservations]);
+
+  /* ------------------------- Generate Report (CSV) ------------------------- */
+  const downloadCSV = () => {
+    const rows = filteredReservations.length ? filteredReservations : reservations;
+    const header = ["#", "Owner", "Number Plate", "Zone", "Spot", "Start Time", "Duration", "Amount", "Status"];
+    const body = rows.map((r, idx) => [
+      idx + 1,
+      r.owner,
+      r.plate,
+      r.zone,
+      r.spot,
+      r.time,
+      r.duration,
+      r.amount,
+      r.status,
+    ]);
+
+    const csv = [header, ...body]
+      .map((row) =>
+        row
+          .map((cell) => {
+            const val = cell == null ? "" : String(cell);
+            const escaped = val.replace(/"/g, '""');
+            return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
+          })
+          .join(",")
+      )
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const dt = new Date();
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, "0");
+    const d = String(dt.getDate()).padStart(2, "0");
+    a.download = `reservation_report_${y}-${m}-${d}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) return <div className="text-white p-5">Loading reservations…</div>;
-  if (error)   return <div className="text-red-300 p-5">{error}</div>;
+  if (error) return <div className="text-red-300 p-5">{error}</div>;
+
+  const rowsToRender = query ? filteredReservations : reservations;
 
   return (
     <div className="">
@@ -276,18 +339,44 @@ const ReservationTable = () => {
         ))}
       </div>
 
-      {/* Table */}
+      {/* Table + actions */}
       <div className="mt-10 p-5 bg-white/5 border border-white/10 rounded-md">
-        <div className="text-white text-3xl font-bold">
-          Parking Reservations ({reservations.length})
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="text-white text-3xl font-bold">
+            Parking Reservations ({reservations.length})
+            {query && (
+              <span className="ml-2 text-sm text-white/60">
+                • showing {rowsToRender.length}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Search */}
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search owner, plate, zone, spot, status…"
+              className="w-64 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-1 focus:ring-white/20"
+            />
+            {/* Generate Report (CSV) */}
+            <button
+              onClick={downloadCSV}
+              className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/10 hover:bg-white/15 px-3 py-2 text-sm text-white"
+            >
+              <CalendarDays size={16} />
+              Generate Report
+            </button>
+          </div>
         </div>
 
         <table className="mt-5 w-full border border-white/10 text-white rounded-lg">
           <thead className="text-left border-b border-white/10 text-gray-300">
             <tr>
               <th className="px-4 py-2">#</th>
-              <th className="px-4 py-2">Vehicle</th>
               <th className="px-4 py-2">Owner</th>
+              <th className="px-4 py-2">Number Plate</th>
               <th className="px-4 py-2">Zone</th>
               <th className="px-4 py-2">Spot</th>
               <th className="px-4 py-2">Start Time</th>
@@ -297,11 +386,11 @@ const ReservationTable = () => {
             </tr>
           </thead>
           <tbody>
-            {reservations.map((r, i) => (
-              <tr key={r.id} className="border-t border-white/10 hover:bg-white/5">
+            {rowsToRender.map((r, i) => (
+              <tr key={`${r.id}-${i}`} className="border-t border-white/10 hover:bg-white/5">
                 <td className="px-4 py-2">{i + 1}</td>
-                <td className="px-4 py-2">{r.vehicle}</td>
                 <td className="px-4 py-2">{r.owner}</td>
+                <td className="px-4 py-2">{r.plate}</td>
                 <td className="px-4 py-2">{r.zone}</td>
                 <td className="px-4 py-2">{r.spot}</td>
                 <td className="px-4 py-2">{r.time}</td>
@@ -336,6 +425,4 @@ const ReservationTable = () => {
       </div>
     </div>
   );
-};
-
-export default ReservationTable;
+}
