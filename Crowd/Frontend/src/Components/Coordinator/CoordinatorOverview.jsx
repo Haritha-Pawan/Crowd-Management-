@@ -1,18 +1,50 @@
-import React, { useState, useEffect } from "react";
+// Coordinator/Overview.jsx
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bell, X } from "lucide-react";
+import axios from "axios";
+import { io } from "socket.io-client";
+import NotificationBell from "../../Components/NotificationBell";
 
-const CoordinatorOverview = () => {
-  // Sample data
-  const eventInfo = {
-    name: "Tech Expo 2025",
-    location: "Main Hall",
-    date: "2025-09-10",
-  };
+const api = axios.create({
+  baseURL: "http://localhost:5000/api",
+  withCredentials: true,
+});
+const postNotification = (payload) => api.post("/notifications", payload);
 
-  const coordinatorInfo = {
+export default function CoordinatorOverview() {
+  const currentUser = {
+    role: "Coordinator",
     name: "John Doe",
     email: "john.doe@example.com",
   };
+
+  const [sent, setSent] = useState([]);
+  const [showComposer, setShowComposer] = useState(false);
+  const [form, setForm] = useState({
+    title: "",
+    message: "",
+    recipientRoles: [], // options: Attendee, Organizer, Staff (NO Coordinator)
+  });
+  const [socket, setSocket] = useState(null);
+  const audioRef = useRef(null);
+
+  useEffect(() => { audioRef.current = new Audio("/new-notification-021-370045.mp3"); }, []);
+
+  useEffect(() => {
+    const s = io("http://localhost:5000", { withCredentials: true });
+    setSocket(s);
+    s.emit("join", { role: currentUser.role });
+
+    const onAny = () => audioRef.current?.play().catch(()=>{});
+    s.on("notification:new", onAny);
+    
+
+    return () => {
+      s.off("notification:new", onAny);
+      
+      s.disconnect();
+    };
+  }, []);
 
   const tasks = [
     { status: "Todo", count: 5 },
@@ -20,257 +52,181 @@ const CoordinatorOverview = () => {
     { status: "Done", count: 8 },
     { status: "Blocked", count: 2 },
   ];
-
   const incidents = [
     { status: "Lost Person", count: 4 },
     { status: "Emergency", count: 6 },
     { status: "Lost Item", count: 2 },
   ];
+  const maxTask = useMemo(() => Math.max(...tasks.map(t => t.count)), [tasks]);
+  const maxInc  = useMemo(() => Math.max(...incidents.map(i => i.count)), [incidents]);
 
-  const [animatedTasks, setAnimatedTasks] = useState(tasks.map(() => 0));
-  const [animatedIncidents, setAnimatedIncidents] = useState(
-    incidents.map(() => 0)
-  );
+  const toggleRole = (role) =>
+    setForm((f) => ({
+      ...f,
+      recipientRoles: f.recipientRoles.includes(role)
+        ? f.recipientRoles.filter((r) => r !== role)
+        : [...f.recipientRoles, role],
+    }));
 
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: "Parking Alert", message: "Zone B is full", date: "2025-09-05", recipients: ["Attendees"] },
-    { id: 2, title: "Food Stall Delay", message: "Stall 3 delayed", date: "2025-09-05", recipients: ["Staff"] },
-  ]);
-
-  const [showNotifPopup, setShowNotifPopup] = useState(false);
-  const [newNotif, setNewNotif] = useState({ title: "", message: "", recipients: [] });
-
-  // Animate bars on mount
-  useEffect(() => {
-    tasks.forEach((task, idx) => {
-      let start = 0;
-      const interval = setInterval(() => {
-        start++;
-        setAnimatedTasks((prev) => {
-          const copy = [...prev];
-          copy[idx] = start;
-          return copy;
-        });
-        if (start >= task.count) clearInterval(interval);
-      }, 100);
-    });
-
-    incidents.forEach((incident, idx) => {
-      let start = 0;
-      const interval = setInterval(() => {
-        start++;
-        setAnimatedIncidents((prev) => {
-          const copy = [...prev];
-          copy[idx] = start;
-          return copy;
-        });
-        if (start >= incident.count) clearInterval(interval);
-      }, 100);
-    });
-  }, []);
-
-  const maxTask = Math.max(...tasks.map((t) => t.count));
-  const maxIncident = Math.max(...incidents.map((i) => i.count));
-
-  const handleNotifSubmit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    if (newNotif.recipients.length === 0) {
-      alert("Please select at least one recipient.");
+    if (!form.recipientRoles.length) {
+      alert("Select at least one recipient role.");
       return;
     }
-    setNotifications([
-      ...notifications,
-      {
-        id: notifications.length + 1,
-        ...newNotif,
-        date: new Date().toISOString().split("T")[0],
-      },
+    const payload = { title: form.title, message: form.message, recipientRoles: form.recipientRoles };
+    const saved = await postNotification(payload);
+    setSent((prev) => [
+      saved.data,
+      ...prev,
     ]);
-    setNewNotif({ title: "", message: "", recipients: [] });
-    setShowNotifPopup(false);
-  };
-
-  const handleRecipientChange = (recipient) => {
-    setNewNotif((prev) => {
-      const exists = prev.recipients.includes(recipient);
-      return {
-        ...prev,
-        recipients: exists
-          ? prev.recipients.filter((r) => r !== recipient)
-          : [...prev.recipients, recipient],
-      };
-    });
+    setForm({ title: "", message: "", recipientRoles: [] });
+    setShowComposer(false);
   };
 
   return (
     <div className="p-10 text-white w-full space-y-10">
-      {/* Event & Coordinator Info */}
-      <div className="flex justify-between bg-[#1e293b] p-6 rounded-md shadow-md">
+      <div className="flex items-center justify-between bg-[#1e293b] p-6 rounded-md shadow-md">
         <div>
-          <h1 className="text-3xl font-bold">{eventInfo.name}</h1>
-          <p className="text-gray-300">{eventInfo.location} | {eventInfo.date}</p>
+          <h1 className="text-3xl font-bold">Tech Expo 2025</h1>
+          <p className="text-gray-300">Main Hall | 2025-09-10</p>
         </div>
-        <div className="text-right">
-          <h2 className="text-xl font-semibold">{coordinatorInfo.name}</h2>
-          <p className="text-gray-300">{coordinatorInfo.email}</p>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <h2 className="text-xl font-semibold">{currentUser.name}</h2>
+            <p className="text-gray-300">{currentUser.email}</p>
+          </div>
+          <NotificationBell currentUser={currentUser} socket={socket} />
         </div>
       </div>
 
-      {/* Summary Bars */}
       <div className="grid grid-cols-2 gap-10">
-        {/* Tasks */}
         <div>
           <h3 className="text-xl font-bold mb-4">Tasks</h3>
-          {tasks.map((t, idx) => (
+          {tasks.map((t) => (
             <div key={t.status} className="mb-3">
               <div className="flex justify-between mb-1">
-                <span>{t.status}</span>
-                <span>{animatedTasks[idx]}</span>
+                <span>{t.status}</span><span>{t.count}</span>
               </div>
               <div className="w-full bg-white/10 h-4 rounded-full">
-                <div
-                  className="h-4 rounded-full"
+                <div className="h-4 rounded-full"
                   style={{
-                    width: `${(animatedTasks[idx] / maxTask) * 100}%`,
+                    width: `${(t.count / maxTask) * 100}%`,
                     background: `linear-gradient(to right, #4ade80, #22d3ee)`,
                     transition: "width 0.3s",
                   }}
-                ></div>
+                />
               </div>
             </div>
           ))}
         </div>
 
-        {/* Incidents */}
         <div>
           <h3 className="text-xl font-bold mb-4">Incidents</h3>
-          {incidents.map((i, idx) => (
+          {incidents.map((i) => (
             <div key={i.status} className="mb-3">
               <div className="flex justify-between mb-1">
-                <span>{i.status}</span>
-                <span>{animatedIncidents[idx]}</span>
+                <span>{i.status}</span><span>{i.count}</span>
               </div>
               <div className="w-full bg-white/10 h-4 rounded-full">
-                <div
-                  className="h-4 rounded-full"
+                <div className="h-4 rounded-full"
                   style={{
-                    width: `${(animatedIncidents[idx] / maxIncident) * 100}%`,
+                    width: `${(i.count / maxInc) * 100}%`,
                     background: `linear-gradient(to right, #facc15, #f472b6)`,
                     transition: "width 0.3s",
                   }}
-                ></div>
+                />
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Agenda */}
-      <div className="bg-[#1e293b] p-6 rounded-md shadow-md">
-        <h3 className="text-xl font-bold mb-3">Agenda</h3>
-        <ul className="list-disc list-inside text-gray-300">
-          <li>09:00 AM - Registration</li>
-          <li>10:00 AM - Keynote Speech</li>
-          <li>11:00 AM - Workshop 1</li>
-          <li>12:30 PM - Lunch Break</li>
-          <li>01:30 PM - Workshop 2</li>
-          <li>03:00 PM - Panel Discussion</li>
-          <li>05:00 PM - Closing Ceremony</li>
-        </ul>
-      </div>
-
-      {/* Notifications */}
+      {/* Sent (local visual only) */}
       <div>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold">Sent Notifications</h3>
           <button
             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2"
-            onClick={() => setShowNotifPopup(true)}
+            onClick={() => setShowComposer(true)}
           >
             <Bell size={18} /> Create Notification
           </button>
         </div>
-        {notifications.length === 0 && <p className="text-gray-400">No notifications sent yet.</p>}
-        <ul className="space-y-2">
-          {notifications.map((n) => (
-            <li key={n.id} className="bg-white/10 p-3 rounded-md flex justify-between">
-              <div>
-                <h4 className="font-semibold">{n.title}</h4>
-                <p className="text-gray-300">{n.message}</p>
-                <p className="text-gray-400 text-sm">Recipients: {n.recipients.join(", ")}</p>
-              </div>
-              <span className="text-gray-400">{n.date}</span>
-            </li>
-          ))}
-        </ul>
+        {sent.length === 0 ? (
+          <p className="text-gray-400">No notifications sent yet.</p>
+        ) : (
+          <ul className="space-y-2">
+            {sent.map((n) => (
+              <li key={n._id} className="bg-white/10 p-3 rounded-md">
+                <div className="flex justify-between">
+                  <div>
+                    <div className="font-semibold">{n.title}</div>
+                    <div className="text-gray-300">{n.message}</div>
+                    <div className="text-gray-400 text-sm mt-1">
+                      Roles: {n.recipientRoles?.join(", ")}
+                    </div>
+                  </div>
+                  <span className="text-gray-400">{new Date(n.createdAt).toLocaleString()}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
-      {/* Notification Popup */}
-      {showNotifPopup && (
+      {/* Composer */}
+      {showComposer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-[#0f172a] p-6 rounded-md w-full max-w-md">
+          <div className="bg-[#0f172a] p-6 rounded-md w-full max-w-lg">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">Create Notification</h3>
-              <X className="cursor-pointer" onClick={() => setShowNotifPopup(false)} />
+              <X className="cursor-pointer" onClick={() => setShowComposer(false)} />
             </div>
-            <form onSubmit={handleNotifSubmit} className="flex flex-col gap-4">
+            <form onSubmit={submit} className="flex flex-col gap-4">
               <input
-                type="text"
-                placeholder="Title"
-                value={newNotif.title}
-                onChange={(e) => setNewNotif({ ...newNotif, title: e.target.value })}
                 className="w-full p-2 rounded bg-white/10 border border-white/20 text-white"
+                placeholder="Title"
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                 required
               />
               <textarea
-                placeholder="Message"
-                value={newNotif.message}
-                onChange={(e) => setNewNotif({ ...newNotif, message: e.target.value })}
                 className="w-full p-2 rounded bg-white/10 border border-white/20 text-white"
                 rows={4}
+                placeholder="Message"
+                value={form.message}
+                onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
                 required
               />
-              <div className="flex gap-4 items-center">
-                <label className="flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    checked={newNotif.recipients.includes("Organizers")}
-                    onChange={() => handleRecipientChange("Organizers")}
-                    className="accent-blue-500"
-                  />
-                  Organizers
-                </label>
-                <label className="flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    checked={newNotif.recipients.includes("Attendees")}
-                    onChange={() => handleRecipientChange("Attendees")}
-                    className="accent-blue-500"
-                  />
-                  Attendees
-                </label>
-                <label className="flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    checked={newNotif.recipients.includes("Staff")}
-                    onChange={() => handleRecipientChange("Staff")}
-                    className="accent-blue-500"
-                  />
-                  Staff
-                </label>
+
+              <div className="text-sm text-gray-300">Send to roles:</div>
+              <div className="flex gap-4 flex-wrap">
+                {["Attendee", "Organizer", "Staff"].map((r) => (
+                  <label key={r} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="accent-blue-500"
+                      checked={form.recipientRoles.includes(r)}
+                      onChange={() => toggleRole(r)}
+                    />
+                    {r}
+                  </label>
+                ))}
               </div>
-              <button
-                type="submit"
-                className="bg-green-500 hover:bg-green-600 p-2 rounded text-white font-semibold"
-              >
-                Send
-              </button>
+
+              <div className="flex justify-end gap-3 mt-4">
+                <button type="button" onClick={() => setShowComposer(false)} className="px-4 py-2 bg-gray-600 rounded">
+                  Cancel
+                </button>
+                <button type="submit" className="px-4 py-2 bg-green-600 rounded">
+                  Send
+                </button>
+              </div>
             </form>
           </div>
         </div>
       )}
     </div>
   );
-};
-
-export default CoordinatorOverview;
+}
