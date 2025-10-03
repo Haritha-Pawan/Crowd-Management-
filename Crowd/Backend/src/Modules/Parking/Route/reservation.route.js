@@ -1,33 +1,56 @@
 import { Router } from "express";
 import { body, validationResult } from "express-validator";
-import { confirmReservation } from "../Controller/reservation.controller.js";
+import { createReservation, getReservation, cancelReservation } from "../Controller/reservation.controller.js";
 
 const router = Router();
 
 const validate = (rules) => [
   ...rules,
   (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) return res.status(422).json({ errors: errors.array() });
+    const result = validationResult(req);
+    if (!result.isEmpty()) return res.status(422).json({ errors: result.array() });
     next();
   },
 ];
 
-// Called only AFTER payment success (e.g., from your frontend OR payment webhook)
+// allow legacy 'spot' → 'spotId'
+const normalizeSpot = (req, _res, next) => {
+  if (!req.body.spotId && req.body.spot) req.body.spotId = req.body.spot;
+  next();
+};
+
 router.post(
-  "/confirm",
+  "/",
+  normalizeSpot,
   validate([
-    body("spotId").isString().notEmpty(),
-    body("userId").isString().notEmpty(),
-    body("hours").isInt({ min: 1 }),
-    body("amount").isFloat({ min: 0 }),
+    body("spotId").isMongoId().withMessage("spotId must be a valid ObjectId"),
     body("paymentId").isString().notEmpty(),
+    body("startTime").isISO8601(),
+    body("endTime").isISO8601(),
+    body("priceCents").optional().isInt({ min: 0 }),
+    body("currency").optional().isString(),
     body("paymentMethod").optional().isString(),
+    body("driverName").optional().isString(),
+    body("plateNumber").optional().isString(),
+    body("userId").optional().isString(),
   ]),
-  confirmReservation
+  createReservation
 );
 
-export default router;
+// Optional alias
+router.post(
+  "/confirm",
+  normalizeSpot,
+  validate([
+    body("spotId").isMongoId(),
+    body("paymentId").isString().notEmpty(),
+    body("startTime").isISO8601(),
+    body("endTime").isISO8601(),
+  ]),
+  createReservation
+);
 
-// Mount in server:
-// app.use("/api/reservations", reservationRouter);
+router.get("/:id", getReservation);
+router.patch("/:id/cancel", cancelReservation);
+
+export default router;
