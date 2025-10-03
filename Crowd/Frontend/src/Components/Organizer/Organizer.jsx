@@ -5,6 +5,7 @@ import { Routes,Route } from 'react-router-dom';
 import Live from './Live/live';
 import Task from './Task/Task';
 import ParkingManagement from './Parking/ParkingManagement';
+import OrganizerOverview from './OrganizerOverview';
 
 const Organizer = () => {
     const OrganizerLinks = [
@@ -34,6 +35,8 @@ const Organizer = () => {
                       <Route path='/Live' element={<Live/>}/>
                       <Route path='/task' element={<Task/>}/>
                       <Route path="/ParkingManagement" element={<ParkingManagement/>} />
+                      <Route path="/OrganizerOverview" element={<OrganizerOverview/>} />
+
                    </Routes>
 
                  

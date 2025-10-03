@@ -15,7 +15,7 @@ import Login from './Pages/Login.jsx'
 import ParkingZone from './Components/Organizer/Parking/parkingZone.jsx'
 import Coordinator from './Components/Coordinator/Coordinator.jsx'
 import { Toaster } from 'react-hot-toast'
-
+import SupportForm from './Components/Attendee/SupportForm.jsx'
 
 const App = () => {
   return (
