@@ -5,9 +5,10 @@ import {
   Edit,
   Locate,
   LocationEdit,
+  Search,
   Trash2Icon,
 } from "lucide-react";
-import React, { useState, useEffect ,useMemo} from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import ReservationTable from "./ReservationTable";
 import AddForm from "./AddForm";
 import RealTime from "./RealTime";
@@ -15,135 +16,90 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import EditForm from "./EditForm";
 
+
 const ParkingManagement = () => {
   const [isAddPopupOpen, setAddIsPopupOpen] = useState(false);
   const [isEditPopupOpen, setEditIsPopupOpen] = useState(false);
   const [active, setActive] = useState("Parking Zones");
-  const [parkingZones, setParkingZones] = useState([]); // Store fetched parking zones
-  const [selectedZoneId, setSelectedZoneId] = useState(null);
-
+  const [places, setPlaces] = useState([]); // unified: places
+  const [selectedId, setSelectedId] = useState(null);
 
   const buttons = ["Parking Zones", "Reservation", "Real-time View"];
 
-  const fetchParkingZones = async () => {
-  try {
-    const res = await axios.get("http://localhost:5000/api/parking-zone");
-    if (Array.isArray(res.data)) {
-      setParkingZones(res.data);
-    } else {
-      console.error("Invalid parking zone data");
-    }
-  } catch (error) {
-    console.error("Error fetching zones:", error);
-  }
-};
-
-
-
-
-
-
-  //total parkingslot
-
-const totalCapacity = useMemo(() => {
-  if (!Array.isArray(parkingZones)) return 0;
-  return parkingZones.reduce((total, zone) => {
-    return total + (zone?.capacity || 0);
-  }, 0);
-}, [parkingZones]);
-
-
-
-
-
-  const card = [
-    {
-      title: "Total Counters",
-      icon: <Car color="#2f80ed" size={30} />,
-      count:totalCapacity,
-    },
-    {
-      title: "Total Occupied",
-      icon: <CircleDotIcon color="#FF3535" size={30} />,
-      count: "460",
-    },
-    {
-      title: "Available",
-      icon: <CircleDotIcon color="#4ade80" size={30} />,
-      count: "170",
-    },
-    {
-      title: "Occupancy Rate",
-      icon: <ChartNoAxesCombined color="#facc15" size={30} />,
-      count: "73%",
-    },
-  ];
-
-  
-
- 
-  useEffect(() => {
-    const fetchParkingZones = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/api/parking-zone");
-        console.log("API Response:", res.data); 
-       
-        if (Array.isArray(res.data)) {
-          setParkingZones(res.data); 
-        } else {
-          console.error("Error: Response data is not an array");
-        }
-      } catch (error) {
-        console.log("Error fetching parking zones", error);
+  // ---- single fetcher for /api/places ----
+  const fetchPlaces = async () => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/zone`);
+      console.log("[PM] GET /places:", res.data);
+      const list = res?.data?.data ?? res?.data ?? [];
+      if (Array.isArray(list)) setPlaces(list);
+      else {
+        console.error("[PM] Unexpected shape for /places:", res.data);
+        toast.error("Invalid places response");
       }
-    };
-    fetchParkingZones();
+      if (res?.data?.error) toast.error(res.data.error);
+    } catch (error) {
+      console.error("[PM] Fetch places failed:", error);
+      toast.error("Failed to fetch places");
+    }
+  };
+
+  useEffect(() => {
+    fetchPlaces();
   }, []);
 
+  // ---- totals / cards ----
+  const totalCapacity = useMemo(
+    () => places.reduce((t, z) => t + (Number(z?.capacity) || 0), 0),
+    [places]
+  );
+  const totalOccupied = useMemo(
+    () => places.reduce((t, z) => t + (Number(z?.occupied) || 0), 0),
+    [places]
+  );
+  const totalAvailable = Math.max(0, totalCapacity - totalOccupied);
+  const occupancyRate = totalCapacity
+    ? Math.round((totalOccupied / totalCapacity) * 100) + "%"
+    : "0%";
 
+  const card = [
+    { title: "Total Capacity", icon: <Car color="#2f80ed" size={30} />, count: totalCapacity },
+    { title: "Total Occupied", icon: <CircleDotIcon color="#FF3535" size={30} />, count: totalOccupied },
+    { title: "Available", icon: <CircleDotIcon color="#4ade80" size={30} />, count: totalAvailable },
+    { title: "Occupancy Rate", icon: <ChartNoAxesCombined color="#facc15" size={30} />, count: occupancyRate },
+  ];
 
+  // ---- delete: keep it consistent with places API ----
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this place?")) return;
+    try {
+      const res = await axios.delete(`http://localhost:5000/api/zone/${id}`);
+      console.log("[PM] DELETE /zone/:id:", res.data);
 
-
-
-const handleDelete = async (id) => {
-  if (!window.confirm("Are you sure you want to delete this parking zone?")) return;
-
-  try {
-    const res = await axios.delete(`http://localhost:5000/api/parking-zone/${id}`);
-    
-    if (res.status === 200) {
-      alert(res.data.message);
-      setParkingZones((prev) => prev.filter((zone) => zone._id !== id));
-      toast.success("Parking zone deleted succesfuly");
+      toast.success(res?.data?.message ?? "Place deleted");
+      setPlaces((prev) => prev.filter((z) => z._id !== id));
+    } catch (err) {
+      console.error("[PM] Delete failed:", err);
+      toast.error("Failed to delete place");
     }
-  } catch (err) {
-    console.error("Delete failed:", err);
-    alert("Failed to delete parking zone");
-  }
-};
+  };
 
-
-  
-
-
-
- 
   return (
     <div className="p-10 h-auto w-full">
       <div className="header text-white text-3xl font-bold">Parking Management</div>
-      <div className="sub-heading text-gray-300 text-xl">
-        Manage parking zones and reservations
+      <div className="sub-heading text-gray-300 text-xl ">
+        Manage parking places and reservations
       </div>
 
+   
+
       <div className="flex gap-6 mt-6 justify-end">
-        {buttons.map((btn, index) => (
+        {buttons.map((btn) => (
           <button
-            key={index}
+            key={btn}
             onClick={() => setActive(btn)}
             className={`px-4 py-2 rounded-md font-semibold ${
-              active === btn
-                ? "bg-blue-600 text-white"
-                : "bg-white/10 text-gray-300"
+              active === btn ? "bg-blue-600 text-white" : "bg-white/10 text-gray-300"
             }`}
           >
             {btn}
@@ -151,7 +107,6 @@ const handleDelete = async (id) => {
         ))}
       </div>
 
-      {/* Conditional Rendering Based on Active Tab */}
       <div className="mt-10">
         {active === "Parking Zones" && (
           <>
@@ -171,95 +126,120 @@ const handleDelete = async (id) => {
               ))}
             </div>
 
-            {/* Add Parking Button */}
+            {/* Add Place Button */}
             <button
               onClick={() => setAddIsPopupOpen(true)}
               className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 px-10 cursor-pointer font-medium mt-5 absolute right-22 rounded-md hover:opacity-70 text-white"
             >
-              + Add Parking Zone
+              + Add Place
             </button>
 
-          
-            <AddForm isOpen={isAddPopupOpen} onClose={() => setAddIsPopupOpen(false)}  refresh={fetchParkingZones}/>
+            {/* Forms */}
+            <AddForm
+              isOpen={isAddPopupOpen}
+              onClose={() => setAddIsPopupOpen(false)}
+              refresh={fetchPlaces}              // unified refresh
+            />
 
-              <EditForm isOpen={isEditPopupOpen}  onClose={()=>setEditIsPopupOpen(false)} zoneId={selectedZoneId} refresh={fetchParkingZones} />
+            <EditForm
+              isOpen={isEditPopupOpen}
+              onClose={() => setEditIsPopupOpen(false)}
+              id={selectedId}                     // pass the right prop name
+              refresh={fetchPlaces}              // unified refresh
+            />
 
-            {/* Parking Zones Info */}
+            {/* Places List */}
             <div className="parking-slots mt-20 grid grid-cols-1 lg:grid-cols-2 gap-10">
-
-              {Array.isArray(parkingZones) && parkingZones.length > 0 ? (
-                parkingZones.map((zone, idx) => {
-                  const color = idx === 0 ? "bg-blue-600" : "bg-yellow-400";
-                  const fill = idx === 0 ? "w-1/2" : "w-3/4";
-                  const available = zone.totalCapacity - zone.occupied;
+              {Array.isArray(places) && places.length > 0 ? (
+                places.map((place) => {
+                  const capacity = Number(place.capacity) || 0;
+                  const occupied = Number(place.occupied) || 0;
+                  const available = Math.max(0, capacity - occupied);
+                  const percent = capacity ? Math.min(100, Math.round((occupied / capacity) * 100)) : 0;
 
                   return (
                     <div
-                      key={zone._id}
+                      key={place._id}
                       className="p-5 bg-white/5 rounded-md border border-white/10 text-white text-2xl font-medium"
                     >
                       <div className="title flex items-center justify-between">
-                        {zone.name} 
-                        <div className={` bg-green-500/20 text-green-500 text-xs font-bold rounded-full border border-green-500/20 w-20 px-2 flex justify-center items-center h-5 
-                          ${zone.status === "active" ? "bg-green-500/20 text-green-500 border-green-500/20" : "bg-red-500/20 text-red-500 border-red-500/20 "}`}>
-                          {zone.status}
+                        {place.name}
+                        <div
+                          className={`text-xs font-bold rounded-full w-20 px-2 flex justify-center items-center h-5 border
+                          ${
+                            place.status === "active"
+                              ? "bg-green-500/20 text-green-500 border-green-500/20"
+                              : "bg-red-500/20 text-red-500 border-red-500/20"
+                          }`}
+                        >
+                          {place.status}
                         </div>
                       </div>
 
                       <div className="sub-heading flex mt-2 text-gray-300 items-center text-sm">
                         <LocationEdit size={20} />
-                        <div className="ml-2">{zone.location}</div>
+                        <div className="ml-2">{place.location}</div>
                       </div>
 
-
-                   
                       <div className="text-sm mt-6 text-gray-300 flex gap-3 justify-between">
                         Occupancy
                         <div>
-                          {zone.occupied} / {zone.capacity} 
-                          
+                          {occupied} / {capacity}
                         </div>
                       </div>
 
                       <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-black/40">
-                        <div className={`${fill} h-full ${color} rounded-full`}></div>
+                        <div
+                          className="h-full bg-blue-600 rounded-full"
+                          style={{ width: `${percent}%` }}
+                        />
                       </div>
 
                       <div className="text-sm mt-2 text-gray-300 font-normal">
-                        Available Slot:{" "}
-                        <span className="text-green-400 font-bold">{zone.capacity} Spots</span>
+                        Available Slots:{" "}
+                        <span className="text-green-400 font-bold ">{available}</span>
+                        <span className=" ml-6 font-bold ">Rate: {place.price}</span>
                       </div>
 
                       <div className="text-sm mt-2 text-gray-300 font-normal">
-                        Facilities:{" "}
+                        Facilities:
                         <div>
-                           {zone.facilities && zone.facilities.length >0 ?(
-                            zone.facilities.map((facility,index)=>(
-                              <span key={index} className="inline-block bg-white/15 text-xs border border-white/5 shadow-md mt-2  text-gray-200 px-2 py-1 rounded-full mr-2 mb-2">{facility}</span>
+                          {place.facilities && place.facilities.length > 0 ? (
+                            place.facilities.map((facility, index) => (
+                              <span
+                                key={index}
+                                className="inline-block bg-white/15 text-xs border border-white/5 shadow-md mt-2 text-gray-200 px-2 py-1 rounded-full mr-2 mb-2"
+                              >
+                                {facility}
+                              </span>
                             ))
-                           ):(
+                          ) : (
                             <span className="text-gray-500">No facilities listed</span>
-                           )}
+                          )}
                         </div>
                       </div>
 
-
-
-                      {/* Action Buttons */}
+                      {/* Actions */}
                       <div className="btn mt-4 flex gap-4">
                         <button className="flex items-center border border-white/10 px-4 py-1 bg-white/5 rounded-md text-white text-sm">
                           <Locate size={15} className="mr-2" />
                           Details
                         </button>
                         <button
-                          onClick={() => {setEditIsPopupOpen(true); setSelectedZoneId(zone._id)}}
-                        className="flex items-center border border-white/10 px-4 py-1 bg-white/5 rounded-md text-white text-sm">
+                          onClick={() => {
+                            console.log("[PM] Edit clicked id:", place._id);
+                            setSelectedId(place._id);
+                            setEditIsPopupOpen(true);
+                          }}
+                          className="flex items-center border border-white/10 px-4 py-1 bg-white/5 rounded-md text-white text-sm"
+                        >
                           <Edit size={15} className="mr-2" />
                           Edit
                         </button>
-                        <button 
-                        onClick={()=>handleDelete(zone._id)} 
-                        className="flex items-center border border-white/10 px-4 py-1 bg-white/5 cursor-pointer rounded-md text-red-400 text-sm">
+                        <button
+                          onClick={() => handleDelete(place._id)}
+                          className="flex items-center border border-white/10 px-4 py-1 bg-white/5 cursor-pointer rounded-md text-red-400 text-sm"
+                        >
                           <Trash2Icon size={15} className="mr-2" />
                           Delete
                         </button>
@@ -268,7 +248,7 @@ const handleDelete = async (id) => {
                   );
                 })
               ) : (
-                <div>No parking zones available.</div>
+                <div className="text-gray-400">No places available.</div>
               )}
             </div>
           </>

@@ -1,3 +1,4 @@
+
 // Organizer/Overview.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
@@ -65,6 +66,18 @@ const OrganizerOverview = () => {
   }, []);
 
   // ====== load tasks + zones (kept from your team’s page) ======
+
+import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import {PieChart,Pie,Cell,ResponsiveContainer,BarChart,Bar,XAxis,YAxis,Tooltip,CartesianGrid,Legend,} from "recharts";
+
+const API = "http://localhost:5000/api";
+
+const OrganizerOverview = () => {
+  const [tasks, setTasks] = useState([]);
+  const [zones, setZones] = useState([]);
+
+
   useEffect(() => {
     (async () => {
       try {
@@ -102,10 +115,18 @@ const OrganizerOverview = () => {
   }).length;
 
   // ===== PARKING KPIs =====
+
   const totalSlots = zones.reduce((s, z) => s + (Number(z.capacity) || 0), 0);
   const occupied   = zones.reduce((s, z) => s + (Number(z.load) || 0), 0);
   const reserved   = zones.reduce((s, z) => s + (Number(z.reserved) || 0), 0);
   const available  = Math.max(totalSlots - occupied - reserved, 0);
+
+  // assume zone has capacity; optionally zone.load (occupied) and zone.reserved
+  const totalSlots = zones.reduce((s, z) => s + (Number(z.capacity) || 0), 0);
+  const occupied = zones.reduce((s, z) => s + (Number(z.load) || 0), 0);
+  const reserved = zones.reduce((s, z) => s + (Number(z.reserved) || 0), 0);
+  const available = Math.max(totalSlots - occupied - reserved, 0);
+
 
   // ===== CHART DATA =====
   const taskPieData = [
@@ -148,6 +169,7 @@ const OrganizerOverview = () => {
     month: "short",
     day: "2-digit",
   });
+
 
   // ===== notifications composer actions =====
   const toggleRole = (role) =>
@@ -199,17 +221,37 @@ const OrganizerOverview = () => {
       </div>
 
       {/* KPI CARDS — Tasks */}
+=======
+  return (
+    <div className="w-full px-8">
+      {/* HEADER */}
+      <div className="mb-6">
+        <br />
+        <h1 className="text-white text-3xl font-bold">Overview Dashboard</h1>
+        <p className="text-white/70">Quick insights into your event operations</p>
+        <div className="text-white/60 text-sm mt-1">Today: {today}</div>
+      </div>
+
+
       <h2 className="text-white text-xl font-semibold mb-4">Tasks</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
         <KPI title="Total Tasks" value={totalTasks} />
         <KPI title="In Progress" value={inProgress} />
         <KPI title="Completed" value={completed} />
+
         <KPI title="Overdue" value={overdue} />
       </div>
 
       {/* KPI CARDS — Parking */}
       <h2 className="text-white text-xl font-semibold mb-4 mt-6">Parking</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+
+        <KPI title="Overdue" value={overdue} /><br />
+        </div>
+
+        <h2 className="text-white text-xl font-semibold mb-4">Parking</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+
         <KPI title="Total Slots" value={totalSlots} />
         <KPI title="Available" value={available} />
         <KPI title="Reserved" value={reserved} />
@@ -232,7 +274,14 @@ const OrganizerOverview = () => {
                   paddingAngle={2}
                 >
                   {taskPieData.map((_, i) => (
+
                     <Cell key={i} fill={taskPieColors[i % taskPieColors.length]} />
+
+                    <Cell
+                      key={i}
+                      fill={taskPieColors[i % taskPieColors.length]}
+                    />
+
                   ))}
                 </Pie>
                 <Legend />
@@ -264,7 +313,11 @@ const OrganizerOverview = () => {
       </div>
 
       {/* TEAM SNAPSHOT */}
+
       <div className="rounded-2xl border border-white/10 bg-white/5 p-5 mt-8 mb-12">
+
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 mt-8">
+
         <div className="text-white font-semibold mb-3">
           Team / Coordinator Snapshot
         </div>
@@ -283,6 +336,7 @@ const OrganizerOverview = () => {
           </ul>
         )}
       </div>
+
 
       {/* SENT NOTIFICATIONS (local list just for confirmation) */}
       <div className="rounded-2xl border border-white/10 bg-white/5 p-5 mt-8">
@@ -361,6 +415,7 @@ const OrganizerOverview = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };
