@@ -21,7 +21,7 @@ const [email, setEmail] = useState('');
     if (response.ok) {
       setTimeout(() => {
         navigate('/login');
-      }, 3000); // Redirect after 3 seconds
+      }, 3); // Redirect after 3 seconds
     }
 };
   return (
@@ -45,7 +45,7 @@ const [email, setEmail] = useState('');
               Email Address
             </label>
             <div className="flex items-center border rounded-md px-3 py-2 mt-4">
-              <span className="text-gray-100 mr-2 ">📧</span>
+
               <input
                 id="email"
                 type="email"
