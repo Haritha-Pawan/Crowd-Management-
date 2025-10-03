@@ -6,7 +6,6 @@ import Live from './Live/live';
 import Task from './Task/Task';
 import ParkingManagement from './Parking/ParkingManagement';
 
-import OrganizerOverview from './OrganizerOverview';
 
 import OrganizerOverview from '../Organizer/OrganizerOverview';
 

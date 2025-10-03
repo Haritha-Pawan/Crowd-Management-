@@ -1,4 +1,3 @@
-
 // Organizer/Overview.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
@@ -10,6 +9,7 @@ import { io } from "socket.io-client";
 import { Bell, X } from "lucide-react";
 import NotificationBell from "../../Components/NotificationBell";
 
+/* ==================== API ==================== */
 const API = "http://localhost:5000/api";
 const api = axios.create({
   baseURL: API,
@@ -20,18 +20,18 @@ const api = axios.create({
 const postNotification = (payload) => api.post("/notifications", payload);
 
 const OrganizerOverview = () => {
-  // ====== your auth-ish identity (only role needed for room join) ======
+  /* ====== your auth-ish identity (only role needed for room join) ====== */
   const currentUser = {
     role: "Organizer",
     name: "Organizer Jane",
     email: "jane@example.com",
   };
 
-  // ====== data for KPIs/charts ======
+  /* ====== data for KPIs/charts ====== */
   const [tasks, setTasks] = useState([]);
   const [zones, setZones] = useState([]);
 
-  // ====== notifications (composer + sent list UI) ======
+  /* ====== notifications (composer + sent list UI) ====== */
   const [showComposer, setShowComposer] = useState(false);
   const [sent, setSent] = useState([]);
   const [form, setForm] = useState({
@@ -40,14 +40,15 @@ const OrganizerOverview = () => {
     recipientRoles: ["Coordinator", "Attendee"], // default broadcast targets
   });
 
-  // ====== socket for NotificationBell + sound ======
+  /* ====== socket for NotificationBell + sound ====== */
   const [socket, setSocket] = useState(null);
   const audioRef = useRef(null);
+
   useEffect(() => {
     audioRef.current = new Audio("/new-notification-021-370045.mp3");
   }, []);
 
-  // Single socket instance + one listener (Fix 1 + Fix 2)
+  // Single socket instance + one listener
   useEffect(() => {
     const s = io("http://localhost:5000", { withCredentials: true });
     setSocket(s);
@@ -65,24 +66,12 @@ const OrganizerOverview = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ====== load tasks + zones (kept from your team’s page) ======
-
-import React, { useEffect, useMemo, useState } from "react";
-import axios from "axios";
-import {PieChart,Pie,Cell,ResponsiveContainer,BarChart,Bar,XAxis,YAxis,Tooltip,CartesianGrid,Legend,} from "recharts";
-
-const API = "http://localhost:5000/api";
-
-const OrganizerOverview = () => {
-  const [tasks, setTasks] = useState([]);
-  const [zones, setZones] = useState([]);
-
-
+  /* ====== load tasks + zones ====== */
   useEffect(() => {
     (async () => {
       try {
-        const t = await axios.get(`${API}/tasks`);
-        setTasks(t.data || []);
+        const t = await api.get("/tasks");
+        setTasks(Array.isArray(t.data) ? t.data : []);
       } catch (e) {
         console.error("tasks load", e);
       }
@@ -91,18 +80,18 @@ const OrganizerOverview = () => {
         // try /parkingzones then fallback to /parking-zone
         let z;
         try {
-          z = await axios.get(`${API}/parkingzones`);
+          z = await api.get("/parkingzones");
         } catch {
-          z = await axios.get(`${API}/parking-zone`);
+          z = await api.get("/parking-zone");
         }
-        setZones(z.data || []);
+        setZones(Array.isArray(z.data) ? z.data : []);
       } catch (e) {
         console.error("zones load", e);
       }
     })();
   }, []);
 
-  // ===== TASK KPIs =====
+  /* ===== TASK KPIs ===== */
   const totalTasks = tasks.length;
   const inProgress = tasks.filter((t) => t.status === "in_progress").length;
   const completed = tasks.filter((t) => t.status === "done").length;
@@ -114,21 +103,14 @@ const OrganizerOverview = () => {
     return due < today;
   }).length;
 
-  // ===== PARKING KPIs =====
-
-  const totalSlots = zones.reduce((s, z) => s + (Number(z.capacity) || 0), 0);
-  const occupied   = zones.reduce((s, z) => s + (Number(z.load) || 0), 0);
-  const reserved   = zones.reduce((s, z) => s + (Number(z.reserved) || 0), 0);
-  const available  = Math.max(totalSlots - occupied - reserved, 0);
-
+  /* ===== PARKING KPIs ===== */
   // assume zone has capacity; optionally zone.load (occupied) and zone.reserved
   const totalSlots = zones.reduce((s, z) => s + (Number(z.capacity) || 0), 0);
   const occupied = zones.reduce((s, z) => s + (Number(z.load) || 0), 0);
   const reserved = zones.reduce((s, z) => s + (Number(z.reserved) || 0), 0);
   const available = Math.max(totalSlots - occupied - reserved, 0);
 
-
-  // ===== CHART DATA =====
+  /* ===== CHART DATA ===== */
   const taskPieData = [
     { name: "Done", value: completed },
     { name: "In Progress", value: inProgress },
@@ -141,17 +123,19 @@ const OrganizerOverview = () => {
 
   const parkingBarData = zones.map((z) => {
     const cap = Number(z.capacity) || 0;
-    const occ = Number(z.load) || 0;
-    const res = Number(z.reserved) || 0;
+    const occ = Math.min(Number(z.load) || 0, cap);
+    const remainingAfterOcc = Math.max(cap - occ, 0);
+    const res = Math.min(Number(z.reserved) || 0, remainingAfterOcc);
+    const avail = Math.max(cap - occ - res, 0);
     return {
       name: z.name || "Zone",
-      Occupied: Math.min(occ, cap),
-      Reserved: Math.min(res, Math.max(cap - occ, 0)),
-      Available: Math.max(cap - occ - res, 0),
+      Available: avail,
+      Reserved: res,
+      Occupied: occ,
     };
   });
 
-  // ===== TEAM SNAPSHOT =====
+  /* ===== TEAM SNAPSHOT ===== */
   const team = useMemo(() => {
     const map = new Map();
     tasks.forEach((t) => {
@@ -170,8 +154,7 @@ const OrganizerOverview = () => {
     day: "2-digit",
   });
 
-
-  // ===== notifications composer actions =====
+  /* ===== notifications composer actions ===== */
   const toggleRole = (role) =>
     setForm((f) => ({
       ...f,
@@ -206,7 +189,9 @@ const OrganizerOverview = () => {
           <h1 className="text-white text-3xl font-bold">Overview Dashboard</h1>
           <p className="text-white/70">Quick insights into your event operations</p>
           <div className="text-white/60 text-sm mt-1">Today: {today}</div>
-          <div className="text-white/60 text-sm mt-1">{currentUser.name} • {currentUser.email}</div>
+          <div className="text-white/60 text-sm mt-1">
+            {currentUser.name} • {currentUser.email}
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -221,37 +206,17 @@ const OrganizerOverview = () => {
       </div>
 
       {/* KPI CARDS — Tasks */}
-=======
-  return (
-    <div className="w-full px-8">
-      {/* HEADER */}
-      <div className="mb-6">
-        <br />
-        <h1 className="text-white text-3xl font-bold">Overview Dashboard</h1>
-        <p className="text-white/70">Quick insights into your event operations</p>
-        <div className="text-white/60 text-sm mt-1">Today: {today}</div>
-      </div>
-
-
       <h2 className="text-white text-xl font-semibold mb-4">Tasks</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
         <KPI title="Total Tasks" value={totalTasks} />
         <KPI title="In Progress" value={inProgress} />
         <KPI title="Completed" value={completed} />
-
         <KPI title="Overdue" value={overdue} />
       </div>
 
       {/* KPI CARDS — Parking */}
       <h2 className="text-white text-xl font-semibold mb-4 mt-6">Parking</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
-
-        <KPI title="Overdue" value={overdue} /><br />
-        </div>
-
-        <h2 className="text-white text-xl font-semibold mb-4">Parking</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
-
         <KPI title="Total Slots" value={totalSlots} />
         <KPI title="Available" value={available} />
         <KPI title="Reserved" value={reserved} />
@@ -274,14 +239,7 @@ const OrganizerOverview = () => {
                   paddingAngle={2}
                 >
                   {taskPieData.map((_, i) => (
-
                     <Cell key={i} fill={taskPieColors[i % taskPieColors.length]} />
-
-                    <Cell
-                      key={i}
-                      fill={taskPieColors[i % taskPieColors.length]}
-                    />
-
                   ))}
                 </Pie>
                 <Legend />
@@ -292,9 +250,7 @@ const OrganizerOverview = () => {
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="text-white font-semibold mb-3">
-            Parking Utilization by Zone
-          </div>
+          <div className="text-white font-semibold mb-3">Parking Utilization by Zone</div>
           <div className="h-64">
             <ResponsiveContainer>
               <BarChart data={parkingBarData}>
@@ -313,11 +269,7 @@ const OrganizerOverview = () => {
       </div>
 
       {/* TEAM SNAPSHOT */}
-
       <div className="rounded-2xl border border-white/10 bg-white/5 p-5 mt-8 mb-12">
-
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-5 mt-8">
-
         <div className="text-white font-semibold mb-3">
           Team / Coordinator Snapshot
         </div>
@@ -336,7 +288,6 @@ const OrganizerOverview = () => {
           </ul>
         )}
       </div>
-
 
       {/* SENT NOTIFICATIONS (local list just for confirmation) */}
       <div className="rounded-2xl border border-white/10 bg-white/5 p-5 mt-8">
@@ -404,7 +355,11 @@ const OrganizerOverview = () => {
               </div>
 
               <div className="flex justify-end gap-3 mt-4">
-                <button type="button" onClick={() => setShowComposer(false)} className="px-4 py-2 bg-gray-600 rounded text-white">
+                <button
+                  type="button"
+                  onClick={() => setShowComposer(false)}
+                  className="px-4 py-2 bg-gray-600 rounded text-white"
+                >
                   Cancel
                 </button>
                 <button type="submit" className="px-4 py-2 bg-green-600 rounded text-white">
@@ -415,7 +370,6 @@ const OrganizerOverview = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };

@@ -9,7 +9,6 @@ import path from 'path';
 
 // ✅ Import existing routes
 import incidentRoutes from './src/Modules/Incident/Route/incident.route.js';
-import zoneRouter from './src/Modules/Parking/Route/zone.Route.js';
 
 
 import taskRoutes from './src/Modules/task/Route/task.Route.js';
@@ -21,20 +20,15 @@ import OtherRoutes from './src/Modules/User/Other.routes.js';
 
 
 import reservationRoutes from './src/Modules/Parking/Route/reservation.route.js';
-import spotRouter from './src/Modules/Parking/Route/spot.route.js';
-
-
-//new routes for places
-import places from './src/routes/place.routes.js'
-import spots from './src/routes/spot.routes.js'
 
 
 
 
 
-import zoneRouter from './src/Modules/Parking/Route/zone.Route.js';
+
+
+import zoneRouter from './src/Modules/Parking/Route/zone.Route.js'; 
 import spotRouter from './src/Modules/Parking/Route/spot.Route.js';
-import reservationRoutes from './src/Modules/Parking/Route/reservation.Route.js';
 
 
 
@@ -77,7 +71,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 // ✅ Register API routes
 app.use('/api/support', incidentRoutes);
-app.use('/api/parking-zone', zoneRouter);
+
 app.use('/api/tasks', taskRoutes);
 app.use('/api/notifications', notificationRoutes);
 
@@ -209,3 +203,4 @@ app.use("/api/reservations",reservationRoutes);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
+});
