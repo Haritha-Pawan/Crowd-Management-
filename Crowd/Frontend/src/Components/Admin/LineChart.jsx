@@ -12,7 +12,7 @@ function AttendeeLineChart() {
   }, []);
 
   return (
-    <div className=" p-4 rounded-lg shadow-lg">
+    <div className=" p-4 rounded-lg shadow-l bg-white/5 ">
       <h2 className="text-xl font-bold mb-4 text-amber-50">Daily Attendee Registrations</h2>
       <ResponsiveContainer width="100%" height={250}>
         <ReLineChart data={data}>
