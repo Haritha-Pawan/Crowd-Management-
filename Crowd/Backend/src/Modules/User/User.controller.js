@@ -115,7 +115,7 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({ message: "Server error while deleting user" });
   }
 };
-
+//get all attendees
 export const getAllAttendees = async (req, res) => {
   try {
     const attendees = await Attendee.find().sort({ createdAt: -1 });
