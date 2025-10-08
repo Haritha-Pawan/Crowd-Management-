@@ -55,8 +55,11 @@ function Login() {
       } else if (role === "Attendee") {
         navigate("/attendee/dashboard");
       }else if (role === "Coordinator") {
-        navigate("/organizer/Organizer");
+        navigate("/Coordinator");
+      }else if (role === "Staff") {
+        navigate("/counterStaff");
       }
+
        else {
         navigate("/");
       }
@@ -66,16 +69,16 @@ function Login() {
   };
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex justify-center py-20'>
+    <div className='min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex justify-center   py-20  '>
       <div>
         <Link to='/'>
-          <button className='text-white relative bottom-15 left-37 p-2 hover:bg-white/10 rounded-md cursor-pointer'>
+          <button className='text-white relative bottom-15 left-20 p-2 hover:bg-white/10 rounded-md cursor-pointer'>
             - Back To Home
           </button>
         </Link>
       </div>
 
-      <div className="Register-wrapper bg-white/10 border border-white/10 w-full sm:w-[70%] md:w-[500px] lg:w-[500px] xl:w-[450px] p-8 rounded-xl shadow-xl">
+      <div className="Register-wrapper    bg-white/10 border border-white/10 w-full sm:w-[70%] md:w-[500px] lg:w-[500px] xl:w-[450px] p-8 rounded-xl shadow-xl relative right-10">
         <div className="icon w-16 mx-auto mb-6">
           <img src={assets.card2} alt="Event" />
         </div>

@@ -17,8 +17,8 @@ const Admin = () => {
         { name: 'overview', icon: <User size={20} />, to: '/Admin/AdminOverview' },
         { name: 'User Management', icon: <UserPlus />, to: '/Admin/UserManagement' },
         { name: 'Counter Management', icon: <Loader2Icon />, to: '/Admin/CounterManagement' },
-        { name: ' Management', icon: <Car />, to: '/Admin/parkingManagement' },
-        {name:'Service Management',icon:<Settings />,to:'/Admin/service'}
+        { name: ' Parking Management', icon: <Car />, to: '/Admin/parkingManagement' },
+       
       ];
 
   return (
@@ -42,6 +42,8 @@ const Admin = () => {
                 <Route path="/UserManagement" element={<UserManagement/>} />
                 <Route path="/CounterManagement" element={<CounterManagement/>} />
                 <Route path="/AttendeDetails" element={<AttendeDetails/>} />
+                <Route path="/AttendeDetails" element={<AttendeDetails/>} />
+                <Route path="/ParkingManagement" element={<ParkingManagement/>} />
               </Routes>
             
            </div>

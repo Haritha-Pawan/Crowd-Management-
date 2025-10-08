@@ -1,17 +1,26 @@
+// models/ParkingSpot.js
 import mongoose from "mongoose";
 
-const SpotSchema = new mongoose.Schema(
+const ParkingSpotSchema = new mongoose.Schema(
   {
-    code: { type: String, required: true, trim: true, unique: true }, // e.g. K001
-    zone: { type: String, required: true, trim: true, index: true }, // zone name
-    type: {type: String,default: "Standard", enum: ["Standard", "VIP", "EV", "Accessible", "Blocked"],},
-    status: {type: String,default: "available",enum: ["available", "occupied", "reserved", "blocked"],index: true,},
-    total: { type: Number, default: 1 },
-    notes: { type: String, default: "" },},
+    label: { type: String, trim: true },
+    placeId: { type: mongoose.Schema.Types.ObjectId, ref: "Place" }, // optional
+    zoneId: { type: mongoose.Schema.Types.ObjectId, ref: "Zone" },   // optional
+    type: { type: String, default: "Standard" },
+    price: { type: Number, default: 0 }, // hourly rate (LKR)
+    status: {
+      type: String,
+      enum: ["available", "reserved", "occupied", "maintenance"],
+      default: "available",
+      index: true,
+    },
+    facilities: [{ type: String }],
+  },
   { timestamps: true }
 );
 
-SpotSchema.index({ zone: 1, status: 1, code: 1 });
+// helpful compound indexes if you filter by place/zone frequently
+ParkingSpotSchema.index({ placeId: 1, status: 1 });
+ParkingSpotSchema.index({ zoneId: 1, status: 1 });
 
-const Spot = mongoose.model("Spot", SpotSchema);
-export default Spot;
+export default mongoose.model("ParkingSpot", ParkingSpotSchema);

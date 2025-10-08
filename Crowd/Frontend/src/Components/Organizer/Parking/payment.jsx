@@ -1,4 +1,4 @@
-
+// src/pages/Checkout/Payment.jsx
 import React, { useState } from "react";
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -12,14 +12,14 @@ import {
   MoveLeft,
 } from "lucide-react";
 
-const PARKING_SPOTS_API = "http://localhost:5000/api/parkingSpots"; // uses models/ParkingSpot.js
-const RESERVATIONS_API = "http://localhost:5000/api/reservations";
+/** ================== CONFIG ================== */
+const PARKING_SPOTS_API = "http://localhost:5000/api/spots";
+const RESERVATION_CONFIRM_API = "http://localhost:5000/api/reservations/confirm";
+/** ============================================ */
 
-// ----------------- helpers -----------------
-function isObjectId(value) {
-  return /^[0-9a-fA-F]{24}$/.test(String(value || ""));
-}
-function formatDateTime(iso) {
+// ---------- helpers ----------
+const isObjectId = (v) => /^[0-9a-fA-F]{24}$/.test(String(v || ""));
+const formatDateTime = (iso) => {
   if (!iso) return "—";
   try {
     return new Date(iso).toLocaleString(undefined, {
@@ -32,20 +32,19 @@ function formatDateTime(iso) {
   } catch {
     return "—";
   }
-}
-function minutesBetween(startISO, endISO) {
-  const s = startISO ? new Date(startISO).getTime() : NaN;
-  const e = endISO ? new Date(endISO).getTime() : NaN;
+};
+const minutesBetween = (a, b) => {
+  const s = a ? new Date(a).getTime() : NaN;
+  const e = b ? new Date(b).getTime() : NaN;
   if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return 0;
   return Math.round((e - s) / (60 * 1000));
-}
-function durationLabel(mins) {
+};
+const durationLabel = (mins) => {
   if (mins <= 0) return "—";
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  return `${h ? h + "h " : ""}${m}m`;
-}
-// -------------------------------------------
+  return `${h ? `${h}h ` : ""}${m}m`;
+};
 
 export default function Payment() {
   const location = useLocation();
@@ -53,12 +52,12 @@ export default function Payment() {
   const query = new URLSearchParams(location.search);
   const state = location.state || {};
 
-  // Spot/booking info
-  const spotId = state.spotId || query.get("spotId") || "";       // Mongo _id, if you have it
-  const spotCode = state.name || query.get("name") || "";          // human label like "kalutara-001"
-  const placeId = state.placeId || query.get("placeId") || "";     // required to resolve by label
+  // ---------- booking data (state or URL fallback) ----------
+  const spotId = state.spotId || query.get("spotId") || "";
+  const spotCode = state.name || query.get("name") || "";       // human label
+  const placeId = state.placeId || query.get("placeId") || "";  // for resolving by label
   const zoneName = state.zone || query.get("zone") || "";
-  const spotType = state.type || query.get("type") || "Standard";
+  const spotType = state.type || query.get("type") || "Car";
 
   const startISO = state.startISO || query.get("startISO") || "";
   const endISO = state.endISO || query.get("endISO") || "";
@@ -68,7 +67,7 @@ export default function Payment() {
   const billableHours = mins <= 0 ? 0 : Math.max(1, Math.ceil(mins / 60));
   const total = billableHours * pricePerHour;
 
-  // Form state
+  // ---------- form/ui ----------
   const [driver, setDriver] = useState(state.driver || query.get("driver") || "");
   const [plate, setPlate] = useState(state.plate || query.get("plate") || "");
   const [card, setCard] = useState({ name: "", number: "", expiry: "", cvc: "" });
@@ -77,18 +76,16 @@ export default function Payment() {
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
 
-  function onCardChange(e) {
-    setCard((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  }
+  const onCardChange = (e) => setCard((p) => ({ ...p, [e.target.name]: e.target.value }));
 
-  function validate() {
+  const validate = () => {
     const e = {};
     if (!zoneName || (!spotId && !spotCode)) e.general = "Missing booking info. Please start again.";
     if (!driver.trim()) e.driver = "Driver name is required.";
     if (!plate.trim()) e.plate = "Plate number is required.";
     if (!startISO || !endISO || billableHours <= 0) e.time = "Please pick a valid time window.";
 
-    // Card (UI only)
+    // Demo card checks
     if (!card.name.trim()) e.cardName = "Cardholder name is required.";
     const digits = card.number.replace(/\s+/g, "");
     if (!/^\d{16}$/.test(digits)) e.cardNumber = "Enter 16 digits (demo).";
@@ -97,9 +94,9 @@ export default function Payment() {
 
     setErrors(e);
     return Object.keys(e).length === 0;
-  }
+  };
 
-  // Resolve ParkingSpot _id from its label (case-insensitive) via /api/parkingSpots
+  // Resolve _id from label if needed
   async function resolveSpotIdFromLabel(label, placeId, startISO, endISO) {
     try {
       const res = await axios.get(PARKING_SPOTS_API, {
@@ -107,7 +104,7 @@ export default function Payment() {
       });
       const list = Array.isArray(res.data?.data) ? res.data.data : [];
       const exact = list.find(
-        (s) => String(s.label).toLowerCase() === String(label).toLowerCase()
+        (s) => String(s.label || s.name).trim().toLowerCase() === String(label).trim().toLowerCase()
       );
       return exact ? exact._id : null;
     } catch {
@@ -115,16 +112,16 @@ export default function Payment() {
     }
   }
 
-  async function onSubmit(e) {
+  const onSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
     if (!validate()) return;
 
     try {
       setLoading(true);
-      await new Promise((r) => setTimeout(r, 500)); // simulate payment UX
+      await new Promise((r) => setTimeout(r, 500)); // simulate gateway
 
-      // Always use _id. If only label is available, resolve via /api/parkingSpots
+      // Ensure we have a Mongo _id
       let idToUse = spotId;
       if (!isObjectId(idToUse)) {
         if (!placeId) throw new Error("Missing placeId to resolve the spot by label.");
@@ -134,25 +131,28 @@ export default function Payment() {
         throw new Error(`Spot not found for label "${spotCode}". Check your database labels.`);
       }
 
-      // 1) Process payment (simulated)
-      const paymentId = "pm_" + Math.random().toString(36).substr(2, 9);
+      const paymentId = "pm_" + Math.random().toString(36).slice(2, 11);
 
-      // 2) Create reservation (server will flip spot → occupied atomically)
-      const reservationData = {
+      // Payload that matches backend (and backend also tolerant to variants)
+      const payload = {
         spotId: idToUse,
-        startTime: startISO,
-        endTime: endISO,
-        priceCents: Math.round(total * 100),
+        startISO,
+        endISO,
+        amount: Number(total),
         currency: "LKR",
         paymentId,
         paymentMethod: "mock",
         driverName: driver,
-        plateNumber: plate,
+        plate,
+        vehicleType: spotType || "Car",
       };
 
-      const reservationRes = await axios.post(RESERVATIONS_API, reservationData);
+      console.log("[Payment] POST /reservations/confirm payload:", payload);
 
-      if (reservationRes.data?._id) {
+      const reservationRes = await axios.post(RESERVATION_CONFIRM_API, payload);
+      const created = reservationRes?.data?.data;
+
+      if (created?._id) {
         setMessage("Success! Your spot has been reserved.");
         const zoneFromUrl = query.get("zoneId") || "";
         setTimeout(() => {
@@ -160,20 +160,20 @@ export default function Payment() {
             replace: true,
             state: { success: true, message: "Parking spot reserved successfully!" },
           });
-        }, 1500);
+        }, 1200);
+      } else {
+        throw new Error("Unexpected response from server.");
       }
     } catch (err) {
       console.error("Payment/Reservation error:", err);
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Failed to process payment and reserve the spot.";
-      setErrors({ general: msg });
+      const serverMsg = err?.response?.data?.message || err?.response?.data?.error;
+      const msg = serverMsg || err?.message || "Failed to process payment and reserve the spot.";
+      setErrors((p) => ({ ...p, general: msg }));
       setMessage(msg);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-[radial-gradient(1200px_600px_at_10%_-10%,rgba(59,130,246,0.15),transparent),radial-gradient(1200px_600px_at_90%_10%,rgba(16,185,129,0.12),transparent)] bg-slate-950">
@@ -215,7 +215,6 @@ export default function Payment() {
                 <span className="text-white/70 text-sm">Spot</span>
                 <span className="text-white/90">{spotCode || "—"}</span>
               </li>
-
               {plate ? (
                 <li className="flex items-center justify-between">
                   <span className="text-white/70 text-sm">Plate</span>
@@ -231,7 +230,7 @@ export default function Payment() {
               <li className="flex items-center justify-between">
                 <span className="text-white/70 text-sm">Type</span>
                 <span className="text-emerald-400 text-xs font-medium px-2.5 py-1 rounded-full border border-emerald-400/20 bg-emerald-400/10">
-                  {spotType || "Standard"}
+                  {spotType || "Car"}
                 </span>
               </li>
             </ul>
@@ -271,7 +270,7 @@ export default function Payment() {
             </div>
           </div>
 
-          {/* Form */}
+          {/* Payment Form */}
           <form onSubmit={onSubmit} className="lg:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
             <h2 className="text-white text-xl font-semibold mb-4 flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-sky-300" />
@@ -394,7 +393,7 @@ export default function Payment() {
             </div>
 
             <div className="mt-3 text-white/50 text-xs">
-              Demo only — no real payment request. On submit, we create a reservation; the server flips the spot to <b>occupied</b>.
+              Demo only — after submit we call <b>/api/reservations/confirm</b>. Server flips the spot to <b>occupied</b>.
             </div>
           </form>
         </div>

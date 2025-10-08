@@ -5,7 +5,10 @@ import { Routes,Route } from 'react-router-dom';
 import Live from './Live/live';
 import Task from './Task/Task';
 import ParkingManagement from './Parking/ParkingManagement';
+
+
 import OrganizerOverview from '../Organizer/OrganizerOverview';
+
 
 const Organizer = () => {
     const OrganizerLinks = [
@@ -34,8 +37,9 @@ const Organizer = () => {
                    <Routes>
                       <Route path='/Live' element={<Live/>}/>
                       <Route path='/task' element={<Task/>}/>
-                      <Route path='/OrganizerOverview' element={<OrganizerOverview/>}/>
+                      <Route path='/organizerOverview' element={<OrganizerOverview/>}/>
                       <Route path="/ParkingManagement" element={<ParkingManagement/>} />
+
                    </Routes>
 
                  

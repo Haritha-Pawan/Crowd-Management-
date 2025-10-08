@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -10,36 +10,65 @@ import {
 export default function ReserveForm() {
   const navigate = useNavigate();
   const location = useLocation();
-  const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
-  // spot from query
-  // Get spot data from navigation state
-  const { spotId, placeId, spotData } = location.state || {};
+  // --- 1) Try to read from state first
+  const stateSpotId = location.state?.spotId;
+  const statePlaceId = location.state?.placeId;
+  const stateSpotData = location.state?.spotData;
 
-  // Validate required data
-  if (!spotId || !placeId || !spotData) {
-    console.error('Missing required reservation data:', { spotId, placeId, spotData });
-    navigate('/parking');
-    return null;
-  }
+  // --- 2) Fallback: read from query if state is missing (works after refresh)
+  const search = new URLSearchParams(location.search);
+  const qsSpotId   = search.get("spotId")   || undefined;
+  const qsPlaceId  = search.get("placeId")  || undefined;
+  const qsName     = search.get("name")     || undefined;
+  const qsZone     = search.get("zone")     || undefined;
+  const qsType     = search.get("type")     || undefined;
+  const qsPrice    = search.get("price")    || undefined;   // numeric string
+  const qsDistance = search.get("distance") || undefined;
 
-  // Combine spot data for the form
+  // --- 3) Normalized reservation input
+  const spotId  = stateSpotId  ?? qsSpotId;
+  const placeId = statePlaceId ?? qsPlaceId;
+
+  // If we have state, prefer it; else build from query
+  const spotData = stateSpotData ?? (
+    (qsName || qsZone || qsType || qsPrice || qsDistance)
+      ? {
+          name: qsName,
+          zone: qsZone,
+          type: qsType ?? "Standard",
+          price: qsPrice,         // numeric string expected
+          distance: qsDistance,
+        }
+      : undefined
+  );
+
+  // Redirect (politely) if both sources are missing
+  useEffect(() => {
+    if (!spotId || !placeId || !spotData) {
+      navigate("/parking", { replace: true });
+    }
+  }, [spotId, placeId, spotData, navigate]);
+
+  // If redirecting, render nothing
+  if (!spotId || !placeId || !spotData) return null;
+
+  // Compose the spot object used by the UI
   const spot = {
-    spotId: spotId,
-    placeId: placeId,
+    spotId,
+    placeId,
     name: spotData.name,
     zone: spotData.zone,
-    price: spotData.price,
+    price: spotData.price,       // can be "250" or "Rs:250" etc
     distance: spotData.distance,
-    type: spotData.type,
-    status: 'available'
+    type: spotData.type ?? "Standard",
+    status: "available",
   };
 
-  console.log
-("ReserveForm spot:", spot);
-
+  // --- pricing helpers
   const priceNumber = useMemo(() => {
-    const m = String(spot.price).match(/[\d.]+/g);
+    const raw = typeof spot.price === "number" ? String(spot.price) : String(spot.price || "");
+    const m = raw.match(/[\d.]+/g);
     return m ? parseFloat(m.join("")) : 0;
   }, [spot.price]);
 
@@ -75,7 +104,6 @@ export default function ReserveForm() {
     e.preventDefault();
     const eobj = {};
 
-    // validations (same as yours)
     if (!form.plate.trim() || !/^[A-Za-z]{2,3}-?\d{3,4}$/.test(form.plate.trim()))
       eobj.plate = "Use a format like ABC-1234";
     if (form.name.trim().length < 2) eobj.name = "Enter your full name";
@@ -87,14 +115,14 @@ export default function ReserveForm() {
     setErrors(eobj);
     if (Object.keys(eobj).length > 0) return;
 
-    // 👉 build the booking we’ll pass to /payment
+    // Build the booking passed to /payment
     const booking = {
-      spotId: spot.spotId,
-       name: spot.name || spotData.label,  // ensure this is the ParkingSpot label
-      placeId,                            // ⬅️ add this so Payment can resolve by label if needed
+      spotId,
+      name: spot.name,   // ParkingSpot label
+      placeId,
       zone: spot.zone,
       type: spot.type,
-      price: Number(priceNumber),                 // numeric
+      price: Number(priceNumber),
       startISO: startAt.toISOString(),
       endISO: endAt.toISOString(),
       plate: form.plate,
@@ -102,13 +130,13 @@ export default function ReserveForm() {
       total,
     };
 
-    // query fallback (so refresh on /payment keeps data)
+    // Also send a query so refresh on /payment persists data
     const qs = new URLSearchParams({
       spotId: booking.spotId,
       name: booking.name,
-      placeId: placeId,
-      zone: booking.zone,
-      type: booking.type,
+      placeId: booking.placeId,
+      zone: booking.zone ?? "",
+      type: booking.type ?? "",
       price: String(booking.price),
       startISO: booking.startISO,
       endISO: booking.endISO,
@@ -117,9 +145,7 @@ export default function ReserveForm() {
       total: String(booking.total),
     }).toString();
 
-    // ✅ Go to Payment page (state + query)
     navigate(`/payment?${qs}`, { state: booking, replace: true });
-   // If your route is /organizer/parking/payment, use that path instead.
   };
 
   return (
@@ -153,11 +179,11 @@ export default function ReserveForm() {
             <ul className="space-y-3">
               <li className="flex items-center justify-between">
                 <span className="text-white/70 text-sm">Location</span>
-                <span className="text-white/90">{spot.spotId}</span>
+                <span className="text-white/90">{spot.name || spot.spotId}</span>
               </li>
               <li className="flex items-center justify-between">
                 <span className="text-white/70 text-sm">Zone</span>
-                <span className="text-white/90">{spot.zone}</span>
+                <span className="text-white/90">{spot.zone || "Selected Zone"}</span>
               </li>
               <li className="flex items-center justify-between">
                 <span className="text-white/70 text-sm">Spot ID</span>
@@ -205,7 +231,6 @@ export default function ReserveForm() {
               <span>Reservation Time</span>
             </div>
 
-            {/* Start/End pickers (unchanged from yours) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-start">
               <label className="block">
                 <span className="text-white/70 text-xs mb-1 block">Start</span>

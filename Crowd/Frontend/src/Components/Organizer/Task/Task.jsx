@@ -1,8 +1,15 @@
+// Task.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Pencil, RefreshCcw, Trash2 } from "lucide-react";
 import axios from "axios";
-import { ClipboardList, CheckCircle2, AlertTriangle, TimerReset, UserRound } from "lucide-react";
+import { ClipboardList, CheckCircle2, AlertTriangle, TimerReset } from "lucide-react";
 import AddTask from "../Task/AddTask";
+
+// ✅ NEW: PDF deps
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+// Adjust the path if needed (e.g., "../../utils/pdfHeader")
+import { addBusinessHeader, BUSINESS_INFO } from "../../../assets/pdfHeader";
 
 const API = "http://localhost:5000/api";
 
@@ -57,6 +64,107 @@ const Task = () => {
     setTasks(prev => prev.filter(t => t._id !== id));
   };
 
+  // ---------- NEW: Export PDF ----------
+  const generatePdf = () => {
+    const doc = new jsPDF();
+
+    // Repeat header on each page
+    const headerInfo = {
+      ...BUSINESS_INFO,
+      // You can override per-report here if needed:
+      // name: "Your Org Name",
+      // logo: "data:image/png;base64,...."
+    };
+
+    // Will be called for each page (including first)
+    const didDrawPage = (data) => {
+      addBusinessHeader(doc, headerInfo);
+      // footer with page numbers
+      const pageCount = doc.getNumberOfPages();
+      doc.setFontSize(9).setTextColor(120);
+      doc.text(
+        `Page ${data.pageNumber} of ${pageCount}`,
+        doc.internal.pageSize.getWidth() - 20,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: "right" }
+      );
+    };
+
+    // Title
+    const reportTitle = "Task Report";
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const fileName = `Task_Report_${yyyy}-${mm}-${dd}.pdf`;
+
+    // Build table rows
+    const toRow = (t) => ({
+      title: t.title || "—",
+      coordinator: t.coordinator || "—",
+      priority: priorityLabel(t.priority || "medium"),
+      status: statusLabel(t.status || "todo"),
+      due: t.dueDate ? String(t.dueDate).split("T")[0] : "—",
+      others: parseOtherStaffs(t.otherStaffs || []).join(", ") || "—",
+    });
+
+    const pendingRows = pendingTasks.map(toRow);
+    const completedRows = completedTasks.map(toRow);
+
+    // common columns
+    const columns = [
+      { header: "Title", dataKey: "title" },
+      { header: "Coordinator", dataKey: "coordinator" },
+      { header: "Priority", dataKey: "priority" },
+      { header: "Status", dataKey: "status" },
+      { header: "Due", dataKey: "due" },
+      { header: "Other Staffs", dataKey: "others" },
+    ];
+
+    // First page header draw
+    didDrawPage({ pageNumber: 1 });
+
+    // Report title + meta under header
+    doc.setFont("helvetica", "bold").setFontSize(14);
+    doc.text(reportTitle, 14, 40);
+    doc.setFont("helvetica", "normal").setFontSize(10);
+    doc.text(`Generated: ${yyyy}-${mm}-${dd}`, 14, 46);
+    doc.text(`Totals: ${total} | In Progress: ${inProgress} | Completed: ${completed} | Overdue: ${overdue}`, 14, 52);
+
+    // Pending section
+    doc.setFont("helvetica", "bold").setFontSize(12);
+    doc.text(`Pending Tasks (${pendingRows.length})`, 14, 62);
+
+    autoTable(doc, {
+      startY: 66,
+      head: [columns.map(c => c.header)],
+      body: pendingRows.map(r => columns.map(c => r[c.dataKey])),
+      styles: { fontSize: 9, cellPadding: 2 },
+      headStyles: { fillColor: [40, 44, 52], textColor: 255 },
+      didDrawPage,
+      margin: { left: 14, right: 14 },
+      tableWidth: "auto",
+    });
+
+    // Completed section (continue where last table ended)
+    const nextY = doc.lastAutoTable?.finalY ? doc.lastAutoTable.finalY + 10 : 66;
+    doc.setFont("helvetica", "bold").setFontSize(12);
+    doc.text(`Completed Tasks (${completedRows.length})`, 14, nextY);
+
+    autoTable(doc, {
+      startY: nextY + 4,
+      head: [columns.map(c => c.header)],
+      body: completedRows.map(r => columns.map(c => r[c.dataKey])),
+      styles: { fontSize: 9, cellPadding: 2 },
+      headStyles: { fillColor: [40, 44, 52], textColor: 255 },
+      didDrawPage,
+      margin: { left: 14, right: 14 },
+      tableWidth: "auto",
+    });
+
+    doc.save(fileName);
+  };
+
   return (
     <div className="p-12 2xl:h-screen w-full">
       <div className="header text-white text-3xl font-bold">Task Management</div>
@@ -70,13 +178,25 @@ const Task = () => {
         <Card title="Overdue" icon={<AlertTriangle color="#ef4444" size={30} />} count={String(overdue)} />
       </div>
 
-      {/* Add Task */}
-      <button
-        onClick={() => setIsPopupOpen(true)}
-        className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 px-10 cursor-pointer font-medium mt-5 rounded-md hover:opacity-70 text-white"
-      >
-        + Add Task
-      </button>
+      {/* Actions */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => setIsPopupOpen(true)}
+          className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 px-10 cursor-pointer font-medium mt-5 rounded-md hover:opacity-70 text-white"
+        >
+          + Add Task
+        </button>
+
+        {/* ✅ NEW: Export PDF */}
+        <button
+          onClick={generatePdf}
+          className="mt-5 inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
+          title="Export PDF"
+        >
+          <ClipboardList size={16} />
+          Export PDF
+        </button>
+      </div>
 
       {/* Create modal */}
       <AddTask
@@ -137,7 +257,18 @@ const Task = () => {
   );
 };
 
+/* helper to render otherStaffs line-by-line */
+function parseOtherStaffs(val) {
+  if (Array.isArray(val)) return val.filter(Boolean);
+  return String(val || "")
+    .split(/\r?\n|,/)     // split on newlines or commas
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
 function TaskRow({ t, done = false, onDone, onEdit, onDelete }) {
+  const staffList = parseOtherStaffs(t.otherStaffs);
+
   return (
     <div className="rounded-xl border border-white/10 bg-gradient-to-br from-slate-800/60 to-slate-900/60 p-4 text-white shadow-sm">
       {/* Title + badges */}
@@ -147,7 +278,7 @@ function TaskRow({ t, done = false, onDone, onEdit, onDelete }) {
             {t.title}
           </div>
 
-          {/* Assigned + Category */}
+          {/* Assigned + Details */}
           <div className="mt-1 text-sm text-slate-300">
             Assigned to:{" "}
             <span className="text-white">
@@ -159,10 +290,16 @@ function TaskRow({ t, done = false, onDone, onEdit, onDelete }) {
               {t.description || "—"}
             </span>
             <br />
-            Other Staffs:{" "}
-            <div className="text-white flex-col">
-              {t.otherStaffs || "—"}
-            </div>
+            Other Staffs:
+            {staffList.length === 0 ? (
+              <span className="text-white"> {" "}—</span>
+            ) : (
+              <div className="text-white flex flex-col mt-1">
+                {staffList.map((name, i) => (
+                  <div key={i}>{name}</div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -188,7 +325,7 @@ function TaskRow({ t, done = false, onDone, onEdit, onDelete }) {
         </div>
       </div>
 
-      {/* Actions (small icon buttons like the mock) */}
+      {/* Actions */}
       <div className="mt-3 flex items-center gap-3 text-slate-300">
         {!done && (
           <button
@@ -280,21 +417,6 @@ function statusColor(s = "todo") {
   if (v === "blocked")
     return { bg: "bg-rose-500/15", text: "text-rose-300", border: "border-rose-400/25" };
   return { bg: "bg-slate-500/15", text: "text-slate-300", border: "border-slate-400/25" };
-}
-
-function StatusPill({ value }) {
-  const map = {
-    todo: "bg-gray-500/20 border-gray-300/20",
-    in_progress: "bg-yellow-500/20 border-yellow-300/20",
-    done: "bg-green-500/20 border-green-300/20",
-    blocked: "bg-red-500/20 border-red-300/20",
-  };
-  const label = String(value || "todo").replace("_", " ");
-  return (
-    <div className={`text-xs rounded-full border w-auto px-3 h-5 flex items-center ${map[value] || map.todo}`}>
-      {label}
-    </div>
-  );
 }
 
 export default Task;
