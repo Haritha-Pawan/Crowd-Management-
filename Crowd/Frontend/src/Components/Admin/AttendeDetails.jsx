@@ -99,7 +99,7 @@ function AttendeDetails() {
                   <img
                     src={
                       attendee.qrCode ||
-                      `https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=${attendee.fullName}`
+                      `http://localhost:5000/qrcode/${attendee._id}` // adjust route to your backend
                     }
                     alt="QR Code"
                     className="w-12 h-12"
