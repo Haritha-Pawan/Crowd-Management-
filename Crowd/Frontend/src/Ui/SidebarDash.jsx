@@ -7,7 +7,7 @@ const SidebarDash = ({title,subtitle,links}) => {
 
 
   return (
-    <div className="left 2xl:flex-1/12 flex-wrap inline p-4 bg-white/10 border border-white/10 text-white max-sm:hidden ">
+    <div className="left 2xl:flex-1/12 flex-wrap inline p-4 bg-white/10 border border-white/10 text-white max-sm:hidden h-auto">
       <Link to="/">
         <div className="text-center flex gap-4 items-center bg-white/10 p-2 rounded-md cursor-pointer">
           <MoveLeft /> Back to Home

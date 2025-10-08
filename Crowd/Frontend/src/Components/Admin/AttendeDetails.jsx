@@ -1,117 +1,133 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect, useMemo, useState } from "react";
 
-function AttendeDetails() {
-  // state for all attendees (original from backend)
-  const [allAttendees, setAllAttendees] = useState([]);
-  // state for attendees shown in the table (filtered)
-  const [attendees, setAttendees] = useState([]);
+const API = import.meta.env.VITE_LANDING_API || "http://localhost:3001/api/checkout";
 
-  // fetch attendees from backend when component mounts
-  useEffect(() => {
-    const fetchAttendees = async () => {
-      try {
-        // 🔹 Replace URL with your real API endpoint
-        const res = await axios.get('http://localhost:5000/other/attendance'); 
-        // ensure data matches your backend structure
-        setAllAttendees(res.data); 
-        setAttendees(res.data); // initially show all
-      } catch (err) {
-        console.error('Error fetching attendees:', err);
-      }
-    };
+function fmtDate(s) {
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString();
+}
+function moneyLKR(n) {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return "—";
+  return new Intl.NumberFormat(undefined, { style: "currency", currency: "LKR", maximumFractionDigits: 0 }).format(v);
+}
 
-    fetchAttendees();
-  }, []);
+export default function AttendeeGrid() {
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [data, setData] = useState({ items: [], total: 0, page: 1, limit: 20 });
 
-  // search function
-  const handleSearch = (e) => {
-    const query = e.target.value.toLowerCase();
-    const filteredAttendees = allAttendees.filter((attendee) =>
-      attendee.fullName.toLowerCase().includes(query) ||
-      attendee.nic.toLowerCase().includes(query) ||
-      attendee.phone.toLowerCase().includes(query) ||
-      attendee.email.toLowerCase().includes(query)
-    );
-    setAttendees(filteredAttendees);
-  };
-
-  // delete all attendees
-  const handleDeleteAll = async () => {
-    if (window.confirm("Are you sure you want to delete all attendees?")) {
-      try {
-        await axios.delete('http://localhost:5000/other/attendance/delete"'); // adjust route to your backend
-        setAllAttendees([]);
-        setAttendees([]);
-      } catch (err) {
-        console.error("Error deleting all attendees:", err);
-      }
+  const fetchData = async (p = page, query = q) => {
+    try {
+      setBusy(true);
+      setErr("");
+      const params = new URLSearchParams({ page: String(p), limit: "12" }); // show 12 per page
+      if (query.trim()) params.set("q", query.trim());
+      const res = await fetch(`${API}?${params.toString()}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message || `Error ${res.status}`);
+      setData(json);
+      setPage(json.page || p);
+    } catch (e) {
+      setErr(e.message || "Failed to load attendees");
+    } finally {
+      setBusy(false);
     }
   };
 
+  useEffect(() => { fetchData(1, ""); }, []);
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil((data.total || 0) / (data.limit || 12))),
+    [data]
+  );
+
   return (
-    <div className='p-12 h-screen w-full'>
-      <div className="header text-white text-3xl font-bold">Attendee Overview</div>
-      <div className="sub-heading text-xl text-gray-300">
-        Monitor and manage all registered attendees
+    <div className="mt-4">
+      {/* Search row matches the “Search Attendee” box */}
+      <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+        <input
+          className="w-full sm:max-w-sm rounded-lg border border-white/15 bg-white/10 px-4 py-2.5 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          placeholder="Search by name or NIC"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") fetchData(1, q); }}
+        />
+        <div className="flex gap-2">
+          <button
+            onClick={() => fetchData(1, q)}
+            className="rounded-lg bg-blue-600 px-4 py-2.5 text-white hover:bg-blue-500"
+            disabled={busy}
+          >
+            Search
+          </button>
+          <button
+            onClick={() => { setQ(""); fetchData(1, ""); }}
+            className="rounded-lg bg-white/10 px-4 py-2.5 text-white hover:bg-white/20"
+            disabled={busy}
+          >
+            Reset
+          </button>
+        </div>
+        <div className="ml-auto text-white/80 text-sm">
+          Total: {data.total}
+        </div>
       </div>
 
-      <button
-        onClick={handleDeleteAll}
-        className="absolute top-12 right-12 p-3 px-8 rounded-md cursor-pointer bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
-      >
-        + Remove All
-      </button>
+      {/* Responsive grid of attendee cards */}
+      {busy && <div className="text-white/70 py-8 text-center">Loading…</div>}
+      {err && !busy && <div className="text-rose-300 py-8 text-center">{err}</div>}
+      {!busy && !err && data.items.length === 0 && (
+        <div className="text-white/70 py-8 text-center">No attendees found.</div>
+      )}
 
-      {/* Attendee Table */}
-      <div className="users-table-container bg-white/5 border-white/10 p-5 mt-10 rounded-md w-full text-white">
-        <div className="mb-4 ">
-          Search:
-          <input
-            type="text"
-            onChange={handleSearch}
-            className="ml-6 p-1 rounded-md bg-white/5 border border-gray-600 text-white w-2/3"
-            placeholder="Search by name, NIC, phone, or email"
-          />
-        </div>
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {data.items.map((t) => (
+          <div key={`${t._id}-${t.nic}`}
+               className="rounded-xl border border-white/10 bg-white/5 p-4 text-white hover:bg-white/10 transition">
+            <div className="flex items-start justify-between">
+              <div className="font-semibold">{t.fullName || "—"}</div>
+              <span className={`inline-flex rounded px-2 py-0.5 text-xs ${
+                t?.payment?.status === "paid" ? "bg-emerald-600/20 text-emerald-300" :
+                t?.payment?.status === "failed" ? "bg-rose-600/20 text-rose-300" :
+                "bg-amber-600/20 text-amber-300"
+              }`}>
+                {t?.payment?.status || "—"}
+              </span>
+            </div>
 
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-gray-500">
-              <th className="pb-3">Full Name</th>
-              <th className="pb-3">NIC</th>
-              <th className="pb-3">Phone Number</th>
-              <th className="pb-3">Email</th>
-              <th className="pb-3">QR Code</th>
-            </tr>
-          </thead>
-          <tbody>
-            {attendees.map((attendee, idx) => (
-              <tr key={idx} className="border-b border-gray-600">
-                <td className="py-3">{attendee.fullName}</td>
-                <td className="py-3">{attendee.nic}</td>
-                <td className="py-3">{attendee.phone}</td>
-                <td className="py-3">
-                  <span className="font-bold">{attendee.email?.split("@")[0]}</span>@{attendee.email?.split("@")[1]}
-                </td>
-                <td className="py-3">
-                  {/* If backend already sends QR code URL, use it directly */}
-                  <img
-                    src={
-                      attendee.qrCode ||
-                      `https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=${attendee.fullName}`
-                    }
-                    alt="QR Code"
-                    className="w-12 h-12"
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            <div className="mt-2 text-sm space-y-1">
+              <div className="text-white/80"><span className="text-white/60">NIC:</span> <span className="font-mono">{t.nic || "—"}</span></div>
+              <div className="text-white/80"><span className="text-white/60">Phone:</span> <span className="font-mono">{t.phone || "—"}</span></div>
+              <div className="text-white/80"><span className="text-white/60">Type:</span> {t.type}{t.type === "family" ? ` (${t.count || 0})` : ""}</div>
+              <div className="text-white/80"><span className="text-white/60">Amount:</span> {moneyLKR(t?.payment?.amount)}</div>
+              <div className="text-white/80"><span className="text-white/60">Counter:</span> {t.assignedCounterName || "—"}</div>
+              <div className="text-white/60 text-xs">{fmtDate(t.createdAt)}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Pagination */}
+      <div className="mt-5 flex items-center gap-2 text-white/80">
+        <button
+          onClick={() => fetchData(Math.max(1, page - 1), q)}
+          disabled={busy || page <= 1}
+          className="rounded-lg bg-white/10 px-3 py-1.5 hover:bg-white/20 disabled:opacity-40"
+        >
+          Prev
+        </button>
+        <span className="text-sm">Page {page} / {totalPages}</span>
+        <button
+          onClick={() => fetchData(Math.min(totalPages, page + 1), q)}
+          disabled={busy || page >= totalPages}
+          className="rounded-lg bg-white/10 px-3 py-1.5 hover:bg-white/20 disabled:opacity-40"
+        >
+          Next
+        </button>
       </div>
     </div>
   );
 }
-
-export default AttendeDetails;

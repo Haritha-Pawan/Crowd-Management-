@@ -21,7 +21,7 @@ import CounterDashboard from "./Components/Counter/CounterDashboard.jsx";
 import ForgotPassword from "./Pages/ForgotPassword.jsx";
 import ResetPassword from "./Pages/ResetPassword.jsx";
 import QRScanner from "./Components/Counter/QRScanner.jsx";
-
+import QRScannerPage from "./Components/Counter/QRScannerPage.jsx";
 
 const App = () => {
   return (
@@ -57,7 +57,7 @@ const App = () => {
           <Route path='/reserve' element={<Reserve />} />
 
           <Route path="/QRScanner" element={<QRScanner/>}/>
-        
+          <Route path="/qr" element={<QRScannerPage/>} />
       
 
         <Route path="/overview" element={<Overview />} />

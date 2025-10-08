@@ -17,11 +17,11 @@ const CounterDashboard = () => {
         { name: 'overview', icon: <User size={20} />, to: '/Admin/AdminOverview' },
         { name: 'QR Scanner', icon: <UserPlus />, to: '/QRScanner' },
         { name: 'Report', icon: <ChartArea />, to: '/Admin/CounterManagement' },
-       
+        
       ];
 
   return (
-        <div className='flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 h-auto min-h-screen'>
+        <div className='flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 h-[230vh]'>
           
           <Sidebar 
           
@@ -51,5 +51,6 @@ const CounterDashboard = () => {
         </div>
   )
 }
+
 
 export default CounterDashboard;

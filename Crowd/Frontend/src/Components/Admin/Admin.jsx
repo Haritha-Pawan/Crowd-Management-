@@ -22,7 +22,7 @@ const Admin = () => {
       ];
 
   return (
-        <div className='flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 max-h-screen h-fit overflow-scroll scrol/l-m-0'>
+        <div className='flex bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 h-auto min-h-screen h-fit overflow-scroll scrol/l-m-0'>
           
           <Sidebar  className=""
           
