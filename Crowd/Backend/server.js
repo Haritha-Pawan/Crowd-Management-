@@ -27,8 +27,6 @@ import spotRouter from './src/Modules/Parking/Route/spot.route.js';
 
 
 
-import zoneRouter from './src/Modules/Parking/Route/zone.Route.js'; 
-import spotRouter from './src/Modules/Parking/Route/spot.Route.js';
 
 
 
@@ -219,4 +217,3 @@ app.use("/api/reservations",reservationRoutes);
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 });
->>>>>>> f0e07c42f134b3503b1c5f0fd5fdd1be68e14113
