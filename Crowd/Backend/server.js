@@ -6,11 +6,10 @@ import http from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 
-
 // ✅ Import existing routes
 import incidentRoutes from './src/Modules/Incident/Route/incident.route.js';
 import zoneRouter from './src/Modules/Parking/Route/zone.Route.js';
-
+import { Socket } from 'socket.io';
 
 import taskRoutes from './src/Modules/task/Route/task.Route.js';
 import counterRoutes from './src/Modules/Counter/Routes/counter.Route.js';
@@ -18,27 +17,8 @@ import userRouter from './src/Modules/User/User.routes.js';
 import AuthRoutes from './src/Modules/User/AuthRoutes.js';
 import OtherRoutes from './src/Modules/User/Other.routes.js';
 
-
-
 import reservationRoutes from './src/Modules/Parking/Route/reservation.route.js';
 import spotRouter from './src/Modules/Parking/Route/spot.route.js';
-
-
-//new routes for places
-import places from './src/routes/place.routes.js'
-import spots from './src/routes/spot.routes.js'
-
-
-
-
-
-import zoneRouter from './src/Modules/Parking/Route/zone.Route.js';
-import spotRouter from './src/Modules/Parking/Route/spot.Route.js';
-import reservationRoutes from './src/Modules/Parking/Route/reservation.Route.js';
-
-
-
-
 
 // ✅ Notifications route
 import notificationRoutes from './src/Modules/notifications/Route/notification.route.js';
@@ -61,17 +41,20 @@ const io = new Server(server, {
 });
 
 // ✅ CORS + JSON
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+  })
+);
 app.use(express.json());
 
 // ✅ Static files (uploads)
 app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 
 // ✅ MongoDB connection
-mongoose.connect(process.env.MONGO_URI)
+mongoose
+  .connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.error(err));
 
@@ -80,6 +63,15 @@ app.use('/api/support', incidentRoutes);
 app.use('/api/parking-zone', zoneRouter);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/counter', counterRoutes);
+app.use('/api/zone', zoneRouter);
+app.use('/api/spots', spotRouter);
+app.use('/api/reservations', reservationRoutes);
+
+// ✅ User-related routes
+app.use('/users', userRouter);
+app.use('/auth', AuthRoutes);
+app.use('/other', OtherRoutes);
 
 // ✅ Make io available inside controllers
 app.set('io', io);
@@ -88,14 +80,11 @@ app.set('io', io);
 io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
 
-  // --- Backward-compat: your existing client emits a string role ---
-  //   socket.emit("joinRoom", "Attendee")
+  // --- Backward-compat ---
   socket.on('joinRoom', (payload) => {
     if (typeof payload === 'string') {
       const role = payload;
-      // legacy room (old controllers may emit to this)
       socket.join(role);
-      // namespaced role room (new controllers emit to this)
       socket.join(`role:${role}`);
       console.log(`Socket ${socket.id} joined rooms: "${role}" and "role:${role}"`);
     } else if (payload && typeof payload === 'object') {
@@ -112,7 +101,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // --- New style: socket.emit("join", { userId, role }) ---
+  // --- New style ---
   socket.on('join', ({ role, userId } = {}) => {
     if (role) {
       socket.join(role);
@@ -125,7 +114,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Optional: allow clients to leave a room
+  // --- Leave room ---
   socket.on('leaveRoom', (room) => {
     try {
       socket.leave(room);
@@ -139,73 +128,12 @@ io.on('connection', (socket) => {
   });
 });
 
+// ✅ Root route
+app.get('/', (req, res) => {
+  res.send('Server is running...');
+});
+
 // ✅ Start server
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log(err));
-
-// User routes
-app.use('/users', userRouter);
-
-app.use('/auth', AuthRoutes);
-
-//other routes
-app.use('/other', OtherRoutes);
-
-
-
-app.get('/', (req, res) => {
-  // DB
-  mongoose
-    .connect(process.env.MONGO_URI)
-    .then(() => {
-      console.log("MongoDB Connected:", mongoose.connection.name);
-    })
-    .catch((err) => {
-      console.error("Mongo connection error:", err);
-    });
-
-
-
-// DB
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("MongoDB Connected:", mongoose.connection.name);
-  })
-  .catch((err) => {
-    console.error("Mongo connection error:", err);
-  });
-
-
-
-// Auth & Users
-app.use("/auth", AuthRoutes);
-app.use("/users", userRouter);
-
-// Core Modules
-app.use("/api/tasks", taskRoutes);
-app.use("/api/counter", counterRoutes);
-
-
-app.use("/api/counter",counterRoutes);
-
-
-
-
-//Parking Routes
-app.use("/api/zone",zoneRouter);
-app.use("/api/spots",spotRouter);
-app.use("/api/reservations",reservationRoutes);
-
-
-
-
-
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-

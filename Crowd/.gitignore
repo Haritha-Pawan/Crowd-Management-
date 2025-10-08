@@ -15,7 +15,9 @@ dist-ssr
 # Node.js dependencies
 node_modules/
 
+
 # Editor directories and files
+package.json/
 .vscode/*
 !.vscode/extensions.json
 .idea
