@@ -12,7 +12,7 @@ import OrganizerOverview from '../Organizer/OrganizerOverview';
 
 const Organizer = () => {
     const OrganizerLinks = [
-        { name: 'overview', icon: <User size={20} />, to: '/Organizer/organizerOverview' },
+        { name: 'overview', icon: <User size={20} />, to: '/Organizer/OrganizerOverview' },
         { name: 'Task Management', icon: <UserPlus />, to: '/Organizer/task' },
         { name: ' Parking Management', icon: <Car />, to: '/Organizer/parkingManagement' },
         { name: '  Management', icon: <TriangleAlert />, to: '' },
