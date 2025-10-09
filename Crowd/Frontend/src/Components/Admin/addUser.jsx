@@ -172,6 +172,7 @@ const AddUser = ({ isOpen, onClose }) => {
               <option value="organizer">organizer</option>
               <option value="Coordinator">Coordinator</option>
               <option value="Staff">Staff</option>
+              <option value="Attendee">Attendee</option>
             </select>
 
             {errors.role && (
