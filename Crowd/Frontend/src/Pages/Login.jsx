@@ -59,7 +59,9 @@ function Login() {
       }else if (role === "Staff") {
         navigate("/counterStaff");
       }
-
+      else if (role === "Attendee") {
+        navigate("/attendee");
+      }
        else {
         navigate("/");
       }
