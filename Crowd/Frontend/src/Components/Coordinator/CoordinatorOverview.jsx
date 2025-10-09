@@ -28,6 +28,12 @@ export default function CoordinatorOverview() {
   const [socket, setSocket] = useState(null);
   const audioRef = useRef(null);
 
+  // ✅ NEW: state for stats + loading/error (Option B)
+  const [taskStats, setTaskStats] = useState([]);       // [{status, count}]
+  const [incidentStats, setIncidentStats] = useState([]); // [{type, count}]
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+
   useEffect(() => { audioRef.current = new Audio("/new-notification-021-370045.mp3"); }, []);
 
   useEffect(() => {
@@ -38,27 +44,59 @@ export default function CoordinatorOverview() {
     const onAny = () => audioRef.current?.play().catch(()=>{});
     s.on("notification:new", onAny);
     
-
     return () => {
       s.off("notification:new", onAny);
-      
       s.disconnect();
     };
   }, []);
 
-  const tasks = [
-    { status: "Todo", count: 5 },
-    { status: "In Progress", count: 3 },
-    { status: "Done", count: 8 },
-    { status: "Blocked", count: 2 },
-  ];
-  const incidents = [
-    { status: "Lost Person", count: 4 },
-    { status: "Emergency", count: 6 },
-    { status: "Lost Item", count: 2 },
-  ];
-  const maxTask = useMemo(() => Math.max(...tasks.map(t => t.count)), [tasks]);
-  const maxInc  = useMemo(() => Math.max(...incidents.map(i => i.count)), [incidents]);
+  // ✅ NEW: fetch tasks/incidents and count on client (Option B)
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const [tasksRes, incRes] = await Promise.all([
+          api.get("/tasks"),
+          api.get("/support"), // ⬅️ changed from "/incidents" to "/support"
+        ]);
+
+        // group tasks by status
+        const tCounts = tasksRes.data.reduce((acc, t) => {
+          const key = t.status || "todo";
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {});
+        const orderedTasks = ["todo", "in_progress", "done", "blocked"].map(k => ({
+          status: k,
+          count: tCounts[k] || 0,
+        }));
+        setTaskStats(orderedTasks);
+
+        // group incidents by type
+        const incCounts = incRes.data.reduce((acc, i) => {
+          const key = i.type || "Unknown";
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {});
+        const orderedInc = ["Lost Person", "Emergency", "Lost Item", "Complaints"].map(t => ({
+          type: t,
+          count: incCounts[t] || 0,
+        }));
+        setIncidentStats(orderedInc);
+
+        setErr("");
+      } catch (e) {
+        console.error(e);
+        setErr("Failed to load lists");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // ✅ UPDATED: derive maxima from fetched stats (safe with fallback 1)
+  const maxTask = useMemo(() => Math.max(1, ...taskStats.map(t => t.count)), [taskStats]);
+  const maxInc  = useMemo(() => Math.max(1, ...incidentStats.map(i => i.count)), [incidentStats]);
 
   const toggleRole = (role) =>
     setForm((f) => ({
@@ -103,7 +141,7 @@ export default function CoordinatorOverview() {
       <div className="grid grid-cols-2 gap-10">
         <div>
           <h3 className="text-xl font-bold mb-4">Tasks</h3>
-          {tasks.map((t) => (
+          {taskStats.map((t) => (
             <div key={t.status} className="mb-3">
               <div className="flex justify-between mb-1">
                 <span>{t.status}</span><span>{t.count}</span>
@@ -123,10 +161,10 @@ export default function CoordinatorOverview() {
 
         <div>
           <h3 className="text-xl font-bold mb-4">Incidents</h3>
-          {incidents.map((i) => (
-            <div key={i.status} className="mb-3">
+          {incidentStats.map((i) => (
+            <div key={i.type} className="mb-3">
               <div className="flex justify-between mb-1">
-                <span>{i.status}</span><span>{i.count}</span>
+                <span>{i.type}</span><span>{i.count}</span>
               </div>
               <div className="w-full bg-white/10 h-4 rounded-full">
                 <div className="h-4 rounded-full"
