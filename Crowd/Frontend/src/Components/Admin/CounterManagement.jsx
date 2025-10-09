@@ -31,7 +31,7 @@ const CounterManagement = () => {
       { title: "Total Counters", icon: <LocationEditIcon color="#2f80ed" size={30} />, count: String(total) },
       { title: "Active Counters", icon: <LocateIcon color="#4ade80" size={30} />, count: String(active) },
       { title: "Total Capacity", icon: <Users color="#facc15" size={30} />, count: String(totalCapacity) },
-      { title: "Current Load", icon: <TrendingUp color="#c084fc" size={30} />, count: `${loadPct}%` },
+      
     ],
     [total, active, totalCapacity, loadPct]
   );
@@ -94,15 +94,6 @@ const CounterManagement = () => {
               <div className="sub-heading flex mt-2 text-gray-300 items-center gap-2 text-sm">
                 <LocationEditIcon size={18} />
                 <div>{c.entrance}</div>
-              </div>
-
-              {/* Occupancy */}
-              <div className="text-[14px] mt-6 text-gray-300 flex justify-between">
-                <span>Occupancy</span>
-                <span>{c.load} / {c.capacity} ({pct}%)</span>
-              </div>
-              <div className="mt-3 h-2 w-full rounded-full bg-black/40">
-                <div className="h-full rounded-full bg-blue-600" style={{ width: `${pct}%` }} />
               </div>
 
               {/* Details */}

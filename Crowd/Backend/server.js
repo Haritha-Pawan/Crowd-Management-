@@ -74,7 +74,6 @@ app.use("/api/counter",counterRoutes);
 
 
 
-
 //Parking Routes
 app.use("/api/zone",zoneRouter);
 app.use("/api/spots",spotRouter);
