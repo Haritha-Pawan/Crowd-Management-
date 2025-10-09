@@ -1,12 +1,12 @@
 // src/pages/ParkingZone.jsx
-import React, { useId, useEffect, useState, useCallback } from "react";
+import React, { useId, useEffect, useState, useCallback, useRef } from "react";
 import axios from "axios";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { MapPin, Car, ChevronRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const API = "http://localhost:5000/api";
-const LIVE_REFRESH_MS = 5000; // <— poll every 5s; tweak as you like
+const LIVE_REFRESH_MS = 5000; // poll every 5s
 
 /* ---------- helpers ---------- */
 const getColorsByValue = (v) =>
@@ -42,10 +42,10 @@ const GET = async (url, config) => {
   }
 };
 
-/* ---------- compact donut (bit bigger) ---------- */
+/* ---------- compact donut ---------- */
 const ProgressDonut = ({ value = 70, subtitle = "Available", size = 160 }) => {
   const colors = getColorsByValue(value);
-  const gradId = useId();
+  const gradId = useId(); // unique per render tree
   const data = [
     { name: "Progress", value },
     { name: "Remaining", value: Math.max(0, 100 - value) },
@@ -88,41 +88,21 @@ const ProgressDonut = ({ value = 70, subtitle = "Available", size = 160 }) => {
 
 /* ---------- occupied logic from spot ---------- */
 const statusToOccupied = (spot) => {
-  // normalize status string (remove spaces/underscores)
-  const s = String(spot?.status || "")
-    .toLowerCase()
-    .replace(/\s|_/g, "");
-
-  // common "taken" statuses
-  const taken = new Set([
-    "occupied",
-    "reserved",
-    "busy",
-    "taken",
-    "unavailable",
-    "confirm",
-    "confirmed",
-    "booked",
-    "inuse",
-  ]);
+  const s = String(spot?.status || "").toLowerCase().replace(/\s|_/g, "");
+  const taken = new Set(["occupied", "reserved", "busy", "taken", "unavailable", "confirm", "confirmed", "booked", "inuse"]);
   if (taken.has(s)) return true;
-
-  // common "free" statuses
   const free = new Set(["available", "free", "open"]);
   if (free.has(s)) return false;
 
-  // boolean flags some models use
   if (typeof spot?.isOccupied === "boolean") return spot.isOccupied;
   if (typeof spot?.available === "boolean") return !spot.available;
   if (typeof spot?.isAvailable === "boolean") return !spot.isAvailable;
 
-  // reservation-based fallback
   const rs = spot?.currentReservation || spot?.activeReservation;
   if (rs?.status) {
     const rsStatus = String(rs.status).toLowerCase().replace(/\s|_/g, "");
     return taken.has(rsStatus);
   }
-
   return false;
 };
 
@@ -133,25 +113,47 @@ const computeCountsFromSpots = (spots) => {
   return { total, occupied, available };
 };
 
-/* ---------- fetch spots by zone (no caching; always fresh) ---------- */
-const fetchSpotsByZone = async (zoneId) => {
-  // Try a few common server param names; add t=Date.now() for cache-bust
-  const tryKey = async (key) => {
-    const data = await GET(`${API}/spots`, { params: { [key]: zoneId, t: Date.now() } });
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data?.items)) return data.items;
-    if (Array.isArray(data?.data)) return data.data;
-    return null;
-  };
-  return (
-    (await tryKey("zone")) ??
-    (await tryKey("zoneId")) ??
-    (await tryKey("placeId")) ??
-    []
-  );
+/* ---------- utils to read a spot's zone/place id ---------- */
+const readSpotZoneId = (s) => {
+  // flat ids
+  const flat = s?.placeId ?? s?.zoneId ?? s?.zone ?? s?.place_id ?? s?.zone_id;
+  if (flat) return String(flat);
+  // nested objects
+  const nested =
+    s?.place?._id ?? s?.place?.id ??
+    s?.zone?._id ?? s?.zone?.id;
+  return nested ? String(nested) : "";
 };
 
-/* ---------- zone card (taller) ---------- */
+/* ---------- fetch spots by zone with guaranteed filtering ---------- */
+const fetchSpotsByZone = async (zoneId) => {
+  const zid = String(zoneId);
+  // Put your real backend param FIRST
+  const paramsOrder = ["placeId", "zoneId", "zone"];
+
+  const pullOnce = async (key) => {
+    const res = await GET(`${API}/spots`, { params: { [key]: zid, t: Date.now() } });
+    let list = Array.isArray(res) ? res
+      : Array.isArray(res?.data) ? res.data
+      : Array.isArray(res?.items) ? res.items
+      : [];
+
+    // Safety: strictly filter to this zoneId even if server returned everything
+    list = list.filter((s) => readSpotZoneId(s) === zid);
+    return list;
+  };
+
+  // Try keys in order; return the first non-empty filtered list
+  for (let i = 0; i < paramsOrder.length; i++) {
+    const list = await pullOnce(paramsOrder[i]);
+    if (list.length > 0) return list;
+    // If it's last attempt, return whatever we got (possibly empty) to reflect reality
+    if (i === paramsOrder.length - 1) return list;
+  }
+  return [];
+};
+
+/* ---------- zone card ---------- */
 const ZoneCard = ({
   name,
   available,
@@ -259,13 +261,16 @@ export default function ParkingZone() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // guard against overlapping poll responses overriding newer data
+  const fetchSeq = useRef(0);
+
   const numOrNull = (v) => {
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
   };
 
   const getCountsForZone = async (z) => {
-    // 1) try to use zone-provided counts
+    // Try zone-provided counts first
     let total = numOrNull(z.totalSpots);
     if (total === null) total = numOrNull(z.capacity);
 
@@ -274,16 +279,14 @@ export default function ParkingZone() {
 
     let occupied = numOrNull(z.occupiedSpots);
 
-    // 2) compute from live spots if missing OR for live accuracy
-    if (true /* force live */) {
-      const zoneId = z._id ?? z.id;
-      const spots = await fetchSpotsByZone(zoneId);
-      const calc = computeCountsFromSpots(spots);
-      // prefer live numbers
-      total = calc.total;
-      occupied = calc.occupied;
-      available = calc.available;
-    }
+    // Always compute from LIVE spots for accuracy
+    const zoneId = z._id ?? z.id;
+    const spots = await fetchSpotsByZone(zoneId);
+    const calc = computeCountsFromSpots(spots);
+
+    total = calc.total;
+    occupied = calc.occupied;
+    available = calc.available;
 
     // sanitize
     total = Math.max(0, total ?? 0);
@@ -295,7 +298,6 @@ export default function ParkingZone() {
   const normalizeZone = (z, counts) => {
     const { total, available, occupied } = counts ?? { total: 0, available: 0, occupied: 0 };
 
-    // price
     const rawPrice = z.price ?? z.pricePerHour ?? z.rate ?? z.zonePrice ?? z.basePrice ?? null;
     const priceValue = currencyToNumber(rawPrice);
     const price = priceValue != null ? `Rs:${priceValue.toFixed(2)}` : rawPrice || "";
@@ -319,6 +321,7 @@ export default function ParkingZone() {
   };
 
   const fetchZones = useCallback(async () => {
+    const seq = ++fetchSeq.current; // bump sequence
     try {
       setLoading(true);
       const res = await GET(`${API}/zone`, { params: { t: Date.now() } });
@@ -329,6 +332,7 @@ export default function ParkingZone() {
         else if (Array.isArray(res?.data)) arr = res.data;
       }
       if (!Array.isArray(arr)) {
+        if (seq !== fetchSeq.current) return; // stale
         setError("Invalid response from the server");
         setZones([]);
         return;
@@ -341,14 +345,17 @@ export default function ParkingZone() {
           return normalizeZone(z, counts);
         })
       );
+
+      if (seq !== fetchSeq.current) return; // ignore stale response
       setZones(enriched);
       setError("");
     } catch (e) {
       console.error("[ParkingZone] fetch error:", e);
+      if (seq !== fetchSeq.current) return; // stale
       setError("Failed to load zones");
       setZones([]);
     } finally {
-      setLoading(false);
+      if (seq === fetchSeq.current) setLoading(false);
     }
   }, []);
 
@@ -357,18 +364,19 @@ export default function ParkingZone() {
   }, [fetchZones]);
 
   // refresh after successful nav actions
+  const locationRef = useRef(location.pathname);
   useEffect(() => {
     if (location.state?.success) {
       fetchZones();
       // clear state
       navigate(location.pathname, { replace: true, state: {} });
     }
+    locationRef.current = location.pathname;
   }, [location.state, location.pathname, navigate, fetchZones]);
 
   // LIVE POLLING so donut updates when spots change
   useEffect(() => {
     const id = setInterval(fetchZones, LIVE_REFRESH_MS);
-    // also refresh on window focus
     const onFocus = () => fetchZones();
     window.addEventListener("focus", onFocus);
     return () => {
