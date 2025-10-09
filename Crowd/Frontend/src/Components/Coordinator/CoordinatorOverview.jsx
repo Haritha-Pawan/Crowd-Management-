@@ -23,14 +23,14 @@ export default function CoordinatorOverview() {
   const [form, setForm] = useState({
     title: "",
     message: "",
-    recipientRoles: [], // options: Attendee, Organizer, Staff (NO Coordinator)
+    recipientRoles: [], // options to send to who
   });
   const [socket, setSocket] = useState(null);
   const audioRef = useRef(null);
 
-  // ✅ NEW: state for stats + loading/error (Option B)
-  const [taskStats, setTaskStats] = useState([]);       // [{status, count}]
-  const [incidentStats, setIncidentStats] = useState([]); // [{type, count}]
+  // stats part
+  const [taskStats, setTaskStats] = useState([]);       
+  const [incidentStats, setIncidentStats] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
@@ -50,17 +50,17 @@ export default function CoordinatorOverview() {
     };
   }, []);
 
-  // ✅ NEW: fetch tasks/incidents and count on client (Option B)
+  // fetching incidents and tasks then count
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
         const [tasksRes, incRes] = await Promise.all([
           api.get("/tasks"),
-          api.get("/support"), // ⬅️ changed from "/incidents" to "/support"
+          api.get("/support"), 
         ]);
 
-        // group tasks by status
+        // group tasks 
         const tCounts = tasksRes.data.reduce((acc, t) => {
           const key = t.status || "todo";
           acc[key] = (acc[key] || 0) + 1;
@@ -72,7 +72,7 @@ export default function CoordinatorOverview() {
         }));
         setTaskStats(orderedTasks);
 
-        // group incidents by type
+        // group incidents 
         const incCounts = incRes.data.reduce((acc, i) => {
           const key = i.type || "Unknown";
           acc[key] = (acc[key] || 0) + 1;
@@ -94,7 +94,7 @@ export default function CoordinatorOverview() {
     })();
   }, []);
 
-  // ✅ UPDATED: derive maxima from fetched stats (safe with fallback 1)
+  // taking the maximum from each
   const maxTask = useMemo(() => Math.max(1, ...taskStats.map(t => t.count)), [taskStats]);
   const maxInc  = useMemo(() => Math.max(1, ...incidentStats.map(i => i.count)), [incidentStats]);
 
@@ -180,7 +180,7 @@ export default function CoordinatorOverview() {
         </div>
       </div>
 
-      {/* Sent (local visual only) */}
+      {/* Sent */}
       <div>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold">Sent Notifications</h3>
@@ -213,7 +213,7 @@ export default function CoordinatorOverview() {
         )}
       </div>
 
-      {/* Composer */}
+      {/* creation of notifications */}
       {showComposer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="bg-[#0f172a] p-6 rounded-md w-full max-w-lg">
@@ -240,7 +240,7 @@ export default function CoordinatorOverview() {
 
               <div className="text-sm text-gray-300">Send to roles:</div>
               <div className="flex gap-4 flex-wrap">
-                {["Attendee", "Organizer", "Staff"].map((r) => (
+                {["Attendee", "Organizer" /* i remove staff*/].map((r) => (
                   <label key={r} className="flex items-center gap-2">
                     <input
                       type="checkbox"
