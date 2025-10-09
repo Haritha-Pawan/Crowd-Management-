@@ -1,4 +1,5 @@
 import { Circle, Filter, Search, User as UserIcon } from "lucide-react";
+import { FileText, Users, UserPlus, LogOut } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Eye, Edit, Trash } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +7,10 @@ import AddUserForm from "../Admin/addUser";
 import axios from "axios";
 import EditUser from "../Admin/updateUser";
 import { Link } from "react-router-dom";
+import { BUSINESS_INFO, addBusinessHeader } from "../../assets/pdfHeader"
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import{logout} from '../../hooks/useLogout.js'
 
 const API_URL = "http://localhost:5000/users";
 
@@ -23,6 +28,8 @@ const UserManagement = () => {
   const handleViewAttendee = (userId) => {
     navigate(`/admin/attendee/${userId}`);
   };
+  //logout
+  const handleLogout = logout();
 
   // Enhanced filter logic
   const filteredUsers = users.filter((user) => {
@@ -69,6 +76,8 @@ const UserManagement = () => {
       setUsers([]); // Set empty array on error
     }
   };
+ 
+
 
   useEffect(() => {
     fetchUsers();
@@ -110,8 +119,6 @@ const UserManagement = () => {
   const pendingUsers = users.filter((u) => u.status === "Pending").length;
   const organizerUsers = users.filter((u) => u.role === "organizer").length;
 
- 
-
   const data = [
     { title: "Total Users", count: totalUsers, icon: <UserIcon /> },
     {
@@ -123,29 +130,121 @@ const UserManagement = () => {
     { title: "Organizers", count: organizerUsers, icon: "" },
   ];
 
+  {/* Generate PDF Report */}
+  const doc = new jsPDF();
+
+  // Business header info
+  const headerInfo = {
+    ...BUSINESS_INFO,
+  };
+
+  // Header + footer callback
+  const didDrawPage = (data) => {
+    addBusinessHeader(doc, headerInfo);
+
+    const pageCount = doc.getNumberOfPages();
+    doc.setFontSize(9).setTextColor(120);
+    doc.text(
+      `Page ${data.pageNumber} of ${pageCount}`,
+      doc.internal.pageSize.getWidth() - 20,
+      doc.internal.pageSize.getHeight() - 10,
+      { align: "right" }
+    );
+  };
+
+  // Report title and metadata
+  const reportTitle = "User Management Report";
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  const fileName = `User_Report_${yyyy}-${mm}-${dd}.pdf`;
+
+  // First page header
+  didDrawPage({ pageNumber: 1 });
+
+  // Title section
+  doc.setFont("helvetica", "bold").setFontSize(14);
+  doc.text(reportTitle, 14, 40);
+  doc.setFont("helvetica", "normal").setFontSize(10);
+  doc.text(`Generated on: ${yyyy}-${mm}-${dd}`, 14, 46);
+  doc.text(`Total Users: ${users.length}`, 14, 52);
+
+  // Table columns
+  const columns = [
+    { header: "Full Name", dataKey: "fullName" },
+    { header: "Email", dataKey: "email" },
+    { header: "Role", dataKey: "role" },
+    { header: "Status", dataKey: "status" },
+    { header: "Created Date", dataKey: "createdAt" },
+  ];
+
+  // Prepare rows
+  const rows = users.map((u) => ({
+    fullName: u.fullName || "—",
+    email: u.email || "—",
+    role: u.role || "—",
+    status: u.status || "Active",
+    createdAt: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—",
+  }));
+
+  // Table
+  autoTable(doc, {
+    startY: 60,
+    head: [columns.map((c) => c.header)],
+    body: rows.map((r) => columns.map((c) => r[c.dataKey])),
+    styles: { fontSize: 9, cellPadding: 2 },
+    headStyles: { fillColor: [40, 44, 52], textColor: 255 },
+    margin: { left: 14, right: 14 },
+    tableWidth: "auto",
+    didDrawPage,
+  });
+
+  // Save file
+  doc.save(fileName);
+
   return (
     <div className="p-10 mx-auto h-screen">
       <div className="header text-3xl text-white font-bold">
         User Management
       </div>
-      <div className="gap-5">
-        {/* Add user button */}
-        <Link to='/admin/AttendeDetails'>
-        <button className="absolute top-12 right-40 p-2 px-4 mx-3  rounded-md cursor-pointer bg-green-500 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all">
-          + View Attende
-          
+      <div className="flex items-center gap-3 absolute top-12 right-12 z-10">
+        {/* Report Generate Button */}
+        <button
+          onClick={didDrawPage }
+          className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
+        >
+          <FileText size={16} />
+          Generate Report
         </button>
-       </Link>
-        {/* view attende */}
-       
+
+        {/* View Attendee Button */}
+        <Link to="/admin/AttendeDetails">
+          <button className=" inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10">
+            <Users size={16} />
+            View Attendee
+          </button>
+        </Link>
+
+        {/* Add User Button */}
         <button
           onClick={() => setIsPopupOpen(true)}
-          className="absolute top-12 right-12 p-2 px-4 rounded-md cursor-pointer bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
+          className=" inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
         >
-          
-          + Add User
+          <UserPlus size={16} />
+          Add User
+        </button>
+
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 p-1.5 px-3 rounded-md cursor-pointer bg-gradient-to-r from-red-500 to-pink-600 text-white text-sm font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
+        >
+          <LogOut size={16} />
+          Log Out
         </button>
       </div>
+
       <div className="sub-heading text-gray-300 mb-5">
         Manage system users and their permissions
       </div>
@@ -274,15 +373,15 @@ const UserManagement = () => {
                   <span className="font-bold">{user.email.split("@")[0]}</span>@
                   {user.email.split("@")[1]}
                 </td>
-                
+
                 <td className="py-3">{user.role}</td>
                 <td className="py-3">
-                  <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">
+                  <span className="border border-white/10 bg-white/5 px-3 py-1 rounded-full text-sm">
                     {user.status}
                   </span>
                 </td>
                 <td className="py-3 flex gap-2">
-                  <button 
+                  <button
                     onClick={() => handleViewAttendee(user._id)}
                     className="bg-blue-700 p-2 rounded hover:bg-blue-600"
                   >
