@@ -51,7 +51,7 @@ function Login() {
       if (role === "admin") {
         navigate("/admin");
       } else if (role === "organizer") {
-        navigate("/organizer/Organizer");
+        navigate("/organizer");
       } else if (role === "Attendee") {
         navigate("/attendee/dashboard");
       }else if (role === "Coordinator") {

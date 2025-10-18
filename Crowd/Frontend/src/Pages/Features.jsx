@@ -1,5 +1,8 @@
 import React from 'react'
 import assets from '../assets/assets'
+import time from '../assets/time.png'
+import counter from '../assets/bar-counter.png'
+import phone from '../assets/smartphone.png'
 
 const Features = () => {
   return (
@@ -31,11 +34,11 @@ const Features = () => {
 
                    <div className="1 bg-white/10 h-[250px] border-2 border-white/10 rounded-md p-5">
                    <div className="image w-18 mb-8">
-                       <img src={assets.card1}/>
+                       <img src={phone}/>
                    </div>
 
                    <div className="feature-card-title text-white text-2xl font-bold mb-2 ">
-                    Smart QR Registration
+                    Booking Parking Slots
                    </div>
                    <div className="feature-card-description text-(--color-secondary) font-semibold">
                     Generate unique QR codes for seamless event entry and tracking
@@ -45,11 +48,11 @@ const Features = () => {
 
                    <div className="1 bg-white/10 h-[250px] border-2 border-white/10 rounded-md p-5">
                    <div className="image w-18 mb-8">
-                       <img src={assets.card1}/>
+                       <img src={time}/>
                    </div>
 
                    <div className="feature-card-title text-white text-2xl font-bold mb-2 ">
-                    Smart QR Registration
+                    Real time notifications
                    </div>
                    <div className="feature-card-description text-(--color-secondary) font-semibold">
                     Generate unique QR codes for seamless event entry and tracking
@@ -59,11 +62,11 @@ const Features = () => {
 
                    <div className="1 bg-white/10 h-[250px] border-2 border-white/10 rounded-md p-5">
                    <div className="image w-18 mb-8">
-                       <img src={assets.card1}/>
+                       <img src={counter}/>
                    </div>
 
                    <div className="feature-card-title text-white text-2xl font-bold mb-2 ">
-                    Smart QR Registration
+                   Counter Management
                    </div>
                    <div className="feature-card-description text-(--color-secondary) font-semibold">
                     Generate unique QR codes for seamless event entry and tracking
@@ -77,7 +80,7 @@ const Features = () => {
                    </div>
 
                    <div className="feature-card-title text-white text-2xl font-bold mb-2 ">
-                    Smart QR Registration
+                    Lost and Found
                    </div>
                    <div className="feature-card-description text-(--color-secondary) font-semibold">
                     Generate unique QR codes for seamless event entry and tracking
@@ -90,7 +93,7 @@ const Features = () => {
                    </div>
 
                    <div className="feature-card-title text-white text-2xl font-bold mb-2 ">
-                    Smart QR Registration
+                   Task Automation
                    </div>
                    <div className="feature-card-description text-(--color-secondary) font-semibold">
                     Generate unique QR codes for seamless event entry and tracking

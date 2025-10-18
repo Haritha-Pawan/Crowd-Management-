@@ -21,17 +21,21 @@ import CounterDashboard from "./Components/Counter/CounterDashboard.jsx";
 import ForgotPassword from "./Pages/ForgotPassword.jsx";
 import ResetPassword from "./Pages/ResetPassword.jsx";
 import QRScanner from "./Components/Counter/QRScanner.jsx";
+import ProtectedRoute from "./Components/ProtectedRoute.jsx";
+import ErrorPage from "./Pages/ErrorPage.jsx";
 
 
 const App = () => {
   return (
-    <>
+    <BrowserRouter>
       <Toaster position="top-right" />
 
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+       
+
 
         <Route path="/Organizer/*" element={<Organizer />} />
         <Route path="/reserve" element={<Reserve />} />
@@ -52,8 +56,10 @@ const App = () => {
           
           <Route path='/overview' element={<Overview />} />
           <Route path='/profile' element={<Profile />} />
-          <Route path='/admin/*' element={<Admin />} />
-          <Route path='/organizer/*' element={<Organizer />} />
+          <Route path="/Admin/*" element={<ProtectedRoute><Admin /></ProtectedRoute>
+          }
+          />
+         
           <Route path='/reserve' element={<Reserve />} />
 
           <Route path="/QRScanner" element={<QRScanner/>}/>
@@ -62,8 +68,7 @@ const App = () => {
 
         <Route path="/overview" element={<Overview />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/admin/*" element={<Admin />} />
-        <Route path="/organizer/*" element={<Organizer />} />
+      
         <Route path="/reserve" element={<Reserve />} />
         <Route path="/" element={<AttendeDetails />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -72,7 +77,7 @@ const App = () => {
         </Routes>
       
 
-    </>
+    </BrowserRouter>
   );
 };
 

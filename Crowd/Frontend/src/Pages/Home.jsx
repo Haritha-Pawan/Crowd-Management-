@@ -29,9 +29,9 @@ const Home = () => {
               Map
             </button>
 
-     <Link to='/Register'>
+     <Link to='/login'>
          <button className="ml-4 py-2 px-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-md font-semibold shadow hover:opacity-90 transition cursor-pointer">
-              Register Now
+              Login Now
             </button>
        </Link>
             

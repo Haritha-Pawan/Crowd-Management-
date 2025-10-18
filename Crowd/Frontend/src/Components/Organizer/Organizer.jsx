@@ -12,7 +12,7 @@ import OrganizerOverview from '../Organizer/OrganizerOverview';
 
 const Organizer = () => {
     const OrganizerLinks = [
-        { name: 'overview', icon: <User size={20} />, to: '/Organizer/OrganizerOverview' },
+        { name: 'overview', icon: <User size={20} />, to: '/OrganizerOverview' },
         { name: 'Task Management', icon: <UserPlus />, to: '/Organizer/task' },
         { name: ' Parking Management', icon: <Car />, to: '/Organizer/parkingManagement' },
         { name: '  Management', icon: <TriangleAlert />, to: '' },
@@ -35,9 +35,9 @@ const Organizer = () => {
             <div className="Right flex flex-10/12">
                   
                    <Routes>
+                      <Route path='/' element={<OrganizerOverview/>}/>
                       <Route path='/Live' element={<Live/>}/>
                       <Route path='/task' element={<Task/>}/>
-                      <Route path='/organizerOverview' element={<OrganizerOverview/>}/>
                       <Route path="/ParkingManagement" element={<ParkingManagement/>} />
 
                    </Routes>

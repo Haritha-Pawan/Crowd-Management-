@@ -3,18 +3,19 @@ import React from 'react'
 import Sidebar from '../../Ui/SidebarDash.jsx';
 import {Routes ,Route} from 'react-router-dom'
 import{User,UserPlus,Car,TriangleAlert,Settings, Loader2Icon} from 'lucide-react';
-import AdminOverview from './AdminOverview.jsx';
+import AdminOverview from '../Admin/AdminOverview.jsx';
 import UserManagement from './UserManagement.jsx';
 import CounterManagement from './CounterManagement.jsx';
 import ParkingManagement from '../Organizer/Parking/ParkingManagement.jsx';
 import AttendeDetails from './AttendeDetails.jsx';
 
 
+
 const Admin = () => {
     
 
        const AdminLinks = [
-        { name: 'overview', icon: <User size={20} />, to: '/Admin/AdminOverview' },
+        { name: 'overview', icon: <User size={20} />, to: '/Admin/AdminOverview ' },
         { name: 'User Management', icon: <UserPlus />, to: '/Admin/UserManagement' },
         { name: 'Counter Management', icon: <Loader2Icon />, to: '/Admin/CounterManagement' },
         { name: ' Parking Management', icon: <Car />, to: '/Admin/parkingManagement' },

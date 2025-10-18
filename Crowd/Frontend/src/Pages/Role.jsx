@@ -13,23 +13,7 @@ const Role = () => {
       </div>
 
       <div className="role-based grid lg:grid-cols-4 md:grid-cols-2 gap-4 mx-10 ">
-        {/* Attendee */}
-        <Link to="/Login">
-          <div className="role1 bg-white/5 p-5 h-55 rounded-md border-2 border-white/10 cursor-pointer hover:scale-95">
-            <div className="icon w-14 mx-auto mb-5 rounded-4xl">
-              <img src={assets.card1} alt="Attendee" />
-            </div>
-            <div className="title text-white text-2xl text-center mb-4">
-              Attendee
-            </div>
-            <div className="description text-white text-l text-center">
-              Register, get QR codes, find parking, report issues
-            </div>
-          </div>
-        </Link>
-
-
-
+     
         {/* System Admin */}
         <Link to="/Login">
 

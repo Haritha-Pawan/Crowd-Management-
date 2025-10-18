@@ -13,7 +13,7 @@ const useLogout = () => {
     sessionStorage.clear();
 
     // ✅ Redirect user to login page
-    navigate("/login");
+    navigate("/");
 
     // Optional: success toast
     console.log("✅ Logged out successfully");
