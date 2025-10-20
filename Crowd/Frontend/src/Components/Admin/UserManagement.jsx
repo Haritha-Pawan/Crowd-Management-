@@ -28,6 +28,8 @@ const UserManagement = () => {
   const handleViewAttendee = (userId) => {
     navigate(`/admin/attendee/${userId}`);
   };
+  //logout
+  const handleLogout = useLogout();
 
   // Enhanced filter logic
   const filteredUsers = users.filter((user) => {
@@ -115,8 +117,6 @@ const UserManagement = () => {
   const pendingUsers = users.filter((u) => u.status === "Pending").length;
   const organizerUsers = users.filter((u) => u.role === "organizer").length;
 
- 
-
   const data = [
     { title: "Total Users", count: totalUsers, icon: <UserIcon /> },
     {
@@ -127,7 +127,8 @@ const UserManagement = () => {
     { title: "Pending", count: pendingUsers, icon: "" },
     { title: "Organizers", count: organizerUsers, icon: "" },
   ];
-    const generateUserReport = () => {
+
+  const generateUserReport = () => {
     const doc = new jsPDF();
 
     // Business header info
@@ -219,7 +220,7 @@ const UserManagement = () => {
       <div className="header text-3xl text-white font-bold">
         User Management
       </div>
-     <div className="flex items-center gap-3 absolute top-12 right-12 z-10">
+      <div className="flex items-center gap-3 absolute top-12 right-12 z-10">
         {/* Report Generate Button */}
         <button
           onClick={generateUserReport}
@@ -248,7 +249,7 @@ const UserManagement = () => {
 
         {/* Logout Button */}
         <button
-          onClick={useLogout}
+          onClick={handleLogout}
           className="flex items-center gap-2 p-1.5 px-3 rounded-md cursor-pointer bg-gradient-to-r from-red-500 to-pink-600 text-white text-sm font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
         >
           <LogOut size={16} />
@@ -384,15 +385,15 @@ const UserManagement = () => {
                   <span className="font-bold">{user.email.split("@")[0]}</span>@
                   {user.email.split("@")[1]}
                 </td>
-                
+
                 <td className="py-3">{user.role}</td>
                 <td className="py-3">
-                  <span className="border border-white/20 bg-white/5 text-white px-3 py-1 rounded-full text-sm">
+                  <span className="border border-white/10 bg-white/5 px-3 py-1 rounded-full text-sm">
                     {user.status}
                   </span>
                 </td>
                 <td className="py-3 flex gap-2">
-                  <button 
+                  <button
                     onClick={() => handleViewAttendee(user._id)}
                     className="bg-blue-700 p-2 rounded hover:bg-blue-600"
                   >
