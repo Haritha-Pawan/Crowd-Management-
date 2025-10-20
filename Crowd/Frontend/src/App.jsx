@@ -3,7 +3,7 @@ import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import Home from "./Pages/Home.jsx";
-import Register from "./Pages/Register.jsx";
+import Register from "./Pages/RegisterPersonal.jsx";
 import Attendee from "./Components/AttendeeDashbord.jsx";
 import Admin from "./Components/Admin/Admin.jsx";
 import Overview from "./Components/Attendee/Overview.jsx";
@@ -21,15 +21,18 @@ import CounterDashboard from "./Components/Counter/CounterDashboard.jsx";
 import ForgotPassword from "./Pages/ForgotPassword.jsx";
 import ResetPassword from "./Pages/ResetPassword.jsx";
 import QRScanner from "./Components/Counter/QRScanner.jsx";
+import Landingpage from "./Pages/landingpage.jsx";
+import RegisterPayment from "./Pages/RegisterPayment.jsx";
 
 
 const App = () => {
   return (
     <>
+    
       <Toaster position="top-right" />
-
+     
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Landingpage />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
 
@@ -46,20 +49,14 @@ const App = () => {
 
         <Route path="/attendee/*" element={<Attendee />} />
         <Route path="/CounterDashboard/*" element={<CounterDashboard />} />
-
-
           <Route path='/attendee/*' element={<Attendee />} />
-          
           <Route path='/overview' element={<Overview />} />
           <Route path='/profile' element={<Profile />} />
           <Route path='/admin/*' element={<Admin />} />
           <Route path='/organizer/*' element={<Organizer />} />
           <Route path='/reserve' element={<Reserve />} />
-
+         <Route path="/register/payment" element={<RegisterPayment />} />
           <Route path="/QRScanner" element={<QRScanner/>}/>
-        
-      
-
         <Route path="/overview" element={<Overview />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/admin/*" element={<Admin />} />
