@@ -13,44 +13,52 @@ const AddUser = ({ isOpen, onClose }) => {
   const [errors, setErrors] = useState({}); // 👈 new state for errors
   const navigate = useNavigate();
 
-  
-
   if (!isOpen) return null;
 
   const handleChange = (e) => {
-    setInput((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+
+    // Prevent numbers and special characters in name field
+    if (name === "name") {
+      const letterOnlyValue = value.replace(/[^a-zA-Z\s]/g, "");
+      setInput((prev) => ({ ...prev, [name]: letterOnlyValue }));
+    } else {
+      setInput((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log(input);
     if (!validate()) return;
-    sendRequest().then(() => navigate("/admin/UserManagement.jsx")); 
+    sendRequest().then(() => navigate("/admin/UserManagement.jsx"));
   };
 
   const sendRequest = async () => {
     try {
       const res = await axios.post("http://localhost:5000/users", {
-        name: String (input.name)   ,
-        email:String (input.email),
-        password:String (input.password),
+        name: String(input.name),
+        email: String(input.email),
+        password: String(input.password),
         role: String(input.role),
-        status:String (input.status),
+        status: String(input.status),
       });
       return res.data;
     } catch (err) {
       console.error("Error adding user:", err.response?.data || err.message);
     }
   };
-   // 🟩 Validation function
+  // 🟩 Validation function
   const validate = () => {
     const tempErrors = {};
 
-    // Name
+    // Updated Name validation
     if (!input.name.trim()) {
       tempErrors.name = "Full name is required";
     } else if (input.name.length < 5) {
       tempErrors.name = "Name must be at least 3 characters";
+    } else if (/[^a-zA-Z\s]/.test(input.name)) {
+      tempErrors.name = "Name can only contain letters and spaces";
     }
 
     // Email
@@ -81,7 +89,6 @@ const AddUser = ({ isOpen, onClose }) => {
     return Object.keys(tempErrors).length === 0; // true if no errors
   };
 
-
   return (
     <div className="fixed inset-0 z-50 flex justify-center items-center bg-black/20 backdrop-blur-sm">
       <div className="w-[90%] max-w-2xl bg-[#0f172a] p-5 rounded-md border border-white/10">
@@ -104,9 +111,10 @@ const AddUser = ({ isOpen, onClose }) => {
               placeholder="Enter full name"
               className="text-white bg-[#272f40] border border-white/20 rounded-md p-2 w-full placeholder:text-gray-500"
             />
-            
-            {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
-          
+
+            {errors.name && (
+              <p className="text-red-500 text-sm">{errors.name}</p>
+            )}
           </div>
 
           {/* Email */}
@@ -123,7 +131,9 @@ const AddUser = ({ isOpen, onClose }) => {
               className="text-white bg-[#272f40] border border-white/20 rounded-md p-2 w-full placeholder:text-gray-500"
             />
             <br />
-               {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+            {errors.email && (
+              <p className="text-red-500 text-sm">{errors.email}</p>
+            )}
           </div>
 
           {/* Password */}
@@ -134,13 +144,13 @@ const AddUser = ({ isOpen, onClose }) => {
             <input
               type="password"
               name="password"
-                value={input.password}
+              value={input.password}
               onChange={handleChange}
               placeholder="Enter password"
               className="text-white bg-[#272f40] border border-white/20 rounded-md p-2 w-full placeholder:text-gray-500"
             />
-          
-               {errors.password && (
+
+            {errors.password && (
               <p className="text-red-500 text-sm">{errors.password}</p>
             )}
           </div>
@@ -162,10 +172,12 @@ const AddUser = ({ isOpen, onClose }) => {
               <option value="organizer">organizer</option>
               <option value="Coordinator">Coordinator</option>
               <option value="Staff">Staff</option>
+              <option value="Attendee">Attendee</option>
             </select>
-            
-             {errors.role && <p className="text-red-500 text-sm ">{errors.role}</p>}
-            
+
+            {errors.role && (
+              <p className="text-red-500 text-sm ">{errors.role}</p>
+            )}
           </div>
 
           {/* Status */}
@@ -184,9 +196,11 @@ const AddUser = ({ isOpen, onClose }) => {
               <option value="pending">pending</option>
               <option value="banned">Banned</option>
             </select>
-            
-             {errors.status && (
-              <p className="text-red-500 text-sm flex flex-col">{errors.status}</p>
+
+            {errors.status && (
+              <p className="text-red-500 text-sm flex flex-col">
+                {errors.status}
+              </p>
             )}
           </div>
 
@@ -206,6 +220,7 @@ const AddUser = ({ isOpen, onClose }) => {
               Create User
             </button>
           </div>
+          {/* */}
         </form>
       </div>
     </div>
