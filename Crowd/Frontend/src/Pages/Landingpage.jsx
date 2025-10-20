@@ -150,7 +150,7 @@ export default function DaladaLanding() {
               </div>
             </div>
 
-            <div className="hidden md:flex items-center gap-1 text-sm">
+            <div className="hidden md:flex items-center gap-1 text-sm font-bold">
               <a href="#about" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.about}</a>
               <a href="#visit" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.visit}</a>
               <a href="#contact" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.contact}</a>
