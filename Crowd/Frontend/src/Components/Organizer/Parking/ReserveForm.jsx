@@ -30,36 +30,32 @@ export default function ReserveForm() {
   const spotId  = stateSpotId  ?? qsSpotId;
   const placeId = statePlaceId ?? qsPlaceId;
 
-  // If we have state, prefer it; else build from query
   const spotData = stateSpotData ?? (
     (qsName || qsZone || qsType || qsPrice || qsDistance)
       ? {
           name: qsName,
           zone: qsZone,
           type: qsType ?? "Standard",
-          price: qsPrice,         // numeric string expected
+          price: qsPrice,
           distance: qsDistance,
         }
       : undefined
   );
 
-  // Redirect (politely) if both sources are missing
   useEffect(() => {
     if (!spotId || !placeId || !spotData) {
       navigate("/parking", { replace: true });
     }
   }, [spotId, placeId, spotData, navigate]);
 
-  // If redirecting, render nothing
   if (!spotId || !placeId || !spotData) return null;
 
-  // Compose the spot object used by the UI
   const spot = {
     spotId,
     placeId,
     name: spotData.name,
     zone: spotData.zone,
-    price: spotData.price,       // can be "250" or "Rs:250" etc
+    price: spotData.price,
     distance: spotData.distance,
     type: spotData.type ?? "Standard",
     status: "available",
@@ -100,13 +96,21 @@ export default function ReserveForm() {
     notes: "",
   });
 
+  // helper: remove digits from a string (prevents numbers in name)
+  const stripDigits = (s) => s.replace(/\d+/g, "");
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const eobj = {};
 
     if (!form.plate.trim() || !/^[A-Za-z]{2,3}-?\d{3,4}$/.test(form.plate.trim()))
       eobj.plate = "Use a format like ABC-1234";
-    if (form.name.trim().length < 2) eobj.name = "Enter your full name";
+
+    // --- UPDATED: name must be letters/spaces/.'- only, no numbers, min 3 chars
+    const nm = form.name.trim();
+    if (!/^[A-Za-z .'-]{3,60}$/.test(nm))
+      eobj.name = "Name: letters only (no numbers), 3–60 chars";
+
     if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) eobj.email = "Enter a valid email";
     if (!/^\d{9,11}$/.test(form.phone.trim())) eobj.phone = "Enter 9–11 digit number";
     if (startAt < new Date()) eobj.time = "Start must be in the future";
@@ -118,7 +122,7 @@ export default function ReserveForm() {
     // Build the booking passed to /payment
     const booking = {
       spotId,
-      name: spot.name,   // ParkingSpot label
+      name: spot.name,
       placeId,
       zone: spot.zone,
       type: spot.type,
@@ -130,7 +134,6 @@ export default function ReserveForm() {
       total,
     };
 
-    // Also send a query so refresh on /payment persists data
     const qs = new URLSearchParams({
       spotId: booking.spotId,
       name: booking.name,
@@ -367,7 +370,17 @@ export default function ReserveForm() {
                   type="text"
                   placeholder="Haritha Pawan"
                   value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  // --- UPDATED: strip digits live so numbers can't remain
+                  onChange={(e) => {
+                    const cleaned = stripDigits(e.target.value);
+                    setForm({ ...form, name: cleaned });
+                    // clear only name error while typing
+                    if (errors.name) setErrors({ ...errors, name: undefined });
+                  }}
+                  // HTML guard (optional but helpful)
+                  inputMode="text"
+                  pattern="[A-Za-z .'-]{3,60}"
+                  title="Letters only (no numbers), 3–60 characters"
                   className={`w-full rounded-xl border ${errors.name ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 outline-none px-3 py-2`}
                 />
                 {errors.name && <p className="text-rose-300 text-xs mt-1">{errors.name}</p>}
