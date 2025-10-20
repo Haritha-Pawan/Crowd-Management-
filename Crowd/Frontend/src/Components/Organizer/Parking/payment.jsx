@@ -1,5 +1,5 @@
 // src/pages/Checkout/Payment.jsx
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -46,6 +46,51 @@ const durationLabel = (mins) => {
   return `${h ? `${h}h ` : ""}${m}m`;
 };
 
+// --- input sanitizers/validators ---
+const sanitizePlate = (v) => v.toUpperCase().replace(/\s+/g, "");
+const formatCardNumber = (v) => {
+  const digits = String(v).replace(/\D/g, "").slice(0, 19); // support 13-19 digits
+  return digits.replace(/(\d{4})(?=\d)/g, "$1 ");
+};
+const rawCardDigits = (v) => String(v).replace(/\D/g, "");
+const sanitizeCVC = (v) => String(v).replace(/\D/g, "").slice(0, 4);
+const normalizeExpiryInput = (v) => {
+  // allow "MMYY" -> "MM/YY", keep only digits and slash
+  const digits = String(v).replace(/[^\d]/g, "").slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+};
+const parseExpiry = (v) => {
+  const m = String(v).match(/^(\d{2})\/(\d{2})$/);
+  if (!m) return null;
+  const mm = parseInt(m[1], 10);
+  const yy = parseInt(m[2], 10);
+  if (mm < 1 || mm > 12) return null;
+  const year = 2000 + yy;
+  // Use end of the month 23:59:59
+  const expDate = new Date(year, mm, 0, 23, 59, 59, 999);
+  return { month: mm, year, expDate };
+};
+const isExpiryInFuture = (expDate) => expDate.getTime() >= Date.now();
+
+// Luhn check for card number
+const luhn = (numStr) => {
+  const s = rawCardDigits(numStr);
+  if (s.length < 13 || s.length > 19) return false;
+  let sum = 0;
+  let dbl = false;
+  for (let i = s.length - 1; i >= 0; i--) {
+    let n = parseInt(s[i], 10);
+    if (dbl) {
+      n *= 2;
+      if (n > 9) n -= 9;
+    }
+    sum += n;
+    dbl = !dbl;
+  }
+  return sum % 10 === 0;
+};
+
 export default function Payment() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -74,27 +119,95 @@ export default function Payment() {
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [message, setMessage] = useState("");
 
-  const onCardChange = (e) => setCard((p) => ({ ...p, [e.target.name]: e.target.value }));
-
-  const validate = () => {
-    const e = {};
-    if (!zoneName || (!spotId && !spotCode)) e.general = "Missing booking info. Please start again.";
-    if (!driver.trim()) e.driver = "Driver name is required.";
-    if (!plate.trim()) e.plate = "Plate number is required.";
-    if (!startISO || !endISO || billableHours <= 0) e.time = "Please pick a valid time window.";
-
-    // Demo card checks
-    if (!card.name.trim()) e.cardName = "Cardholder name is required.";
-    const digits = card.number.replace(/\s+/g, "");
-    if (!/^\d{16}$/.test(digits)) e.cardNumber = "Enter 16 digits (demo).";
-    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(card.expiry)) e.cardExpiry = "Use MM/YY.";
-    if (!/^\d{3,4}$/.test(card.cvc)) e.cardCvc = "3–4 digits.";
-
-    setErrors(e);
-    return Object.keys(e).length === 0;
+  const onCardChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "number") {
+      setCard((p) => ({ ...p, number: formatCardNumber(value) }));
+    } else if (name === "expiry") {
+      setCard((p) => ({ ...p, expiry: normalizeExpiryInput(value) }));
+    } else if (name === "cvc") {
+      setCard((p) => ({ ...p, cvc: sanitizeCVC(value) }));
+    } else {
+      setCard((p) => ({ ...p, [name]: value }));
+    }
   };
+  const markTouched = (field) => setTouched((t) => ({ ...t, [field]: true }));
+
+  // ----- validation rules -----
+  const validators = {
+    general: () => {
+      if (!zoneName || (!spotId && !spotCode)) return "Missing booking info. Please start again.";
+      if (!(pricePerHour > 0)) return "Invalid rate for this spot.";
+      if (!(total > 0)) return "Invalid total amount.";
+      return "";
+    },
+    driver: (v) => {
+      const s = (v || "").trim();
+      if (s.length < 2) return "Driver name is required.";
+      return "";
+    },
+    plate: (v) => {
+      const s = sanitizePlate(v);
+      if (!s) return "Plate number is required.";
+      if (!/^[A-Z]{2,3}-?\d{3,4}$/.test(s)) return "Use a format like ABC-1234";
+      return "";
+    },
+    time: () => {
+      const now = Date.now() - 60 * 1000; // 1-min grace
+      const s = startISO ? new Date(startISO).getTime() : NaN;
+      const e = endISO ? new Date(endISO).getTime() : NaN;
+      if (!Number.isFinite(s) || !Number.isFinite(e)) return "Please pick a valid time window.";
+      if (s < now) return "Start must be in the future.";
+      if (e <= s) return "End must be after start.";
+      return "";
+    },
+    cardName: (v) => {
+      const s = (v || "").trim();
+      if (s.length < 2) return "Cardholder name is required.";
+      return "";
+    },
+    cardNumber: (v) => {
+      const digits = rawCardDigits(v);
+      if (!digits) return "Card number is required.";
+      if (!luhn(digits)) return "Invalid card number.";
+      return "";
+    },
+    cardExpiry: (v) => {
+      const norm = normalizeExpiryInput(v);
+      const parsed = parseExpiry(norm);
+      if (!parsed) return "Use MM/YY.";
+      if (!isExpiryInFuture(parsed.expDate)) return "Card expired.";
+      return "";
+    },
+    cardCvc: (v) => {
+      const s = sanitizeCVC(v);
+      if (!(s.length === 3 || s.length === 4)) return "3–4 digits.";
+      return "";
+    },
+  };
+
+  const computeErrors = () => {
+    const e = {};
+    const g = validators.general(); if (g) e.general = g;
+    const d = validators.driver(driver); if (d) e.driver = d;
+    const p = validators.plate(plate); if (p) e.plate = p;
+    const t = validators.time(); if (t) e.time = t;
+    const cn = validators.cardName(card.name); if (cn) e.cardName = cn;
+    const cnum = validators.cardNumber(card.number); if (cnum) e.cardNumber = cnum;
+    const cexp = validators.cardExpiry(card.expiry); if (cexp) e.cardExpiry = cexp;
+    const ccvc = validators.cardCvc(card.cvc); if (ccvc) e.cardCvc = ccvc;
+    return e;
+  };
+
+  const isFormValid = useMemo(() => Object.keys(computeErrors()).length === 0, [driver, plate, card, startISO, endISO, pricePerHour, total]);
+
+  useEffect(() => {
+    setErrors(computeErrors());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [driver, plate, card, startISO, endISO, pricePerHour, total]);
 
   // Resolve _id from label if needed
   async function resolveSpotIdFromLabel(label, placeId, startISO, endISO) {
@@ -115,7 +228,11 @@ export default function Payment() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
-    if (!validate()) return;
+    setTouched({ driver: true, plate: true, cardName: true, cardNumber: true, cardExpiry: true, cardCvc: true, time: true });
+
+    const latest = computeErrors();
+    setErrors(latest);
+    if (Object.keys(latest).length > 0) return;
 
     try {
       setLoading(true);
@@ -133,7 +250,6 @@ export default function Payment() {
 
       const paymentId = "pm_" + Math.random().toString(36).slice(2, 11);
 
-      // Payload that matches backend (and backend also tolerant to variants)
       const payload = {
         spotId: idToUse,
         startISO,
@@ -142,12 +258,10 @@ export default function Payment() {
         currency: "LKR",
         paymentId,
         paymentMethod: "mock",
-        driverName: driver,
-        plate,
+        driverName: driver.trim(),
+        plate: sanitizePlate(plate),
         vehicleType: spotType || "Car",
       };
-
-      console.log("[Payment] POST /reservations/confirm payload:", payload);
 
       const reservationRes = await axios.post(RESERVATION_CONFIRM_API, payload);
       const created = reservationRes?.data?.data;
@@ -218,7 +332,7 @@ export default function Payment() {
               {plate ? (
                 <li className="flex items-center justify-between">
                   <span className="text-white/70 text-sm">Plate</span>
-                  <span className="text-white/90">{plate}</span>
+                  <span className="text-white/90">{sanitizePlate(plate)}</span>
                 </li>
               ) : null}
               {driver ? (
@@ -296,10 +410,12 @@ export default function Payment() {
                   type="text"
                   value={driver}
                   onChange={(e) => setDriver(e.target.value)}
+                  onBlur={() => markTouched("driver")}
                   placeholder="J. Perera"
-                  className={`w-full rounded-xl border ${errors.driver ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 px-3 py-2 outline-none`}
+                  className={`w-full rounded-xl border ${touched.driver && errors.driver ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 px-3 py-2 outline-none`}
+                  aria-invalid={!!(touched.driver && errors.driver)}
                 />
-                {errors.driver && <p className="text-rose-300 text-xs mt-1">{errors.driver}</p>}
+                {touched.driver && errors.driver && <p className="text-rose-300 text-xs mt-1">{errors.driver}</p>}
               </label>
 
               <label className="block">
@@ -307,11 +423,13 @@ export default function Payment() {
                 <input
                   type="text"
                   value={plate}
-                  onChange={(e) => setPlate(e.target.value)}
+                  onChange={(e) => setPlate(sanitizePlate(e.target.value))}
+                  onBlur={() => markTouched("plate")}
                   placeholder="ABC-1234"
-                  className={`w-full rounded-xl border ${errors.plate ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 px-3 py-2 outline-none`}
+                  className={`w-full rounded-xl border ${touched.plate && errors.plate ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 px-3 py-2 outline-none`}
+                  aria-invalid={!!(touched.plate && errors.plate)}
                 />
-                {errors.plate && <p className="text-rose-300 text-xs mt-1">{errors.plate}</p>}
+                {touched.plate && errors.plate && <p className="text-rose-300 text-xs mt-1">{errors.plate}</p>}
               </label>
             </div>
 
@@ -325,9 +443,11 @@ export default function Payment() {
                   placeholder="Cardholder"
                   value={card.name}
                   onChange={onCardChange}
-                  className={`w-full rounded-xl border ${errors.cardName ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 px-3 py-2 outline-none`}
+                  onBlur={() => markTouched("cardName")}
+                  className={`w-full rounded-xl border ${touched.cardName && errors.cardName ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 px-3 py-2 outline-none`}
+                  aria-invalid={!!(touched.cardName && errors.cardName)}
                 />
-                {errors.cardName && <p className="text-rose-300 text-xs mt-1">{errors.cardName}</p>}
+                {touched.cardName && errors.cardName && <p className="text-rose-300 text-xs mt-1">{errors.cardName}</p>}
               </label>
 
               <label className="block">
@@ -336,12 +456,14 @@ export default function Payment() {
                   name="number"
                   type="text"
                   inputMode="numeric"
-                  placeholder="4242424242424242"
+                  placeholder="4242 4242 4242 4242"
                   value={card.number}
                   onChange={onCardChange}
-                  className={`w-full rounded-xl border ${errors.cardNumber ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 px-3 py-2 outline-none`}
+                  onBlur={() => markTouched("cardNumber")}
+                  className={`w-full rounded-xl border ${touched.cardNumber && errors.cardNumber ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 px-3 py-2 outline-none`}
+                  aria-invalid={!!(touched.cardNumber && errors.cardNumber)}
                 />
-                {errors.cardNumber && <p className="text-rose-300 text-xs mt-1">{errors.cardNumber}</p>}
+                {touched.cardNumber && errors.cardNumber && <p className="text-rose-300 text-xs mt-1">{errors.cardNumber}</p>}
               </label>
 
               <label className="block">
@@ -349,12 +471,15 @@ export default function Payment() {
                 <input
                   name="expiry"
                   type="text"
+                  inputMode="numeric"
                   placeholder="08/27"
                   value={card.expiry}
                   onChange={onCardChange}
-                  className={`w-full rounded-xl border ${errors.cardExpiry ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 px-3 py-2 outline-none`}
+                  onBlur={() => markTouched("cardExpiry")}
+                  className={`w-full rounded-xl border ${touched.cardExpiry && errors.cardExpiry ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 px-3 py-2 outline-none`}
+                  aria-invalid={!!(touched.cardExpiry && errors.cardExpiry)}
                 />
-                {errors.cardExpiry && <p className="text-rose-300 text-xs mt-1">{errors.cardExpiry}</p>}
+                {touched.cardExpiry && errors.cardExpiry && <p className="text-rose-300 text-xs mt-1">{errors.cardExpiry}</p>}
               </label>
 
               <label className="block">
@@ -366,9 +491,11 @@ export default function Payment() {
                   placeholder="123"
                   value={card.cvc}
                   onChange={onCardChange}
-                  className={`w-full rounded-xl border ${errors.cardCvc ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 px-3 py-2 outline-none`}
+                  onBlur={() => markTouched("cardCvc")}
+                  className={`w-full rounded-xl border ${touched.cardCvc && errors.cardCvc ? "border-rose-400/60" : "border-white/10"} bg-white/5 text-white/90 px-3 py-2 outline-none`}
+                  aria-invalid={!!(touched.cardCvc && errors.cardCvc)}
                 />
-                {errors.cardCvc && <p className="text-rose-300 text-xs mt-1">{errors.cardCvc}</p>}
+                {touched.cardCvc && errors.cardCvc && <p className="text-rose-300 text-xs mt-1">{errors.cardCvc}</p>}
               </label>
             </div>
 
@@ -376,8 +503,12 @@ export default function Payment() {
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <button
                 type="submit"
-                disabled={loading}
-                className={`flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-white py-2.5 rounded-xl font-medium ring-1 ring-white/10 ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
+                disabled={loading || !isFormValid}
+                className={`flex-1 inline-flex items-center justify-center gap-2 text-white py-2.5 rounded-xl font-medium ring-1 ring-white/10 ${
+                  loading || !isFormValid
+                    ? "bg-white/10 cursor-not-allowed"
+                    : "bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400"
+                }`}
               >
                 <CreditCard className="h-5 w-5" />
                 {loading ? "Processing…" : `Pay Rs ${total.toFixed(2)}`}

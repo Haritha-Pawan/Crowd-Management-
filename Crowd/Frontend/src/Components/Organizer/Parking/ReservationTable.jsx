@@ -1,17 +1,73 @@
 // src/components/ReservationTable.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
-import {
-  Car,
-  ChartNoAxesCombined,
-  CircleDotIcon,
-  CalendarDays,
-} from "lucide-react";
+import { Car, ChartNoAxesCombined, CircleDotIcon, CalendarDays } from "lucide-react";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
+/* =============== inline assets + helpers =============== */
+const BUSINESS_INFO = {
+  name: "CrowdFlow",
+  tagline: "Smart Event & Crowd Management",
+  address: "Sri Lanka Institute of Information Technology",
+  phone: "+94 778985469",
+  email: "info@crowdflow.lk",
+  website: "www.crowdflow.lk",
+};
+
+// paste your base64 logo here if you want *everything* truly inline.
+// keep it small (<200KB). Example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgA..."
+// leave as null to load /branding/logo.png from public, or render text-only header.
+const LOGO_BASE64 = null;
+
+async function toDataURL(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("image not found");
+    const blob = await res.blob();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** draw business header; return next Y for body */
+function addBusinessHeader(doc, info = BUSINESS_INFO) {
+  const i = { ...BUSINESS_INFO, ...info };
+  const marginX = 14;
+  const topY = 12;
+
+  if (i.logo) {
+    try {
+      doc.addImage(i.logo, "PNG", marginX, topY - 2, 18, 18);
+    } catch { /* ignore */ }
+  }
+
+  const leftX = i.logo ? marginX + 22 : marginX;
+  doc.setFont("helvetica", "bold").setFontSize(13);
+  doc.text(i.name, leftX, topY + 2);
+
+  doc.setFont("helvetica", "normal").setFontSize(10);
+  if (i.tagline) doc.text(i.tagline, leftX, topY + 7);
+  const line2 = [i.address, i.phone].filter(Boolean).join("  •  ");
+  if (line2) doc.text(line2, leftX, topY + 12);
+  const line3 = [i.email, i.website].filter(Boolean).join("  •  ");
+  if (line3) doc.text(line3, leftX, topY + 17);
+
+  doc.setDrawColor(200).setLineWidth(0.2);
+  doc.line(marginX, topY + 21, 200, topY + 21);
+
+  return topY + 27;
+}
+
+/* ========================= component ========================= */
 const API = "http://localhost:5000/api";
 const RES_API = `${API}/reservations`;
-
-console.log("Using RES_API:", RES_API);
 
 const fmtLKR = (n) =>
   Number.isFinite(Number(n))
@@ -35,9 +91,8 @@ const humanDuration = (start, end) => {
 
 const statusKey = (s) => String(s || "").trim().toLowerCase();
 
-/* ------------------------- Owner display ------------------------- */
 const displayOwner = (r) => {
-  if (r?.driverName) return r.driverName; // your payload field
+  if (r?.driverName) return r.driverName;
   const user = r?.user || {};
   const full =
     user.fullName ||
@@ -52,7 +107,6 @@ const displayOwner = (r) => {
   return r?.plate || user.email || user.phone || "—";
 };
 
-/* ------------------------- ID helpers ------------------------- */
 const readSpotId = (r) =>
   r?.spotId ||
   r?.spot_id ||
@@ -70,25 +124,20 @@ export default function ReservationTable() {
   ]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  // Search
   const [query, setQuery] = useState("");
 
-  // Caches
-  const spotCache = useRef(new Map()); // spotId -> spot
-  const zoneCache = useRef(new Map()); // zoneId/placeId -> zone
+  const spotCache = useRef(new Map());
+  const zoneCache = useRef(new Map());
 
-  // Generic GET wrapper
   const GET = async (url) => {
     try {
       const r = await axios.get(url);
       return r?.data?.data ?? r?.data ?? null;
-    } catch (e) {
+    } catch {
       return null;
     }
   };
 
-  // Fetch spot, cache
   const fetchSpotById = async (id) => {
     if (!id) return null;
     if (spotCache.current.has(id)) return spotCache.current.get(id);
@@ -97,11 +146,9 @@ export default function ReservationTable() {
       spotCache.current.set(id, spot);
       return spot;
     }
-    console.warn("[spot] not found:", id);
     return null;
   };
 
-  // Fetch zone, cache (your route: /api/zone/:id)
   const fetchZoneById = async (id) => {
     if (!id) return null;
     if (zoneCache.current.has(id)) return zoneCache.current.get(id);
@@ -110,35 +157,25 @@ export default function ReservationTable() {
       zoneCache.current.set(id, zone);
       return zone;
     }
-    console.warn("[zone] not found:", id);
     return null;
   };
 
-  // Resolve Zone & Spot display names for rows
   const resolveNames = async (rows) => {
-    // Step 1: ensure all spots loaded
     const spotIds = [
       ...new Set(
-        rows
-          .map((r) => readSpotId(r))
-          .filter(Boolean)
-          .map(String)
+        rows.map((r) => readSpotId(r)).filter(Boolean).map(String)
       ),
     ];
     await Promise.all(spotIds.map((id) => fetchSpotById(id)));
 
-    // Step 2: gather zone ids from spots (support spot.zoneId or spot.placeId)
     const zoneIds = new Set();
     spotIds.forEach((sid) => {
       const s = spotCache.current.get(sid);
       const zId = s?.zoneId || s?.placeId || s?.place_id || s?.zone_id;
       if (zId) zoneIds.add(String(zId));
     });
-
-    // Step 3: ensure all zones loaded
     await Promise.all([...zoneIds].map((id) => fetchZoneById(id)));
 
-    // Step 4: return rows with resolved names
     return rows.map((r) => {
       const sId = String(readSpotId(r) || "");
       const spot = sId ? spotCache.current.get(sId) : null;
@@ -158,15 +195,10 @@ export default function ReservationTable() {
         r?.spot?.label ||
         (sId ? `#${String(sId).slice(-6)}` : "—");
 
-      return {
-        ...r,
-        __zoneName: zoneName,
-        __spotName: spotName,
-      };
+      return { ...r, __zoneName: zoneName, __spotName: spotName };
     });
   };
 
-  // Fetch + normalize
   useEffect(() => {
     (async () => {
       try {
@@ -185,7 +217,6 @@ export default function ReservationTable() {
           return;
         }
 
-        // Normalize rows from API
         const raw = arr.map((r, idx) => {
           const s = statusKey(r?.status);
           const status =
@@ -199,14 +230,14 @@ export default function ReservationTable() {
               ? "Completed"
               : "Pending";
 
-          const amount =
-            Number.isFinite(r?.amount)
-              ? fmtLKR(r.amount)
-              : Number.isFinite(r?.price)
-              ? fmtLKR(r.price)
-              : Number.isFinite(r?.amountCents)
-              ? fmtLKR(r.amountCents / 100)
-              : "—";
+        const amount =
+          Number.isFinite(r?.amount)
+            ? fmtLKR(r.amount)
+            : Number.isFinite(r?.price)
+            ? fmtLKR(r.price)
+            : Number.isFinite(r?.amountCents)
+            ? fmtLKR(r.amountCents / 100)
+            : "—";
 
           return {
             _id: r?._id || r?.id || `row-${idx}`,
@@ -218,7 +249,6 @@ export default function ReservationTable() {
             amount,
             vehicle: r?.vehicleType || r?.vehicle || "Car",
             status,
-            // keep any nested objects if present
             zone: r?.zone || r?.place || null,
             spot: r?.spot || null,
           };
@@ -228,10 +258,10 @@ export default function ReservationTable() {
 
         const rows = withNames.map((r) => ({
           id: r._id,
-          owner: displayOwner(r),                 // Owner = driverName (fallbacks)
-          plate: r.plate || "—",                  // Number plate column
-          zone: r.__zoneName,                     // Zone name
-          spot: r.__spotName,                     // Spot name
+          owner: displayOwner(r),
+          plate: r.plate || "—",
+          zone: r.__zoneName,
+          spot: r.__spotName,
           time: r.startTime ? new Date(r.startTime).toLocaleString() : "—",
           duration: humanDuration(r.startTime, r.endTime),
           amount: r.amount,
@@ -240,7 +270,6 @@ export default function ReservationTable() {
 
         setReservations(rows);
 
-        // KPIs
         const total = rows.length;
         const occupied = rows.filter(
           (x) => x.status === "Occupied" || x.status === "Reserved"
@@ -255,7 +284,6 @@ export default function ReservationTable() {
           { title: "Occupancy Rate", icon: <ChartNoAxesCombined color="#facc15" size={30} />, count: `${rate}%` },
         ]);
       } catch (e) {
-        console.error("[ReservationTable] fetch error:", e);
         setError(e?.response?.data?.error || e.message || "Failed to load reservations");
         setReservations([]);
       } finally {
@@ -264,7 +292,6 @@ export default function ReservationTable() {
     })();
   }, []);
 
-  /* ------------------------- Search ------------------------- */
   const filteredReservations = useMemo(() => {
     const term = (query || "").trim().toLowerCase();
     if (!term) return reservations;
@@ -275,45 +302,81 @@ export default function ReservationTable() {
     );
   }, [query, reservations]);
 
-  /* ------------------------- Generate Report (CSV) ------------------------- */
-  const downloadCSV = () => {
-    const rows = filteredReservations.length ? filteredReservations : reservations;
-    const header = ["#", "Owner", "Number Plate", "Zone", "Spot", "Start Time", "Duration", "Amount", "Status"];
-    const body = rows.map((r, idx) => [
-      idx + 1,
-      r.owner,
-      r.plate,
-      r.zone,
-      r.spot,
-      r.time,
-      r.duration,
-      r.amount,
-      r.status,
-    ]);
+  /* ========================= PDF ========================= */
+  const downloadPDF = async () => {
+    try {
+      const rows = (query ? filteredReservations : reservations) ?? [];
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
 
-    const csv = [header, ...body]
-      .map((row) =>
-        row
-          .map((cell) => {
-            const val = cell == null ? "" : String(cell);
-            const escaped = val.replace(/"/g, '""');
-            return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
-          })
-          .join(",")
-      )
-      .join("\n");
+      const headerInfo = {
+        ...BUSINESS_INFO,
+        logo: LOGO_BASE64 || (await toDataURL("/branding/logo.png")) || null,
+      };
 
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    const dt = new Date();
-    const y = dt.getFullYear();
-    const m = String(dt.getMonth() + 1).padStart(2, "0");
-    const d = String(dt.getDate()).padStart(2, "0");
-    a.download = `reservation_report_${y}-${m}-${d}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+      // Compute header height for margins
+      const headerBottomY = addBusinessHeader(doc, headerInfo); // draws header on page 1
+      const topMargin = headerBottomY + 9;
+
+      // Title + meta on first page
+      doc.setFont("helvetica", "bold").setFontSize(12);
+      doc.text("Parking Reservations Report", 14, headerBottomY);
+      doc.setFont("helvetica", "normal").setFontSize(9);
+      const meta = `Generated: ${new Date().toLocaleString()}`;
+      doc.text(meta, 14, headerBottomY + 5);
+
+      // Build table
+      const head = [["#", "Owner", "Number Plate", "Zone", "Spot", "Start Time", "Duration", "Amount", "Status"]];
+      const body = rows.map((r, i) => [
+        i + 1,
+        r.owner ?? "—",
+        r.plate ?? "—",
+        r.zone ?? "—",
+        r.spot ?? "—",
+        r.time ?? "—",
+        r.duration ?? "—",
+        r.amount ?? "—",
+        r.status ?? "—",
+      ]);
+
+      autoTable(doc, {
+        head,
+        body,
+        startY: topMargin,
+        styles: { font: "helvetica", fontSize: 9, cellPadding: 2, valign: "middle" },
+        headStyles: { fillColor: [240, 240, 240], textColor: 20, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        theme: "grid",
+        margin: { left: 14, right: 14, top: topMargin, bottom: 14 },
+
+        didDrawPage: (data) => {
+          if (data.pageNumber > 1) {
+            // redraw header for subsequent pages
+            addBusinessHeader(doc, headerInfo);
+            doc.setFont("helvetica", "bold").setFontSize(12);
+            doc.text("Parking Reservations Report", 14, headerBottomY);
+            doc.setFont("helvetica", "normal").setFontSize(9);
+            const meta2 = `Generated: ${new Date().toLocaleString()}`;
+            doc.text(meta2, 14, headerBottomY + 5);
+          }
+          // footer
+          const pageSize = doc.internal.pageSize;
+          const pageWidth = pageSize.getWidth();
+          const pageHeight = pageSize.getHeight();
+          doc.setFontSize(9);
+          doc.text(`Page ${data.pageNumber}`, pageWidth - 14, pageHeight - 10, { align: "right" });
+        },
+      });
+
+      // Save
+      const dt = new Date();
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, "0");
+      const d = String(dt.getDate()).padStart(2, "0");
+      doc.save(`reservation_report_${y}-${m}-${d}.pdf`);
+    } catch (err) {
+      console.error("PDF generation error:", err);
+      alert("Failed to generate PDF: " + (err?.message || err));
+    }
   };
 
   if (loading) return <div className="text-white p-5">Loading reservations…</div>;
@@ -360,10 +423,11 @@ export default function ReservationTable() {
               placeholder="Search owner, plate, zone, spot, status…"
               className="w-64 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-1 focus:ring-white/20"
             />
-            {/* Generate Report (CSV) */}
+            {/* Generate PDF Report */}
             <button
-              onClick={downloadCSV}
+              onClick={downloadPDF}
               className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/10 hover:bg-white/15 px-3 py-2 text-sm text-white"
+              title="Generate PDF (with business header and logo)"
             >
               <CalendarDays size={16} />
               Generate Report

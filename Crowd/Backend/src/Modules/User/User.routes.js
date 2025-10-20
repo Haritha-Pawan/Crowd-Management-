@@ -5,13 +5,17 @@ import {
   getUserById,
   updateUser,
   deleteUser,
-  getAllAttendees2
+  getAllAttendees2,
+  getRegistrationsPerDay
   
 } from "../User/User.controller.js";
 
 const router = express.Router();
 //get attendees count
 router.post("/attendees/new", getAllAttendees2);
+
+//get registrations per day
+router.get("/attendee-daily-count", getRegistrationsPerDay);
 
 // GET all users
 router.get("/", getAllUsers);
@@ -29,6 +33,8 @@ router.put("/:id", updateUser);
 
 // DELETE user
 router.delete("/:id", deleteUser);
+
+
 
 
 

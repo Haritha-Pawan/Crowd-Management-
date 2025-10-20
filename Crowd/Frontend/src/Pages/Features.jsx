@@ -3,7 +3,7 @@ import assets from '../assets/assets'
 
 const Features = () => {
   return (
-    <div className=' w-full 2xl:-mt-60 xl:mt-30 sm:mt-20  max-sm:mt-30'>
+    <div className=' w-full 2xl:-mt-60 xl:mt-30 sm:mt-20  max-sm:mt-30 bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900'>
 
 
        <div className="feature-headline mb-5 text-center text-white text-4xl font-bold">

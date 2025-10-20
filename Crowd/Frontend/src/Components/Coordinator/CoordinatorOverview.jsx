@@ -23,10 +23,16 @@ export default function CoordinatorOverview() {
   const [form, setForm] = useState({
     title: "",
     message: "",
-    recipientRoles: [], // options: Attendee, Organizer, Staff (NO Coordinator)
+    recipientRoles: [], // options to send to who
   });
   const [socket, setSocket] = useState(null);
   const audioRef = useRef(null);
+
+  // stats part
+  const [taskStats, setTaskStats] = useState([]);       
+  const [incidentStats, setIncidentStats] = useState([]); 
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
 
   useEffect(() => { audioRef.current = new Audio("/new-notification-021-370045.mp3"); }, []);
 
@@ -38,27 +44,59 @@ export default function CoordinatorOverview() {
     const onAny = () => audioRef.current?.play().catch(()=>{});
     s.on("notification:new", onAny);
     
-
     return () => {
       s.off("notification:new", onAny);
-      
       s.disconnect();
     };
   }, []);
 
-  const tasks = [
-    { status: "Todo", count: 5 },
-    { status: "In Progress", count: 3 },
-    { status: "Done", count: 8 },
-    { status: "Blocked", count: 2 },
-  ];
-  const incidents = [
-    { status: "Lost Person", count: 4 },
-    { status: "Emergency", count: 6 },
-    { status: "Lost Item", count: 2 },
-  ];
-  const maxTask = useMemo(() => Math.max(...tasks.map(t => t.count)), [tasks]);
-  const maxInc  = useMemo(() => Math.max(...incidents.map(i => i.count)), [incidents]);
+  // fetching incidents and tasks then count
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const [tasksRes, incRes] = await Promise.all([
+          api.get("/tasks"),
+          api.get("/support"), 
+        ]);
+
+        // group tasks 
+        const tCounts = tasksRes.data.reduce((acc, t) => {
+          const key = t.status || "todo";
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {});
+        const orderedTasks = ["todo", "in_progress", "done", "blocked"].map(k => ({
+          status: k,
+          count: tCounts[k] || 0,
+        }));
+        setTaskStats(orderedTasks);
+
+        // group incidents 
+        const incCounts = incRes.data.reduce((acc, i) => {
+          const key = i.type || "Unknown";
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {});
+        const orderedInc = ["Lost Person", "Emergency", "Lost Item", "Complaints"].map(t => ({
+          type: t,
+          count: incCounts[t] || 0,
+        }));
+        setIncidentStats(orderedInc);
+
+        setErr("");
+      } catch (e) {
+        console.error(e);
+        setErr("Failed to load lists");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // taking the maximum from each
+  const maxTask = useMemo(() => Math.max(1, ...taskStats.map(t => t.count)), [taskStats]);
+  const maxInc  = useMemo(() => Math.max(1, ...incidentStats.map(i => i.count)), [incidentStats]);
 
   const toggleRole = (role) =>
     setForm((f) => ({
@@ -103,7 +141,7 @@ export default function CoordinatorOverview() {
       <div className="grid grid-cols-2 gap-10">
         <div>
           <h3 className="text-xl font-bold mb-4">Tasks</h3>
-          {tasks.map((t) => (
+          {taskStats.map((t) => (
             <div key={t.status} className="mb-3">
               <div className="flex justify-between mb-1">
                 <span>{t.status}</span><span>{t.count}</span>
@@ -123,10 +161,10 @@ export default function CoordinatorOverview() {
 
         <div>
           <h3 className="text-xl font-bold mb-4">Incidents</h3>
-          {incidents.map((i) => (
-            <div key={i.status} className="mb-3">
+          {incidentStats.map((i) => (
+            <div key={i.type} className="mb-3">
               <div className="flex justify-between mb-1">
-                <span>{i.status}</span><span>{i.count}</span>
+                <span>{i.type}</span><span>{i.count}</span>
               </div>
               <div className="w-full bg-white/10 h-4 rounded-full">
                 <div className="h-4 rounded-full"
@@ -142,7 +180,7 @@ export default function CoordinatorOverview() {
         </div>
       </div>
 
-      {/* Sent (local visual only) */}
+      {/* Sent */}
       <div>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold">Sent Notifications</h3>
@@ -175,7 +213,7 @@ export default function CoordinatorOverview() {
         )}
       </div>
 
-      {/* Composer */}
+      {/* creation of notifications */}
       {showComposer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="bg-[#0f172a] p-6 rounded-md w-full max-w-lg">
@@ -202,7 +240,7 @@ export default function CoordinatorOverview() {
 
               <div className="text-sm text-gray-300">Send to roles:</div>
               <div className="flex gap-4 flex-wrap">
-                {["Attendee", "Organizer", "Staff"].map((r) => (
+                {["Attendee", "Organizer" /* i remove staff*/].map((r) => (
                   <label key={r} className="flex items-center gap-2">
                     <input
                       type="checkbox"
