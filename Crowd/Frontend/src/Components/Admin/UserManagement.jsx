@@ -387,7 +387,7 @@ const UserManagement = () => {
                 
                 <td className="py-3">{user.role}</td>
                 <td className="py-3">
-                  <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">
+                  <span className="border border-white/20 bg-white/5 text-white px-3 py-1 rounded-full text-sm">
                     {user.status}
                   </span>
                 </td>
