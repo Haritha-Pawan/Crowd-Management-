@@ -203,11 +203,13 @@ export default function DaladaLanding() {
               <a href="#about" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.about}</a>
               <a href="#visit" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.visit}</a>
               <a href="#contact" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.contact}</a>
-              <Link to="/parking" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.Parking}</Link>
+             
 
               {/* ✅ Conditional Display */}
               {isLoggedIn ? (
                 <>
+                  {/* parking slot boking*/ }
+                  <Link to="/parking" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.Parking}</Link>
                   {/* Booking visible when logged in */}
                   <Link to="/booking" className="px-3 py-2 rounded-md text-white hover:bg-white/10">
                     Booking
