@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Service from "./Service";
 import Banner from "./Banner";
+import { User, LogOut, Book } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function DaladaLanding() {
   const year = new Date().getFullYear();
@@ -14,7 +16,13 @@ export default function DaladaLanding() {
       en: {
         brand: "CrowdFlow",
         brandSub: "Test",
-        nav: { about: "About", visit: "Plan Your Visit", contact: "Contact", signIn: "Sign In",Parking:"Parking Spot" },
+        nav: {
+          about: "About",
+          visit: "Plan Your Visit",
+          contact: "Contact",
+          signIn: "Sign In",
+          Parking: "Parking Spot",
+        },
         heroTitle: "Smart Crowd Management",
         heroTag:
           "Learn the significance of the Sacred Tooth Relic, explore traditions, and plan your visit to Kandy with respect and ease.",
@@ -24,7 +32,7 @@ export default function DaladaLanding() {
         visitCards: [
           ["Timings", "Daily worship times vary; mornings are quieter."],
           ["Attire", "Shoulders and knees covered; light fabrics recommended."],
-          ["Donations", "Offerings are voluntary; use official counters."]
+          ["Donations", "Offerings are voluntary; use official counters."],
         ],
         contactTitle: "Contact Us",
         contactName: "Full Name",
@@ -51,7 +59,7 @@ export default function DaladaLanding() {
         visitCards: [
           ["වේලාවන්", "දෛනික පූජා වේලාවන් වෙනස් විය හැක; උදෑසන සන්සුන්ය."],
           ["පළඳුන", "තොල හා දණ පසාරු නොවී; හිස්පාද වන්න."],
-          ["පරිත්‍යාග", "මනාපය පරිදි; නිල කවුන්ටර් භාවිතා කරන්න."]
+          ["පරිත්‍යාග", "මනාපය පරිදි; නිල කවුන්ටර් භාවිතා කරන්න."],
         ],
         contactTitle: "අප අමතන්න",
         contactName: "පිළිපන් නාමය",
@@ -68,7 +76,12 @@ export default function DaladaLanding() {
       ta: {
         brand: "CrowdFlow",
         brandSub: "சோதனை",
-        nav: { about: "எங்களை பற்றி", visit: "உங்கள் பயணம்", contact: "தொடர்பு", signIn: "உள் நுழை" },
+        nav: {
+          about: "எங்களை பற்றி",
+          visit: "உங்கள் பயணம்",
+          contact: "தொடர்பு",
+          signIn: "உள் நுழை",
+        },
         heroTitle: "ஸ்மார்ட் கூட்ட மேலாண்மை",
         heroTag:
           "புனித பல் திருவாளயம் குறித்து அறிந்து, மரபுகளை மதித்து, கண்டி பயணத்தை எளிதாகத் திட்டமிடுங்கள்.",
@@ -76,9 +89,12 @@ export default function DaladaLanding() {
         heroCTAR: "எங்களைத் தொடர்புகொள்ள",
         visitTitle: "உங்கள் பயணத்தைத் திட்டமிடுங்கள்",
         visitCards: [
-          ["நேரங்கள்", "தினசரி வழிபாட்டு நேரங்கள் மாறலாம்; காலை நேரம் அமைதியாக இருக்கும்."],
+          [
+            "நேரங்கள்",
+            "தினசரி வழிபாட்டு நேரங்கள் மாறலாம்; காலை நேரம் அமைதியாக இருக்கும்.",
+          ],
           ["உடை", "தோள்கள்/முழங்கால் மூடப்பட்ட உடை; இலகு துணி பரிந்துரை."],
-          ["இரக்கம்", "தன்னார்வம்; அதிகாரப்பூர்வ கவுண்டர்களை பயன்படுத்தவும்."]
+          ["இரக்கம்", "தன்னார்வம்; அதிகாரப்பூர்வ கவுண்டர்களை பயன்படுத்தவும்."],
         ],
         contactTitle: "எங்களைத் தொடர்புகொள்ள",
         contactName: "முழுப் பெயர்",
@@ -104,7 +120,10 @@ export default function DaladaLanding() {
   };
 
   // motion
-  const fadeUp = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: "easeOut" } } };
+  const fadeUp = {
+    hidden: { opacity: 0, y: 24 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: "easeOut" } },
+  };
   const stagger = { show: { transition: { staggerChildren: 0.12 } } };
 
   const Section = ({ id, title, children }) => (
@@ -120,11 +139,19 @@ export default function DaladaLanding() {
           {title}
         </motion.h2>
       )}
-      <motion.div variants={stagger} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.15 }}>
+      <motion.div
+        variants={stagger}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.15 }}
+      >
         {children}
       </motion.div>
     </section>
   );
+ // ✅ Check login status here (before return)
+  const token = localStorage.getItem("token");
+  const isLoggedIn = !!token;
 
   return (
     <div className="min-h-screen bg-white">
@@ -228,6 +255,25 @@ export default function DaladaLanding() {
   </div>
 </motion.div>
 
+            <p className="mt-4 md:mt-5 text-white/85 md:text-lg leading-relaxed relative  font-bold">
+              {copy[lang].heroTag}
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <a
+                href="#about"
+                className="px-6 py-3 rounded-lg bg-indigo-600 font-bold border border-indigo-500 text-white hover:brightness-110 shadow-sm"
+              >
+                {copy[lang].heroCTAL}
+              </a>
+              <a
+                href="#contact"
+                className="px-6 py-3 rounded-lg bg-white/10 border font-bold border-white/25 text-white hover:bg-white/15"
+              >
+                {copy[lang].heroCTAR}
+              </a>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Location hint */}
         <div className="absolute bottom-4 left-6 text-xs text-white/80">
@@ -243,7 +289,11 @@ export default function DaladaLanding() {
       <Section id="visit" title={copy[lang].visitTitle}>
         <div className="grid md:grid-cols-3 gap-6">
           {copy[lang].visitCards.map(([title, text], i) => (
-            <motion.div key={i} variants={fadeUp} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <motion.div
+              key={i}
+              variants={fadeUp}
+              className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm"
+            >
               <h3 className="font-semibold text-indigo-700">{title}</h3>
               <p className="mt-2 text-slate-600 text-sm">{text}</p>
             </motion.div>
@@ -254,29 +304,60 @@ export default function DaladaLanding() {
       {/* Contact */}
       <Section id="contact" title={copy[lang].contactTitle}>
         <div className="grid md:grid-cols-2 gap-6">
-          <motion.form variants={fadeUp} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <motion.form
+            variants={fadeUp}
+            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm"
+          >
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-slate-700">{copy[lang].contactName}</label>
-                <input type="text" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Your name" />
+                <label className="block text-sm text-slate-700">
+                  {copy[lang].contactName}
+                </label>
+                <input
+                  type="text"
+                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Your name"
+                />
               </div>
               <div>
-                <label className="block text-sm text-slate-700">{copy[lang].contactEmail}</label>
-                <input type="email" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="you@example.com" />
+                <label className="block text-sm text-slate-700">
+                  {copy[lang].contactEmail}
+                </label>
+                <input
+                  type="email"
+                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="you@example.com"
+                />
               </div>
             </div>
             <div className="mt-4">
-              <label className="block text-sm text-slate-700">{copy[lang].contactMsg}</label>
-              <textarea rows={5} className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="How can we help?" />
+              <label className="block text-sm text-slate-700">
+                {copy[lang].contactMsg}
+              </label>
+              <textarea
+                rows={5}
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="How can we help?"
+              />
             </div>
-            <button type="submit" className="mt-4 px-5 py-2.5 rounded-lg text-white bg-indigo-600 border border-indigo-700 shadow-sm hover:brightness-105">
+            <button
+              type="submit"
+              className="mt-4 px-5 py-2.5 rounded-lg text-white bg-indigo-600 border border-indigo-700 shadow-sm hover:brightness-105"
+            >
               {copy[lang].contactSend}
             </button>
           </motion.form>
 
-          <motion.div variants={fadeUp} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <h3 className="font-semibold text-indigo-700">{copy[lang].addressHead}</h3>
-            <p className="mt-2 text-slate-700 text-sm leading-relaxed">{copy[lang].addressText}</p>
+          <motion.div
+            variants={fadeUp}
+            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm"
+          >
+            <h3 className="font-semibold text-indigo-700">
+              {copy[lang].addressHead}
+            </h3>
+            <p className="mt-2 text-slate-700 text-sm leading-relaxed">
+              {copy[lang].addressText}
+            </p>
             <div className="mt-4">
               <motion.img
                 whileHover={{ scale: 1.02 }}
@@ -286,7 +367,9 @@ export default function DaladaLanding() {
                 alt="Kandy city view"
               />
             </div>
-            <p className="mt-3 text-xs text-slate-500">Map preview (replace with an interactive map if needed).</p>
+            <p className="mt-3 text-xs text-slate-500">
+              Map preview (replace with an interactive map if needed).
+            </p>
           </motion.div>
         </div>
       </Section>
@@ -295,19 +378,39 @@ export default function DaladaLanding() {
       <footer className="border-t border-slate-200 bg-white text-slate-600">
         <div className="max-w-7xl mx-auto px-6 py-8 grid md:grid-cols-3 gap-6 items-center">
           <div className="flex items-center gap-3">
-            <svg width="24" height="24" viewBox="0 0 24 24" style={{ color: "#1e3a8a" }}>
-              <path fill="currentColor" d="M12 2l2 3H10l2-3Zm0 4c3.866 0 7 3.134 7 7h-2a5 5 0 1 0-10 0H5c0-3.866 3.134 7 7-7Zm-8 9h16l2 5H2l2-5Z"/>
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              style={{ color: "#1e3a8a" }}
+            >
+              <path
+                fill="currentColor"
+                d="M12 2l2 3H10l2-3Zm0 4c3.866 0 7 3.134 7 7h-2a5 5 0 1 0-10 0H5c0-3.866 3.134 7 7-7Zm-8 9h16l2 5H2l2-5Z"
+              />
             </svg>
             <div>
-              <div className="font-semibold text-indigo-700">{copy[lang].footerBrand}</div>
-              <div className="text-xs text-slate-500">{copy[lang].footerTag}</div>
+              <div className="font-semibold text-indigo-700">
+                {copy[lang].footerBrand}
+              </div>
+              <div className="text-xs text-slate-500">
+                {copy[lang].footerTag}
+              </div>
             </div>
           </div>
-          <div className="text-sm">© {year} • Crafted in Sri Lanka • {copy[lang].footerLangs}</div>
+          <div className="text-sm">
+            © {year} • Crafted in Sri Lanka • {copy[lang].footerLangs}
+          </div>
           <div className="flex gap-4 text-sm justify-start md:justify-end">
-            <a href="#about" className="hover:underline">{copy[lang].nav.about}</a>
-            <a href="#visit" className="hover:underline">{copy[lang].nav.visit}</a>
-            <a href="#contact" className="hover:underline">{copy[lang].nav.contact}</a>
+            <a href="#about" className="hover:underline">
+              {copy[lang].nav.about}
+            </a>
+            <a href="#visit" className="hover:underline">
+              {copy[lang].nav.visit}
+            </a>
+            <a href="#contact" className="hover:underline">
+              {copy[lang].nav.contact}
+            </a>
           </div>
         </div>
       </footer>
