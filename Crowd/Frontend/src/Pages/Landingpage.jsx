@@ -5,6 +5,8 @@ import Service from "./Service";
 import Banner from "./Banner";
 import { User, LogOut, Book } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import Footer from "./Footer";
+import About from "./About";
 
 export default function DaladaLanding() {
   const year = new Date().getFullYear();
@@ -205,7 +207,7 @@ export default function DaladaLanding() {
     </div>
 
     {/* --- Center: Navigation Links --- */}
-    <div className="hidden md:flex items-center gap-1 text-sm font-bold">
+    <div className="hidden md:flex items-center gap-4 text-sm font-bold">
       <a href="#about" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.about}</a>
       <a href="#visit" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.visit}</a>
       <a href="#contact" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.contact}</a>
@@ -305,6 +307,7 @@ export default function DaladaLanding() {
       </section>
 
       {/* Your extra sections */}
+      <About/>
       <Service />
       <Banner />
 
@@ -398,45 +401,7 @@ export default function DaladaLanding() {
       </Section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white text-slate-600">
-        <div className="max-w-7xl mx-auto px-6 py-8 grid md:grid-cols-3 gap-6 items-center">
-          <div className="flex items-center gap-3">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              style={{ color: "#1e3a8a" }}
-            >
-              <path
-                fill="currentColor"
-                d="M12 2l2 3H10l2-3Zm0 4c3.866 0 7 3.134 7 7h-2a5 5 0 1 0-10 0H5c0-3.866 3.134 7 7-7Zm-8 9h16l2 5H2l2-5Z"
-              />
-            </svg>
-            <div>
-              <div className="font-semibold text-indigo-700">
-                {copy[lang].footerBrand}
-              </div>
-              <div className="text-xs text-slate-500">
-                {copy[lang].footerTag}
-              </div>
-            </div>
-          </div>
-          <div className="text-sm">
-            © {year} • Crafted in Sri Lanka • {copy[lang].footerLangs}
-          </div>
-          <div className="flex gap-4 text-sm justify-start md:justify-end">
-            <a href="#about" className="hover:underline">
-              {copy[lang].nav.about}
-            </a>
-            <a href="#visit" className="hover:underline">
-              {copy[lang].nav.visit}
-            </a>
-            <a href="#contact" className="hover:underline">
-              {copy[lang].nav.contact}
-            </a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

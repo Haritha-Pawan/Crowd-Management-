@@ -244,7 +244,7 @@ const UserManagement = () => {
           className=" inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
         >
           <UserPlus size={16} />
-          Add User
+          Register User
         </button>
 
         {/* Logout Button */}
