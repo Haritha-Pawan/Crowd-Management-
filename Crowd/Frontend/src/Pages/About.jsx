@@ -12,7 +12,7 @@ const AboutUs = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white overflow-hidden">
+    <div className="min-h-screen  text-white overflow-hidden">
       <section className="max-w-7xl mx-auto px-6 py-20 grid lg:grid-cols-2 gap-16 items-center">
         {/* LEFT SECTION */}
         <motion.div
@@ -22,20 +22,20 @@ const AboutUs = () => {
           className="space-y-8"
         >
           {/* Headings */}
-          <p className="uppercase text-sm tracking-widest text-teal-400">
+          <p className="uppercase text-sm tracking-widest text-blue-700">
             Our Story
           </p>
-          <h2 className="text-4xl md:text-5xl font-extrabold leading-tight">
-            Empowering <span className="text-teal-400">Smart Mobility</span>
+          <h2 className="text-4xl md:text-5xl font-extrabold leading-tight text-amber-300">
+            Empowering <span className=" text-blue-700">Smart Mobility</span>
             <br />
-            for a <span className="text-blue-400">Safer Tomorrow</span>
+            for a <span className=" text-blue-600">Safer Tomorrow</span>
           </h2>
 
           {/* Main Large Image */}
           <motion.img
             src="https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=800&q=80"
             alt="CrowdFlow Team"
-            className="rounded-2xl shadow-xl w-full h-[400px] object-cover"
+            className="rounded-2xl shadow-xl w-full h-[350px] object-cover"
             whileHover={{ scale: 1.03 }}
             transition={{ duration: 0.3 }}
           />
@@ -65,7 +65,7 @@ const AboutUs = () => {
           </div>
 
           {/* Description */}
-          <p className="text-gray-300 leading-relaxed">
+          <p className="text-black leading-relaxed">
             CrowdFlow is transforming Sri Lanka’s public transport and crowd
             management. Passengers can easily track buses, book seats, and view
             real-time movement — while organizers and bus owners gain insights,
@@ -80,7 +80,7 @@ const AboutUs = () => {
                 whileHover={{ scale: 1.1 }}
                 className="flex flex-col items-center"
               >
-                <h3 className="text-3xl font-bold text-teal-400">
+                <h3 className="text-3xl font-bold text-blue-700">
                   <CountUp end={s.value} duration={3} />+
                 </h3>
                 <p className="text-sm text-gray-400 mt-1">{s.label}</p>
