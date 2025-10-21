@@ -131,7 +131,7 @@ const UserManagement = () => {
       <div className="gap-5">
         {/* Add user button */}
         <Link to='/admin/AttendeDetails'>
-        <button className="absolute top-12 right-40 p-2 px-4 mx-3  rounded-md cursor-pointer bg-green-500 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all">
+        <button className="absolute top-12 right-50 p-3 px-8 mx-4  rounded-md cursor-pointer bg-green-500 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all">
           + View Attende
           
         </button>
@@ -140,7 +140,7 @@ const UserManagement = () => {
        
         <button
           onClick={() => setIsPopupOpen(true)}
-          className="absolute top-12 right-12 p-2 px-4 rounded-md cursor-pointer bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
+          className="absolute top-12 right-12 p-3 px-8 rounded-md cursor-pointer bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
         >
           
           + Add User
@@ -254,7 +254,7 @@ const UserManagement = () => {
 
       {/* End of Serac */}
 
-      <div className="users-table-container bg-white/5 border-white/10  p-5 mt-5 rounded-md w-full text-white h-60 overflow-y-auto scroll-m-0">
+      <div className="users-table-container bg-white/5 border-white/10  p-5 mt-5 rounded-md w-full text-white h-70 overflow-y-auto scroll-m-0">
         <h2 className="text-xl font-semibold mb-4">Users</h2>
         <table className="w-full text-left ">
           <thead>

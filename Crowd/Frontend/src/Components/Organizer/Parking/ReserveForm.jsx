@@ -181,19 +181,14 @@ export default function ReserveForm() {
 
             <ul className="space-y-3">
               <li className="flex items-center justify-between">
-                <span className="text-white/70 text-sm">Location</span>
+                <span className="text-white/70 text-sm">Spot ID</span>
                 <span className="text-white/90">{spot.name || spot.spotId}</span>
               </li>
               <li className="flex items-center justify-between">
                 <span className="text-white/70 text-sm">Zone</span>
                 <span className="text-white/90">{spot.zone || "Selected Zone"}</span>
               </li>
-              <li className="flex items-center justify-between">
-                <span className="text-white/70 text-sm">Spot ID</span>
-                <span className="text-white text-xs font-semibold px-3 py-1 rounded-full border border-white/15 bg-white/5">
-                  {spot.spotId}
-                </span>
-              </li>
+             
               <li className="flex items-center justify-between">
                 <span className="text-white/70 text-sm">Type</span>
                 <span className="text-emerald-400 text-xs font-medium px-2.5 py-1 rounded-full border border-emerald-400/20 bg-emerald-400/10">

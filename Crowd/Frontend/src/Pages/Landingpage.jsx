@@ -41,7 +41,7 @@ export default function DaladaLanding() {
       si: {
         brand: "CrowdFlow",
         brandSub: "පරීක්ෂණ",
-        nav: { about: "පිළිබඳව", visit: "ඔබේ සංචාරය", contact: "සම්බන්ධ වන්න", signIn: "පිවිසෙන්න",Parking:"" },
+        nav: { about: "පිළිබඳව", visit: "ඔබේ සංචාරය", contact: "සම්බන්ධ වන්න", signIn: "පිවිසෙන්න",Parking:"වාහන නැවැත්වීම" },
         heroTitle: "බුද්ධිමත් නැගුරුවූ පිරිස් කළමනාකරණය",
         heroTag:
           "දළදා මාළිගාවේ වැදගත්කම ගැන ඉගෙන ගනිමින්, සිද්ධස්ථාන රිති රූ සැදැහැයෙන් අනුගමනය කරමින්, ඔබගේ සංචාරය සැලසුම් කරයි.",
@@ -131,60 +131,73 @@ export default function DaladaLanding() {
       {/* ===== HERO ===== */}
       <section className="relative h-[100svh] w-full">
         <img
-          src="https://sridaladamaligawa.lk/wp-content/uploads/2020/09/Main-entrnce-Thumbnail-1-768x432.jpg"
+          src="https://sridaladamaligawa.lk/wp-content/uploads/2020/09/Octagan-Thumbnail-2-768x432.jpg"
           alt="Sri Dalada Maligawa"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-black/50" />
 
         {/* Top nav with language switcher */}
-        <header className="absolute top-0 left-0 right-0 z-20 backdrop-blur-3xl">
-          <nav className="max-w-7xl mx-auto h-16 px-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <svg width="28" height="28" viewBox="0 0 24 24" className={colors.navInk}>
-                <path fill="currentColor" d="M12 2l2 3H10l2-3Zm0 4c3.866 0 7 3.134 7 7h-2a5 5 0 1 0-10 0H5c0-3.866 3.134-7 7-7Zm-8 9h16l2 5H2l2-5Z"/>
-              </svg>
-              <div className="leading-tight">
-                <span className="block font-bold tracking-wide text-white">{copy[lang].brand}</span>
-                <span className="block text-xs text-white/80">{copy[lang].brandSub}</span>
-              </div>
-            </div>
+   <header className="absolute top-0 left-0 right-0 z-20 backdrop-blur-3xl">
+  <nav className="max-w-7xl mx-auto h-16 px-6 flex items-center justify-between">
+    
+    {/* --- Left: Brand --- */}
+    <div className="flex items-center gap-3">
+      <svg width="28" height="28" viewBox="0 0 24 24" className={colors.navInk}>
+        <path fill="currentColor" d="M12 2l2 3H10l2-3Zm0 4c3.866 0 7 3.134 7 7h-2a5 5 0 1 0-10 0H5c0-3.866 3.134-7 7-7Zm-8 9h16l2 5H2l2-5Z"/>
+      </svg>
+      <div className="leading-tight">
+        <span className="block font-bold tracking-wide text-3xl text-white">{copy[lang].brand}</span>
+        <span className="block text-xs text-white/80">{copy[lang].brandSub}</span>
+      </div>
+    </div>
 
-            <div className="hidden md:flex items-center gap-1 text-sm font-bold">
-              <a href="#about" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.about}</a>
-              <a href="#visit" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.visit}</a>
-              <a href="#contact" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.contact}</a>
-              <Link to="/parking" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.Parking}</Link>
-              <Link
-                to="/login"
-                className="ml-2 px-4 py-2 rounded-lg text-white shadow-sm hover:brightness-105"
-                style={{ backgroundColor: colors.cta }}
-              >
-                {copy[lang].nav.signIn}
-              </Link>
+    {/* --- Center: Navigation Links --- */}
+    <div className="hidden md:flex items-center gap-1 text-sm font-bold">
+      <a href="#about" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.about}</a>
+      <a href="#visit" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.visit}</a>
+      <a href="#contact" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.contact}</a>
+      <Link to="/parking" className="relative px-3 py-2 rounded-md text-white hover:bg-white/10">
+        {copy[lang].nav.Parking}
+        <span className="absolute top-1 h-3 w-3 rounded-full bg-green-400 animate-ping opacity-80 [animation-duration:1.2s]" />
+      </Link>
+    </div>
 
-              {/* language pills */}
-              <div className="ml-3 flex items-center gap-1 bg-white/10 rounded-full p-1 border border-white/20">
-                {[
-                  { id: "si", label: "සිං", title: "සිංහල" },
-                  { id: "ta", label: "தமிழ்", title: "தமிழ்" },
-                  { id: "en", label: "EN", title: "English" },
-                ].map((l) => (
-                  <button
-                    key={l.id}
-                    title={l.title}
-                    onClick={() => setLang(l.id)}
-                    className={`px-2.5 py-1 text-xs rounded-full ${
-                      lang === l.id ? "bg-white text-black" : "text-white/90 hover:bg-white/10"
-                    }`}
-                  >
-                    {l.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </nav>
-        </header>
+    {/* --- Right: Sign In + Profile --- */}
+    <div className="flex items-center gap-4">
+      <Link
+        to="/login"
+        className="px-4 py-2 rounded-lg text-white shadow-sm hover:brightness-105"
+        style={{ backgroundColor: colors.cta }}
+      >
+        {copy[lang].nav.signIn}
+      </Link>
+
+      
+
+      {/* Language Selector */}
+      <div className="ml-3 flex items-center gap-1 bg-white/10 rounded-full p-1 border border-white/20">
+        {[
+          { id: "si", label: "සිං", title: "සිංහල" },
+          { id: "ta", label: "தமிழ்", title: "தமிழ்" },
+          { id: "en", label: "EN", title: "English" },
+        ].map((l) => (
+          <button
+            key={l.id}
+            title={l.title}
+            onClick={() => setLang(l.id)}
+            className={`px-2.5 py-1 text-xs rounded-full ${
+              lang === l.id ? "bg-white text-black" : "text-white/90 hover:bg-white/10"
+            }`}
+          >
+            {l.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  </nav>
+</header>
+
 
         {/* Centered hero content */}
         <motion.div
@@ -205,9 +218,9 @@ export default function DaladaLanding() {
       {copy[lang].heroTag}
     </p>
     <div className="mt-6 flex items-center justify-center gap-3">
-      <a href="#about" className="px-6 py-3 rounded-lg bg-indigo-600 font-bold border border-indigo-500 text-white hover:brightness-110 shadow-sm">
+      <Link to="/login" className="px-6 py-3 rounded-lg bg-indigo-600 font-bold border border-indigo-500 text-white hover:brightness-110 shadow-sm">
         {copy[lang].heroCTAL}
-      </a>
+      </Link>
       <a href="#contact" className="px-6 py-3 rounded-lg bg-white/10 border font-bold border-white/25 text-white hover:bg-white/15">
         {copy[lang].heroCTAR}
       </a>
