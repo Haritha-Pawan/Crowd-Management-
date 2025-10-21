@@ -1,7 +1,6 @@
 import { User, Users, LocateIcon, Car, LoaderPinwheel } from 'lucide-react';
 import React from 'react'
 import Barchart from './Barchart';
-import LineChart from './LineChart';
 import { useEffect, useState } from 'react';
 
 const AdminOverview = () => {
@@ -56,7 +55,7 @@ const AdminOverview = () => {
             <div className="sub-heading text-xl text-gray-300">Monitor and manage all system components</div>
              <button
           onClick={() => setIsPopupOpen(true)}
-          className="absolute top-12 right-12 p-3 px-4 rounded-md cursor-pointer bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
+          className="absolute top-12 right-12 p-3 px-8 rounded-md cursor-pointer bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
         >
           + generate report
         </button>
@@ -91,9 +90,7 @@ const AdminOverview = () => {
                 <Barchart/>
           </div>
           
-          <div className='w-130 rounded-md'>
-                <LineChart/>
-          </div>    
+          <div className=' bg-white/5 w-130 rounded-md'>lahiru</div>    
   
         </div>
      

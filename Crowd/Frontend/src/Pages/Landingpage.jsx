@@ -49,13 +49,7 @@ export default function DaladaLanding() {
       si: {
         brand: "CrowdFlow",
         brandSub: "පරීක්ෂණ",
-        nav: {
-          about: "පිළිබඳව",
-          visit: "ඔබේ සංචාරය",
-          contact: "සම්බන්ධ වන්න",
-          signIn: "පිවිසෙන්න",
-          Parking: "",
-        },
+        nav: { about: "පිළිබඳව", visit: "ඔබේ සංචාරය", contact: "සම්බන්ධ වන්න", signIn: "පිවිසෙන්න",Parking:"වාහන නැවැත්වීම" },
         heroTitle: "බුද්ධිමත් නැගුරුවූ පිරිස් කළමනාකරණය",
         heroTag:
           "දළදා මාළිගාවේ වැදගත්කම ගැන ඉගෙන ගනිමින්, සිද්ධස්ථාන රිති රූ සැදැහැයෙන් අනුගමනය කරමින්, ඔබගේ සංචාරය සැලසුම් කරයි.",
@@ -164,147 +158,102 @@ export default function DaladaLanding() {
       {/* ===== HERO ===== */}
       <section className="relative h-[100svh] w-full">
         <img
-          src="https://sridaladamaligawa.lk/wp-content/uploads/2020/09/Main-entrnce-Thumbnail-1-768x432.jpg"
+          src="https://sridaladamaligawa.lk/wp-content/uploads/2020/09/Octagan-Thumbnail-2-768x432.jpg"
           alt="Sri Dalada Maligawa"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-black/50" />
 
         {/* Top nav with language switcher */}
-        <div className="min-h-screen bg-white">
-      {/* ===== HERO ===== */}
-      <section className="relative h-[100svh] w-full">
-        <img
-          src="https://sridaladamaligawa.lk/wp-content/uploads/2020/09/Main-entrnce-Thumbnail-1-768x432.jpg"
-          alt="Sri Dalada Maligawa"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/50" />
-
-        {/* ===== HEADER ===== */}
-        <header className="absolute top-0 left-0 right-0 z-20 backdrop-blur-3xl">
-          <nav className="max-w-7xl mx-auto h-16 px-6 flex items-center justify-between">
-            {/* Left Logo */}
-            <div className="flex items-center gap-3">
-              <svg width="28" height="28" viewBox="0 0 24 24" className={colors.navInk}>
-                <path
-                  fill="currentColor"
-                  d="M12 2l2 3H10l2-3Zm0 4c3.866 0 7 3.134 7 7h-2a5 5 0 1 0-10 0H5c0-3.866 3.134-7 7-7Zm-8 9h16l2 5H2l2-5Z"
-                />
-              </svg>
-              <div className="leading-tight">
-                <span className="block font-bold tracking-wide text-white">{copy[lang].brand}</span>
-                <span className="block text-xs text-white/80">{copy[lang].brandSub}</span>
-              </div>
-            </div>
-
-            {/* Right Navigation */}
-            <div className="hidden md:flex items-center gap-1 text-sm">
-              <a href="#about" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.about}</a>
-              <a href="#visit" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.visit}</a>
-              <a href="#contact" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.contact}</a>
-             
-
-              {/* ✅ Conditional Display */}
-              {isLoggedIn ? (
-                <>
-                  {/* parking slot boking*/ }
-                  <Link to="/parking" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.Parking}</Link>
-                  {/* Booking visible when logged in */}
-                  <Link to="/booking" className="px-3 py-2 rounded-md text-white hover:bg-white/10">
-                    Booking
-                  </Link>
-
-                  {/* Profile Icon */}
-                  <div className="relative group ml-2">
-                    <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-5 h-5 text-white"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.654 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                    </button>
-
-                    {/* Dropdown */}
-                    <div className="absolute right-0 mt-2 hidden group-hover:block w-40 bg-white text-gray-800 rounded-lg shadow-lg overflow-hidden">
-                      <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-gray-100">
-                        Profile
-                      </Link>
-                      <Link to="/booking" className="block px-4 py-2 text-sm hover:bg-gray-100">
-                        My Bookings
-                      </Link>
-                      <button
-                        onClick={() => {
-                          localStorage.removeItem("token");
-                          window.location.reload();
-                        }}
-                        className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-                      >
-                        Logout
-                      </button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <Link
-                  to="/login"
-                  className="ml-2 px-4 py-2 rounded-lg text-white shadow-sm hover:brightness-105"
-                  style={{ backgroundColor: colors.cta }}
-                >
-                  {copy[lang].nav.signIn}
-                </Link>
-              )}
-
-              {/* Language Switcher */}
-              <div className="ml-3 flex items-center gap-1 bg-white/10 rounded-full p-1 border border-white/20">
-                {[
-                  { id: "si", label: "සිං", title: "සිංහල" },
-                  { id: "ta", label: "தமிழ்", title: "தமிழ்" },
-                  { id: "en", label: "EN", title: "English" },
-                ].map((l) => (
-                  <button
-                    key={l.id}
-                    title={l.title}
-                    onClick={() => setLang(l.id)}
-                    className={`px-2.5 py-1 text-xs rounded-full ${
-                      lang === l.id ? "bg-white text-black" : "text-white/90 hover:bg-white/10"
-                    }`}
-                  >
-                    {l.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </nav>
-        </header>
-      </section>
+   <header className="absolute top-0 left-0 right-0 z-20 backdrop-blur-3xl">
+  <nav className="max-w-7xl mx-auto h-16 px-6 flex items-center justify-between">
+    
+    {/* --- Left: Brand --- */}
+    <div className="flex items-center gap-3">
+      <svg width="28" height="28" viewBox="0 0 24 24" className={colors.navInk}>
+        <path fill="currentColor" d="M12 2l2 3H10l2-3Zm0 4c3.866 0 7 3.134 7 7h-2a5 5 0 1 0-10 0H5c0-3.866 3.134-7 7-7Zm-8 9h16l2 5H2l2-5Z"/>
+      </svg>
+      <div className="leading-tight">
+        <span className="block font-bold tracking-wide text-3xl text-white">{copy[lang].brand}</span>
+        <span className="block text-xs text-white/80">{copy[lang].brandSub}</span>
+      </div>
     </div>
+
+    {/* --- Center: Navigation Links --- */}
+    <div className="hidden md:flex items-center gap-1 text-sm font-bold">
+      <a href="#about" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.about}</a>
+      <a href="#visit" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.visit}</a>
+      <a href="#contact" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.contact}</a>
+      <Link to="/parking" className="relative px-3 py-2 rounded-md text-white hover:bg-white/10">
+        {copy[lang].nav.Parking}
+        <span className="absolute top-1 h-3 w-3 rounded-full bg-green-400 animate-ping opacity-80 [animation-duration:1.2s]" />
+      </Link>
+    </div>
+
+    {/* --- Right: Sign In + Profile --- */}
+    <div className="flex items-center gap-4">
+      <Link
+        to="/login"
+        className="px-4 py-2 rounded-lg text-white shadow-sm hover:brightness-105"
+        style={{ backgroundColor: colors.cta }}
+      >
+        {copy[lang].nav.signIn}
+      </Link>
+
+      
+
+      {/* Language Selector */}
+      <div className="ml-3 flex items-center gap-1 bg-white/10 rounded-full p-1 border border-white/20">
+        {[
+          { id: "si", label: "සිං", title: "සිංහල" },
+          { id: "ta", label: "தமிழ்", title: "தமிழ்" },
+          { id: "en", label: "EN", title: "English" },
+        ].map((l) => (
+          <button
+            key={l.id}
+            title={l.title}
+            onClick={() => setLang(l.id)}
+            className={`px-2.5 py-1 text-xs rounded-full ${
+              lang === l.id ? "bg-white text-black" : "text-white/90 hover:bg-white/10"
+            }`}
+          >
+            {l.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  </nav>
+</header>
+
 
         {/* Centered hero content */}
         <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="show"
-          className="absolute inset-0 z-10 flex items-center justify-center px-6"
-        >
-          <div className="max-w-3xl text-center text-white px-6 py-8 md:px-10 md:py-12 shadow-xl">
-            <h1
-              className={`font-extrabold tracking-tight leading-tight  relative right-10
-                  text-[clamp(28px,8vw,64px)] ${
-                    lang === "en" ? "whitespace-nowrap" : ""
-                  }`}
-            >
-              {copy[lang].heroTitle}
-            </h1>
+  variants={fadeUp}
+  initial="hidden"
+  animate="show"
+  className="absolute inset-0 z-10 flex items-center justify-center px-6"
+>
+  <div className="max-w-3xl text-center text-white px-6 py-8 md:px-10 md:py-12 shadow-xl">
+    <h1
+      className={`font-extrabold tracking-tight leading-tight  relative right-10
+                  text-[clamp(28px,8vw,64px)] ${lang === "en" ? "whitespace-nowrap" : ""}` }
+    >
+      {copy[lang].heroTitle}
+    </h1>
+
+    <p className="mt-4 md:mt-5 text-white/85 md:text-lg leading-relaxed relative  font-bold">
+      {copy[lang].heroTag}
+    </p>
+    <div className="mt-6 flex items-center justify-center gap-3">
+      <Link to="/login" className="px-6 py-3 rounded-lg bg-indigo-600 font-bold border border-indigo-500 text-white hover:brightness-110 shadow-sm">
+        {copy[lang].heroCTAL}
+      </Link>
+      <a href="#contact" className="px-6 py-3 rounded-lg bg-white/10 border font-bold border-white/25 text-white hover:bg-white/15">
+        {copy[lang].heroCTAR}
+      </a>
+    </div>
+  </div>
+</motion.div>
 
             <p className="mt-4 md:mt-5 text-white/85 md:text-lg leading-relaxed relative  font-bold">
               {copy[lang].heroTag}
