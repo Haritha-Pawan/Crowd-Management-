@@ -227,7 +227,7 @@ export default function DaladaLanding() {
 
 
         {/* Centered hero content */}
-        <motion.div
+<motion.div
   variants={fadeUp}
   initial="hidden"
   animate="show"
@@ -235,13 +235,13 @@ export default function DaladaLanding() {
 >
   <div className="max-w-3xl text-center text-white px-6 py-8 md:px-10 md:py-12 shadow-xl">
     <h1
-      className={`font-extrabold tracking-tight leading-tight  relative right-10
-                  text-[clamp(28px,8vw,64px)] ${lang === "en" ? "whitespace-nowrap" : ""}` }
+      className={`font-extrabold tracking-tight leading-tight relative right-10
+                  text-[clamp(28px,8vw,64px)] ${lang === "en" ? "whitespace-nowrap" : ""}`}
     >
       {copy[lang].heroTitle}
     </h1>
 
-    <p className="mt-4 md:mt-5 text-white/85 md:text-lg leading-relaxed relative  font-bold">
+    <p className="mt-4 md:mt-5 text-white/85 md:text-lg leading-relaxed relative font-bold">
       {copy[lang].heroTag}
     </p>
     <div className="mt-6 flex items-center justify-center gap-3">
@@ -254,26 +254,6 @@ export default function DaladaLanding() {
     </div>
   </div>
 </motion.div>
-
-            <p className="mt-4 md:mt-5 text-white/85 md:text-lg leading-relaxed relative  font-bold">
-              {copy[lang].heroTag}
-            </p>
-            <div className="mt-6 flex items-center justify-center gap-3">
-              <a
-                href="#about"
-                className="px-6 py-3 rounded-lg bg-indigo-600 font-bold border border-indigo-500 text-white hover:brightness-110 shadow-sm"
-              >
-                {copy[lang].heroCTAL}
-              </a>
-              <a
-                href="#contact"
-                className="px-6 py-3 rounded-lg bg-white/10 border font-bold border-white/25 text-white hover:bg-white/15"
-              >
-                {copy[lang].heroCTAR}
-              </a>
-            </div>
-          </div>
-        </motion.div>
 
         {/* Location hint */}
         <div className="absolute bottom-4 left-6 text-xs text-white/80">
