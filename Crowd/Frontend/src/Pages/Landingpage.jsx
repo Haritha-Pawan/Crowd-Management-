@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Service from "./Service";
@@ -8,6 +8,29 @@ import { useNavigate } from "react-router-dom";
 
 export default function DaladaLanding() {
   const year = new Date().getFullYear();
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  
+  //login state
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  // read token on mount
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem("token");
+      setIsLoggedIn(!!token);
+    } catch (e) {
+      setIsLoggedIn(false);
+    }
+  }, []);
+
+  // logout handler
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    setMenuOpen(false);
+    navigate("/login");
+  };
 
   // ---- language state (default English) ----
   const [lang, setLang] = useState("en");
@@ -19,6 +42,7 @@ export default function DaladaLanding() {
         nav: {
           about: "About",
           visit: "Plan Your Visit",
+          Service: "Services",
           contact: "Contact",
           signIn: "Sign In",
           Parking: "Parking Spot",
@@ -79,6 +103,7 @@ export default function DaladaLanding() {
         nav: {
           about: "எங்களை பற்றி",
           visit: "உங்கள் பயணம்",
+          Service: "சேவைகள்",
           contact: "தொடர்பு",
           signIn: "உள் நுழை",
         },
@@ -149,9 +174,9 @@ export default function DaladaLanding() {
       </motion.div>
     </section>
   );
- // ✅ Check login status here (before return)
-  const token = localStorage.getItem("token");
-  const isLoggedIn = !!token;
+ 
+
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -184,21 +209,39 @@ export default function DaladaLanding() {
       <a href="#about" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.about}</a>
       <a href="#visit" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.visit}</a>
       <a href="#contact" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.contact}</a>
-      <Link to="/parking" className="relative px-3 py-2 rounded-md text-white hover:bg-white/10">
-        {copy[lang].nav.Parking}
-        <span className="absolute top-1 h-3 w-3 rounded-full bg-green-400 animate-ping opacity-80 [animation-duration:1.2s]" />
-      </Link>
+      <a href="#service" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.Service}</a>
+      {isLoggedIn && (
+        <Link to="/parking" className="relative px-3 py-2 rounded-md text-white hover:bg-white/10">
+          {copy[lang].nav.Parking}
+          <span className="absolute top-1 h-3 w-3 rounded-full bg-green-400 animate-ping opacity-80 [animation-duration:1.2s]" />
+        </Link>
+      )}
     </div>
-
     {/* --- Right: Sign In + Profile --- */}
     <div className="flex items-center gap-4">
-      <Link
-        to="/login"
-        className="px-4 py-2 rounded-lg text-white shadow-sm hover:brightness-105"
-        style={{ backgroundColor: colors.cta }}
-      >
-        {copy[lang].nav.signIn}
-      </Link>
+      {isLoggedIn ? (
+        <div className="relative">
+          <button
+            onClick={() => setMenuOpen((s) => !s)}
+            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20"
+            aria-label="Open profile menu"
+          >
+            <User size={18} className="text-white" />
+          </button>
+
+          {menuOpen && (
+            <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg overflow-hidden z-30">
+              <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-gray-100">Profile</Link>
+              <Link to="/booking" className="block px-4 py-2 text-sm hover:bg-gray-100">My Bookings</Link>
+              <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Logout</button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <Link to="/login" className="px-4 py-2 rounded-lg text-white shadow-sm hover:brightness-105" style={{ backgroundColor: colors.cta }}>
+          {copy[lang].nav.signIn}
+        </Link>
+      )}
 
       
 
@@ -226,7 +269,7 @@ export default function DaladaLanding() {
 </header>
 
 
-        {/* Centered hero content */}
+ {/* Centered hero content */}
 <motion.div
   variants={fadeUp}
   initial="hidden"
