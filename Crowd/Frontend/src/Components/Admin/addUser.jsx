@@ -203,7 +203,7 @@ const AddUser = ({ isOpen, onClose }) => {
               type="submit"
               className="w-30 bg-gradient-to-r from-blue-500 to-purple-600 rounded-md p-2 text-white font-medium cursor-pointer"
             >
-              Create User
+              Register User
             </button>
           </div>
         </form>

@@ -1,13 +1,38 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Service from "./Service";
 import Banner from "./Banner";
 import { User, LogOut, Book } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import Footer from "./Footer";
+import About from "./About";
 
 export default function DaladaLanding() {
   const year = new Date().getFullYear();
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  
+  //login state
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  // read token on mount
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem("token");
+      setIsLoggedIn(!!token);
+    } catch (e) {
+      setIsLoggedIn(false);
+    }
+  }, []);
+
+  // logout handler
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    setMenuOpen(false);
+    navigate("/login");
+  };
 
   // ---- language state (default English) ----
   const [lang, setLang] = useState("en");
@@ -19,6 +44,7 @@ export default function DaladaLanding() {
         nav: {
           about: "About",
           visit: "Plan Your Visit",
+          Service: "Services",
           contact: "Contact",
           signIn: "Sign In",
           Parking: "Parking Spot",
@@ -79,6 +105,7 @@ export default function DaladaLanding() {
         nav: {
           about: "எங்களை பற்றி",
           visit: "உங்கள் பயணம்",
+          Service: "சேவைகள்",
           contact: "தொடர்பு",
           signIn: "உள் நுழை",
         },
@@ -149,9 +176,9 @@ export default function DaladaLanding() {
       </motion.div>
     </section>
   );
- // ✅ Check login status here (before return)
-  const token = localStorage.getItem("token");
-  const isLoggedIn = !!token;
+ 
+
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -180,25 +207,43 @@ export default function DaladaLanding() {
     </div>
 
     {/* --- Center: Navigation Links --- */}
-    <div className="hidden md:flex items-center gap-1 text-sm font-bold">
+    <div className="hidden md:flex items-center gap-4 text-sm font-bold">
       <a href="#about" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.about}</a>
       <a href="#visit" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.visit}</a>
       <a href="#contact" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.contact}</a>
-      <Link to="/parking" className="relative px-3 py-2 rounded-md text-white hover:bg-white/10">
-        {copy[lang].nav.Parking}
-        <span className="absolute top-1 h-3 w-3 rounded-full bg-green-400 animate-ping opacity-80 [animation-duration:1.2s]" />
-      </Link>
+      <a href="#service" className="px-3 py-2 rounded-md text-white hover:bg-white/10">{copy[lang].nav.Service}</a>
+      {isLoggedIn && (
+        <Link to="/parking" className="relative px-3 py-2 rounded-md text-white hover:bg-white/10">
+          {copy[lang].nav.Parking}
+          <span className="absolute top-1 h-3 w-3 rounded-full bg-green-400 animate-ping opacity-80 [animation-duration:1.2s]" />
+        </Link>
+      )}
     </div>
-
     {/* --- Right: Sign In + Profile --- */}
     <div className="flex items-center gap-4">
-      <Link
-        to="/login"
-        className="px-4 py-2 rounded-lg text-white shadow-sm hover:brightness-105"
-        style={{ backgroundColor: colors.cta }}
-      >
-        {copy[lang].nav.signIn}
-      </Link>
+      {isLoggedIn ? (
+        <div className="relative">
+          <button
+            onClick={() => setMenuOpen((s) => !s)}
+            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20"
+            aria-label="Open profile menu"
+          >
+            <User size={18} className="text-white" />
+          </button>
+
+          {menuOpen && (
+            <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg overflow-hidden z-30">
+              <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-gray-100">Profile</Link>
+              <Link to="/booking" className="block px-4 py-2 text-sm hover:bg-gray-100">My Bookings</Link>
+              <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Logout</button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <Link to="/login" className="px-4 py-2 rounded-lg text-white shadow-sm hover:brightness-105" style={{ backgroundColor: colors.cta }}>
+          {copy[lang].nav.signIn}
+        </Link>
+      )}
 
       
 
@@ -226,8 +271,8 @@ export default function DaladaLanding() {
 </header>
 
 
-        {/* Centered hero content */}
-        <motion.div
+ {/* Centered hero content */}
+<motion.div
   variants={fadeUp}
   initial="hidden"
   animate="show"
@@ -235,13 +280,13 @@ export default function DaladaLanding() {
 >
   <div className="max-w-3xl text-center text-white px-6 py-8 md:px-10 md:py-12 shadow-xl">
     <h1
-      className={`font-extrabold tracking-tight leading-tight  relative right-10
-                  text-[clamp(28px,8vw,64px)] ${lang === "en" ? "whitespace-nowrap" : ""}` }
+      className={`font-extrabold tracking-tight leading-tight relative right-10
+                  text-[clamp(28px,8vw,64px)] ${lang === "en" ? "whitespace-nowrap" : ""}`}
     >
       {copy[lang].heroTitle}
     </h1>
 
-    <p className="mt-4 md:mt-5 text-white/85 md:text-lg leading-relaxed relative  font-bold">
+    <p className="mt-4 md:mt-5 text-white/85 md:text-lg leading-relaxed relative font-bold">
       {copy[lang].heroTag}
     </p>
     <div className="mt-6 flex items-center justify-center gap-3">
@@ -255,26 +300,6 @@ export default function DaladaLanding() {
   </div>
 </motion.div>
 
-            <p className="mt-4 md:mt-5 text-white/85 md:text-lg leading-relaxed relative  font-bold">
-              {copy[lang].heroTag}
-            </p>
-            <div className="mt-6 flex items-center justify-center gap-3">
-              <a
-                href="#about"
-                className="px-6 py-3 rounded-lg bg-indigo-600 font-bold border border-indigo-500 text-white hover:brightness-110 shadow-sm"
-              >
-                {copy[lang].heroCTAL}
-              </a>
-              <a
-                href="#contact"
-                className="px-6 py-3 rounded-lg bg-white/10 border font-bold border-white/25 text-white hover:bg-white/15"
-              >
-                {copy[lang].heroCTAR}
-              </a>
-            </div>
-          </div>
-        </motion.div>
-
         {/* Location hint */}
         <div className="absolute bottom-4 left-6 text-xs text-white/80">
           {copy[lang].location}
@@ -282,6 +307,7 @@ export default function DaladaLanding() {
       </section>
 
       {/* Your extra sections */}
+      <About/>
       <Service />
       <Banner />
 
@@ -375,45 +401,7 @@ export default function DaladaLanding() {
       </Section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white text-slate-600">
-        <div className="max-w-7xl mx-auto px-6 py-8 grid md:grid-cols-3 gap-6 items-center">
-          <div className="flex items-center gap-3">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              style={{ color: "#1e3a8a" }}
-            >
-              <path
-                fill="currentColor"
-                d="M12 2l2 3H10l2-3Zm0 4c3.866 0 7 3.134 7 7h-2a5 5 0 1 0-10 0H5c0-3.866 3.134 7 7-7Zm-8 9h16l2 5H2l2-5Z"
-              />
-            </svg>
-            <div>
-              <div className="font-semibold text-indigo-700">
-                {copy[lang].footerBrand}
-              </div>
-              <div className="text-xs text-slate-500">
-                {copy[lang].footerTag}
-              </div>
-            </div>
-          </div>
-          <div className="text-sm">
-            © {year} • Crafted in Sri Lanka • {copy[lang].footerLangs}
-          </div>
-          <div className="flex gap-4 text-sm justify-start md:justify-end">
-            <a href="#about" className="hover:underline">
-              {copy[lang].nav.about}
-            </a>
-            <a href="#visit" className="hover:underline">
-              {copy[lang].nav.visit}
-            </a>
-            <a href="#contact" className="hover:underline">
-              {copy[lang].nav.contact}
-            </a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
