@@ -220,14 +220,16 @@ const UserManagement = () => {
       <div className="header text-3xl text-white font-bold">
         User Management
       </div>
-      <div className="gap-5">
-        {/* Add user button */}
-        <Link to='/admin/AttendeDetails'>
-        <button className="absolute top-12 right-50 p-3 px-8 mx-4  rounded-md cursor-pointer bg-green-500 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all">
-          + View Attende
-          
+  <div className="flex items-center gap-3 absolute top-12 right-12 z-10">
+        {/* Report Generate Button */}
+        <button
+          onClick={generateUserReport}
+          className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
+        >
+          <FileText size={16} />
+          Generate Report
         </button>
-        </Link>
+
         {/* View Attendee Button */}
         <Link to="/admin/AttendeDetails">
           <button className=" inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10">
@@ -239,7 +241,7 @@ const UserManagement = () => {
         {/* Add User Button */}
         <button
           onClick={() => setIsPopupOpen(true)}
-          className="absolute top-12 right-12 p-3 px-8 rounded-md cursor-pointer bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
+          className=" inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
         >
           <UserPlus size={16} />
           Add User
