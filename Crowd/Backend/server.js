@@ -17,6 +17,7 @@ import counterRoutes from './src/Modules/Counter/Routes/counter.Route.js';
 import userRouter from './src/Modules/User/User.routes.js';
 import AuthRoutes from './src/Modules/User/AuthRoutes.js';
 import OtherRoutes from './src/Modules/User/Other.routes.js';
+import checkoutRouter from "./src/Modules/Register/Route/ticket.route.js";
 
 import reservationRoutes from './src/Modules/Parking/Route/reservation.route.js';
 import spotRouter from './src/Modules/Parking/Route/spot.route.js';
@@ -76,6 +77,7 @@ app.use('/api/support', incidentRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/counter', counterRoutes);
+app.use("/api/checkout", checkoutRouter);
 app.use('/api/zone', zoneRouter);
 app.use('/api/spots', spotRouter);
 app.use('/api/reservations', reservationRoutes);

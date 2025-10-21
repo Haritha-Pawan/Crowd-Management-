@@ -2,53 +2,56 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-const API = "http://localhost:3001/api/checkout";
+const API = "http://localhost:5000/api/checkout";
 const nicRegex = /^(?:\d{12}|\d{9}[VvXx])$/;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const phoneRegex = /^0\d{9}$/;
 
-/* ---------- Pricing (adjust as needed) ---------- */
+/* ---------- Pricing ---------- */
 const PRICING = {
-  individual: 100,      // LKR per individual
-  familyPerPerson: 100, // LKR per family member (min 2)
+  individual: 100,
+  familyPerPerson: 100,
 };
 
+/* ---------- Helpers ---------- */
 const digitsOnly = (s) => s.replace(/\D+/g, "");
-const luhnCheck = (num) => {
-  const arr = num.split("").reverse().map((n) => parseInt(n, 10));
-  const sum = arr.reduce((acc, val, i) => {
-    if (i % 2 === 1) {
-      let dbl = val * 2;
-      if (dbl > 9) dbl -= 9;
-      return acc + dbl;
-    }
-    return acc + val;
-  }, 0);
-  return sum % 10 === 0;
-};
 
-function detectBrand(raw) {
-  const s = digitsOnly(raw);
-  if (/^4\d{12,18}$/.test(s)) return { brand: "visa", cvcLen: 3 };
-  if (/^5[1-5]\d{14}$/.test(s) || /^2(2[2-9]|[3-6]\d|7[01])\d{12}$/.test(s)) return { brand: "mastercard", cvcLen: 3 };
-  if (/^3[47]\d{13}$/.test(s)) return { brand: "amex", cvcLen: 4 };
-  if (/^6(?:011|5)/.test(s)) return { brand: "discover", cvcLen: 3 };
+// keep brand for icon row; force cvcLen=3
+function detectBrand() {
   return { brand: "card", cvcLen: 3 };
 }
+
+// ---- Expiry helpers ----
 function parseExpiry(exp) {
   const s = exp.replace(/[^\d]/g, "").slice(0, 4);
   return { mm: s.slice(0, 2), yy: s.slice(2, 4) };
 }
-function formatCardNumber(v, brand) {
-  const s = digitsOnly(v).slice(0, 19);
-  if (brand === "amex") {
-    return s.replace(/^(\d{0,4})(\d{0,6})(\d{0,5}).*$/, (_, a, b, c) => [a, b, c].filter(Boolean).join(" "));
-  }
+function formatExpiryForTyping(v) {
+  const s = digitsOnly(v).slice(0, 4);
+  if (s.length <= 2) return s; // "1", "12"
+  return `${s.slice(0, 2)}/${s.slice(2)}`; // "12/3", "12/34"
+}
+function isPastExpiry(mm, yy) {
+  if (!(mm && yy) || mm.length !== 2 || yy.length !== 2) return false;
+  const m = Number(mm);
+  if (m < 1 || m > 12) return true;
+  const now = new Date();
+  const currYY = Number(String(now.getFullYear()).slice(2));
+  const currMM = now.getMonth() + 1;
+  return Number(yy) < currYY || (Number(yy) === currYY && m < currMM);
+}
+
+// Card number: strictly 16 digits, grouped
+function formatCardNumber(v) {
+  const s = digitsOnly(v).slice(0, 16);
   return s.replace(/(\d{1,4})/g, "$1 ").trim();
 }
-function formatExpiry(exp) {
-  const { mm, yy } = parseExpiry(exp);
-  return yy ? `${mm}/${yy}` : mm;
+
+// Prevent non-digit key presses (allow nav keys/backspace/delete/tab)
+function allowOnlyDigitsKeyDown(e) {
+  const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Home", "End"];
+  if (allowed.includes(e.key)) return;
+  if (!/^\d$/.test(e.key)) e.preventDefault();
 }
 
 /* --- Badges --- */
@@ -73,9 +76,7 @@ export default function RegisterPayment() {
   const nav = useNavigate();
   const { state: personal } = useLocation();
 
-  useEffect(() => {
-    if (!personal) nav("/register");
-  }, [personal, nav]);
+  useEffect(() => { if (!personal) nav("/register"); }, [personal, nav]);
 
   /* ---------- Compute amount (locked) ---------- */
   const computedAmount = useMemo(() => {
@@ -88,13 +89,7 @@ export default function RegisterPayment() {
   }, [personal]);
 
   /* ---------- State ---------- */
-  const [payment, setPayment] = useState({
-    provider: "card",
-    status: "pending",
-    currency: "LKR",
-    card: { brand: "", last4: "", expMonth: "", expYear: "" },
-  });
-
+  const [payment, setPayment] = useState({ provider: "card", status: "pending", currency: "LKR", card: { brand: "", last4: "", expMonth: "", expYear: "" } });
   const [serverError, setServerError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [open, setOpen] = useState(false);
@@ -126,14 +121,16 @@ export default function RegisterPayment() {
       if (!Number.isFinite(c) || c < 2) e.count = "Family count must be ≥ 2";
     }
     if (!(computedAmount > 0)) e.amount = "Amount not available";
+
     const rawNum = digitsOnly(cardNumber);
     if (!cardName.trim()) e.cardName = "Cardholder name required";
-    if (rawNum.length < 12) e.cardNumber = "Card number too short";
-    else if (!luhnCheck(rawNum)) e.cardNumber = "Invalid card number";
+    if (rawNum.length !== 16) e.cardNumber = "Card number must be 16 digits"; // no Luhn now
+
     const { mm, yy } = parseExpiry(exp);
-    const mmNum = Number(mm);
-    if (!(mm && yy && mmNum >= 1 && mmNum <= 12)) e.exp = "Invalid expiry";
-    if (!/^\d{3,4}$/.test(cvc) || cvc.length !== cvcLen) e.cvc = `CVC must be ${cvcLen} digits`;
+    const m = Number(mm);
+    if (!(mm && yy && m >= 1 && m <= 12) || isPastExpiry(mm, yy)) e.exp = "Invalid expiry";
+
+    if (!/^\d{3}$/.test(cvc)) e.cvc = `CVC must be ${cvcLen} digits`;
     return e;
   }, [personal, computedAmount, cardName, cardNumber, exp, cvc, cvcLen]);
 
@@ -160,12 +157,7 @@ export default function RegisterPayment() {
         status: "paid",
         amount: computedAmount,
         currency: payment.currency || "LKR",
-        card: {
-          brand,
-          last4: rawNum.slice(-4),
-          expMonth: mm,
-          expYear: `20${yy}`,
-        },
+        card: { brand, last4: rawNum.slice(-4), expMonth: mm, expYear: `20${yy}` },
         saved: !!saveCard,
       },
     };
@@ -210,14 +202,27 @@ export default function RegisterPayment() {
   };
 
   /* ---------- Handlers ---------- */
-  const onNumberChange = (v) => setCardNumber(formatCardNumber(v, brand));
-  const onExpChange = (v) => setExp(formatExpiry(v));
-  const onCvcChange = (v) => setCvc(digitsOnly(v).slice(0, cvcLen));
+  const onNumberChange = (v) => setCardNumber(formatCardNumber(v));
+  const onExpChange = (v) => setExp(formatExpiryForTyping(v));
+  const onExpBlur = () => {
+    const { mm, yy } = parseExpiry(exp);
+    if (mm.length !== 2 || yy.length !== 2) return;
+    const now = new Date();
+    const currYY = Number(String(now.getFullYear()).slice(2));
+    const currMM = now.getMonth() + 1;
+    const m = Math.min(12, Math.max(1, Number(mm) || 0));
+    let fixed = `${String(m).padStart(2, "0")}/${yy}`;
+    if (isPastExpiry(String(m).padStart(2, "0"), yy)) {
+      fixed = `${String(currMM).padStart(2, "0")}/${String(currYY).padStart(2, "0")}`;
+    }
+    setExp(fixed);
+  };
+  const onCvcChange = (v) => setCvc(digitsOnly(v).slice(0, 3));
 
-  /* ---------- UI (styled to match RegisterPersonal) ---------- */
+  /* ---------- UI ---------- */
   return (
-    <div className="min-h-screen relative bg-[#0B1120]">
-      {/* Background + overlay (same vibe) */}
+    <div className="min-h-screen relative bg-transparent">
+      {/* Background + overlay */}
       <img
         src="https://sridaladamaligawa.lk/wp-content/uploads/2020/09/Main-entrnce-Thumbnail-1-768x432.jpg"
         alt=""
@@ -234,26 +239,21 @@ export default function RegisterPayment() {
         </nav>
       </header>
 
-      {/* Centered dark modal-style card */}
+      {/* Transparent outer wrapper */}
       <main className="relative z-10 min-h-screen flex items-center justify-center px-4 py-24">
-        <div className="w-full max-w-5xl bg-[#0F172A] border border-[#334155] rounded-2xl p-6 md:p-8 text-[#E2E8F0] shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+        <div className="w-full max-w-5xl bg-transparent border-0 rounded-2xl p-0 text-[#E2E8F0]">
           {/* Title row */}
           <div className="mb-6 md:mb-7">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-[22px] md:text-[24px] leading-[1.2] font-semibold">
-                  Complete Payment
-                </h2>
-                <p className="text-[13px] text-[#94A3B8] mt-1">
-                  Pay securely to receive your QR ticket
-                </p>
+                <h2 className="text-[22px] md:text-[24px] leading-[1.2] font-semibold">Complete Payment</h2>
+                <p className="text-[13px] text-[#94A3B8] mt-1">Pay securely to receive your QR ticket</p>
               </div>
-              {/* Stepper visually at step 2 */}
               <Stepper step={2} />
             </div>
           </div>
 
-          {/* Two-column compact grid (Order summary + Card form) */}
+          {/* Order + Card form */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Order Summary */}
             <section className="lg:col-span-1">
@@ -274,9 +274,7 @@ export default function RegisterPayment() {
                 </div>
 
                 <div className="mt-6 space-y-2 text-[11px] text-[#94A3B8]">
-                  <p>
-                    Test card: <span className="font-medium text-[#E2E8F0]">4242 4242 4242 4242</span> (future expiry, any CVC).
-                  </p>
+                  <p>Test card: <span className="font-medium text-[#E2E8F0]">4242 4242 4242 4242</span> (future expiry, any CVC).</p>
                   <p>3-D Secure demo will ask for a 6-digit code.</p>
                 </div>
 
@@ -321,10 +319,13 @@ export default function RegisterPayment() {
                       <input
                         ref={numberRef}
                         inputMode="numeric"
+                        pattern="\d*"
+                        maxLength={19}              // 16 digits + 3 spaces
                         className="u-input pr-14"
                         placeholder="4242 4242 4242 4242"
                         value={cardNumber}
                         onChange={(e) => onNumberChange(e.target.value)}
+                        onKeyDown={allowOnlyDigitsKeyDown}
                         onBlur={() => setCardTouched(true)}
                       />
                       <div className="absolute right-2 top-1/2 -translate-y-1/2">
@@ -336,21 +337,27 @@ export default function RegisterPayment() {
                   <LabelWrap label="Expiry (MM/YY)" error={cardTouched && errors.exp}>
                     <input
                       inputMode="numeric"
+                      pattern="\d*"
+                      maxLength={5}
                       className="u-input"
                       placeholder="12/28"
                       value={exp}
                       onChange={(e) => onExpChange(e.target.value)}
-                      onBlur={() => setCardTouched(true)}
+                      onBlur={onExpBlur}
+                      onKeyDown={allowOnlyDigitsKeyDown}
                     />
                   </LabelWrap>
 
                   <LabelWrap label="CVC" error={cardTouched && errors.cvc}>
                     <input
                       inputMode="numeric"
+                      pattern="\d*"
+                      maxLength={3}
                       className="u-input"
-                      placeholder={brand === "amex" ? "1234" : "123"}
+                      placeholder="123"
                       value={cvc}
                       onChange={(e) => onCvcChange(e.target.value)}
+                      onKeyDown={allowOnlyDigitsKeyDown}
                       onBlur={() => setCardTouched(true)}
                     />
                   </LabelWrap>
@@ -386,7 +393,7 @@ export default function RegisterPayment() {
                 </div>
               </form>
 
-              {/* Receipt (unchanged logic, styled to match) */}
+              {/* Receipt */}
               {open && (
                 <div className="mt-6 rounded-xl border border-[#334155] bg-[#0b152c]/40 p-5">
                   {result?.ticket ? (
@@ -396,6 +403,12 @@ export default function RegisterPayment() {
                         <p className="text-[13px] text-[#94A3B8] mt-1">
                           Ticket issued for {result.ticket.fullName} — {result.ticket.type}
                           {result.ticket.type === "family" ? ` (${result.ticket.count})` : ""}
+                        </p>
+                        <p className="text-slate-600 text-sm mt-1">
+                          Assigned counter:{" "}
+                          <span className="font-semibold text-indigo-600">
+                            {result?.ticket?.assignedCounterName || "Not assigned"}
+                          </span>
                         </p>
                         <div className="mt-4 p-3 rounded-lg bg-emerald-500/10 text-emerald-300 text-[13px]">
                           Status: Paid • {result.ticket?.payment?.card?.brand?.toUpperCase() || "CARD"} • **** {result.ticket?.payment?.card?.last4}
@@ -430,38 +443,18 @@ export default function RegisterPayment() {
         </div>
       </main>
 
-      {/* Inputs styled EXACTLY like your RegisterPersonal page */}
       <style>{`
-        .u-label {
-          font-size: 12px;
-          line-height: 1.2;
-          font-weight: 600;
-          color: #E2E8F0;
-          display: inline-block;
-        }
-        .u-err {
-          font-size: 11px;
-          color: #FCA5A5;
-          margin-top: 6px;
-        }
+        .u-label { font-size: 12px; line-height: 1.2; font-weight: 600; color: #E2E8F0; display: inline-block; }
+        .u-err { font-size: 11px; color: #FCA5A5; margin-top: 6px; }
         .u-input {
-          width: 100%;
-          height: 44px;
-          border-radius: 10px;
-          border: 1px solid #334155;
-          background: rgba(30, 41, 59, 0.6);
-          color: #E2E8F0;
-          padding: 0 14px;
-          outline: none;
+          width: 100%; height: 44px; border-radius: 10px; border: 1px solid #334155;
+          background: rgba(30, 41, 59, 0.6); color: #E2E8F0; padding: 0 14px; outline: none;
         }
         .u-input::placeholder { color: #94A3B8; }
-        .u-input:focus {
-          border-color: #818CF8;
-          box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.18);
-        }
+        .u-input:focus { border-color: #818CF8; box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.18); }
       `}</style>
 
-      {/* 3-D Secure modal (same logic, dark-themed) */}
+      {/* 3-D Secure modal */}
       {threeDSOpen && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
           <div className="w-full max-w-sm rounded-2xl bg-[#0F172A] border border-[#334155] p-6 shadow-2xl text-[#E2E8F0]">
@@ -499,7 +492,7 @@ export default function RegisterPayment() {
   );
 }
 
-/* Helpers (styled to match) */
+/* Helpers */
 function Row({ label, value }) {
   return (
     <div className="flex justify-between">
@@ -517,7 +510,6 @@ function LabelWrap({ label, error, children }) {
     </label>
   );
 }
-
 function Stepper({ step = 1 }) {
   return (
     <div className="flex items-center gap-2">

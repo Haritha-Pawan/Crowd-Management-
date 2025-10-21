@@ -1,12 +1,17 @@
-import {   checkoutAndGenerateQR, listTickets ,getTicketStats } from "../Controller/checkout.controller.js";
-
-
+// src/Modules/Checkout/Route/ticket.route.js
 import { Router } from "express";
+import {
+  checkoutAndGenerateQR,
+  listTickets,
+  getTicketStats,
+} from "../Controller/checkout.controller.js";
+
 const router = Router();
 
-// POST/api/checkout
-
+// Payment + QR + Counter assignment
 router.post("/", checkoutAndGenerateQR);
+
+// Admin/ops helpers
 router.get("/", listTickets);
 router.get("/stats", getTicketStats);
 
