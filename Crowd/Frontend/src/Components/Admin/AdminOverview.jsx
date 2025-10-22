@@ -2,6 +2,7 @@ import { User, Users, LocateIcon, Car, LoaderPinwheel } from 'lucide-react';
 import React from 'react'
 import Barchart from './Barchart';
 import { useEffect, useState } from 'react';
+import LineChart from './LineChart';
 
 const AdminOverview = () => {
 
@@ -90,7 +91,7 @@ const AdminOverview = () => {
                 <Barchart/>
           </div>
           
-          <div className=' bg-white/5 w-130 rounded-md'>lahiru</div>    
+          <div className=' bg-white/5 w-130 rounded-md'><LineChart/> </div>    
   
         </div>
      
