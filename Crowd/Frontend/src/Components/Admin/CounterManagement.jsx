@@ -9,9 +9,51 @@ import {
   Edit,
   Trash2Icon,
 } from "lucide-react";
-import AddCounter from "./AddCounter"; 
+import AddCounter from "./AddCounter";
 import EditCounter from "./EditCounter";
+
 const API = "http://localhost:5000/api";
+
+const toNumber = (value) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+};
+
+const normalizeCounter = (counter) => {
+  if (!counter) return counter;
+
+  const assignedLoad = toNumber(counter.assignedLoad ?? counter.load ?? 0);
+  const scanLoad = toNumber(
+    counter.loadFromScanLogs ??
+      counter.scanStats?.totalAttendees ??
+      counter.load ??
+      0
+  );
+  const totalScans = toNumber(counter.scanStats?.totalScans ?? 0);
+
+  return {
+    ...counter,
+    assignedLoad,
+    loadFromScanLogs: scanLoad,
+    scanStats: {
+      totalAttendees: scanLoad,
+      totalScans,
+      lastScanAt: counter.scanStats?.lastScanAt ?? null,
+    },
+  };
+};
+
+const getLiveLoad = (counter) =>
+  toNumber(
+    counter?.loadFromScanLogs ??
+      counter?.scanStats?.totalAttendees ??
+      counter?.assignedLoad ??
+      counter?.load ??
+      0
+  );
+
+const getAssignedLoad = (counter) =>
+  toNumber(counter?.assignedLoad ?? counter?.load ?? 0);
 
 const CounterManagement = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -22,8 +64,8 @@ const CounterManagement = () => {
   // ---- summary cards from live data ----
   const total = counters.length;
   const active = counters.filter((c) => c.isActive !== false).length; // default true
-  const totalCapacity = counters.reduce((s, c) => s + (+c.capacity || 0), 0);
-  const loadSum = counters.reduce((s, c) => s + (+c.load || 0), 0);
+  const totalCapacity = counters.reduce((sum, c) => sum + toNumber(c.capacity), 0);
+  const loadSum = counters.reduce((sum, c) => sum + getLiveLoad(c), 0);
   const loadPct = totalCapacity ? Math.round((loadSum / totalCapacity) * 100) : 0;
 
   const cards = useMemo(
@@ -39,13 +81,20 @@ const CounterManagement = () => {
   // ---- load data ----
   useEffect(() => {
     (async () => {
-      const { data } = await axios.get(`${API}/counter`);
-      setCounters(data);
+      try {
+        const { data } = await axios.get(`${API}/counter?includeScanLoad=true`);
+        setCounters(Array.isArray(data) ? data.map(normalizeCounter) : []);
+      } catch (err) {
+        console.error("GET /api/counter failed:", err);
+      }
     })();
   }, []);
 
   // ---- create / delete / (edit hook placeholder) ----
-  const handleCreated = (newCounter) => setCounters((prev) => [newCounter, ...prev]);
+  const handleCreated = (newCounter) => {
+    if (!newCounter) return;
+    setCounters((prev) => [normalizeCounter(newCounter), ...prev]);
+  };
 
   const removeCounter = async (id) => {
     await axios.delete(`${API}/counter/${id}`);
@@ -76,14 +125,23 @@ const CounterManagement = () => {
       {isPopupOpen && (
         <AddCounter
           onClose={() => setIsPopupOpen(false)}
-    onCreate={(newCounter) => setCounters((prev) => [newCounter, ...prev])}
+          onCreate={handleCreated}
         />
       )}
 
       {/* Counter list */}
       <div className="mt-20 grid grid-cols-1 lg:grid-cols-2 gap-10">
         {counters.map((c) => {
-          const pct = c.capacity ? Math.min(100, Math.round(((+c.load || 0) / (+c.capacity || 1)) * 100)) : 0;
+          const liveLoad = getLiveLoad(c);
+          const assignedLoad = getAssignedLoad(c);
+          const capacity = toNumber(c.capacity);
+          const pct = capacity ? Math.min(100, Math.round((liveLoad / capacity) * 100)) : 0;
+          const lastScanDate = c.scanStats?.lastScanAt ? new Date(c.scanStats.lastScanAt) : null;
+          const lastScanAt =
+            lastScanDate && !Number.isNaN(lastScanDate.getTime())
+              ? lastScanDate.toLocaleString()
+              : null;
+
           return (
             <div key={c._id} className="p-5 bg-white/5 border border-white/10 rounded-md text-white text-2xl font-medium">
               <div className="title flex justify-between items-start">
@@ -99,7 +157,7 @@ const CounterManagement = () => {
               {/* Occupancy */}
               <div className="text-[14px] mt-6 text-gray-300 flex justify-between">
                 <span>Occupancy</span>
-                <span>{c.load} / {c.capacity} ({pct}%)</span>
+                <span>{liveLoad} / {capacity} ({pct}%)</span>
               </div>
               <div className="mt-3 h-2 w-full rounded-full bg-black/40">
                 <div className="h-full rounded-full bg-blue-600" style={{ width: `${pct}%` }} />
@@ -107,18 +165,29 @@ const CounterManagement = () => {
 
               {/* Details */}
               <div className="mt-3 text-sm text-gray-300 space-y-1">
-                <div>Capacity: <span className="text-white font-medium">{c.capacity}</span></div>
-                <div>Current Load: <span className="text-white font-medium">{c.load}</span></div>
-                <div>Assigned Staff: <span className="text-white/90">{c.staff || "—"}</span></div>
+                <div>Capacity: <span className="text-white font-medium">{capacity}</span></div>
+                <div>Current Load (scans): <span className="text-white font-medium">{liveLoad}</span></div>
+                {assignedLoad !== liveLoad && (
+                  <div>Assigned Load: <span className="text-white font-medium">{assignedLoad}</span></div>
+                )}
+                <div>Total Scans: <span className="text-white font-medium">{c.scanStats?.totalScans ?? 0}</span></div>
+                {lastScanAt && (
+                  <div>Last Scan: <span className="text-white/90">{lastScanAt}</span></div>
+                )}
+                <div>Assigned Staff: <span className="text-white/90">{c.staff || "-"}</span></div>
               </div>
 
               {/* Actions */}
               <div className="btn mt-4 flex gap-3">
-               <button
-                  onClick={() => { setSelected(c); setEditOpen(true); }}
-                  className="border border-white/10 px-4 py-1 bg-white/5 rounded-md text-[16px] cursor-pointer text-white">
+                <button
+                  onClick={() => {
+                    setSelected(c);
+                    setEditOpen(true);
+                  }}
+                  className="border border-white/10 px-4 py-1 bg-white/5 rounded-md text-[16px] cursor-pointer text-white"
+                >
                   <Edit size={15} className="inline mr-2 relative top-[1px]" />
-                    Edit
+                  Edit
                 </button>
                 <button
                   onClick={() => removeCounter(c._id)}
@@ -137,11 +206,14 @@ const CounterManagement = () => {
           isOpen={editOpen}
           counter={selected}
           onClose={() => setEditOpen(false)}
-          onUpdated={(updated) =>
-            setCounters(prev => prev.map(x => (x._id === updated._id ? updated : x)))
-          }
-  />
-)}
+          onUpdated={(updated) => {
+            if (!updated) return;
+            setCounters((prev) =>
+              prev.map((x) => (x._id === updated._id ? normalizeCounter(updated) : x))
+            );
+          }}
+        />
+      )}
     </div>
   );
 };

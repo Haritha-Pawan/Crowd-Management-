@@ -1,35 +1,39 @@
-// src/pages/register/RegisterPayment.jsx
+// src/pages/register/RegisterOnePage.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
 
-const API = "http://localhost:5000/api/checkout";
+/* ================================
+   Config & helpers
+================================== */
+const api = axios.create({
+  baseURL: "http://localhost:5000/api",
+  withCredentials: true,
+});
+
 const nicRegex = /^(?:\d{12}|\d{9}[VvXx])$/;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const phoneRegex = /^0\d{9}$/;
 
-/* ---------- Pricing ---------- */
 const PRICING = {
   individual: 100,
   familyPerPerson: 100,
 };
 
-/* ---------- Helpers ---------- */
-const digitsOnly = (s) => s.replace(/\D+/g, "");
+const digitsOnly = (s) => String(s || "").replace(/\D+/g, "");
 
-// keep brand for icon row; force cvcLen=3
+// super-light brand detect (always “card” here; keep shape for UI)
 function detectBrand() {
   return { brand: "card", cvcLen: 3 };
 }
 
-// ---- Expiry helpers ----
 function parseExpiry(exp) {
   const s = exp.replace(/[^\d]/g, "").slice(0, 4);
   return { mm: s.slice(0, 2), yy: s.slice(2, 4) };
 }
 function formatExpiryForTyping(v) {
   const s = digitsOnly(v).slice(0, 4);
-  if (s.length <= 2) return s; // "1", "12"
-  return `${s.slice(0, 2)}/${s.slice(2)}`; // "12/3", "12/34"
+  if (s.length <= 2) return s;
+  return `${s.slice(0, 2)}/${s.slice(2)}`;
 }
 function isPastExpiry(mm, yy) {
   if (!(mm && yy) || mm.length !== 2 || yy.length !== 2) return false;
@@ -40,28 +44,54 @@ function isPastExpiry(mm, yy) {
   const currMM = now.getMonth() + 1;
   return Number(yy) < currYY || (Number(yy) === currYY && m < currMM);
 }
-
-// Card number: strictly 16 digits, grouped
 function formatCardNumber(v) {
   const s = digitsOnly(v).slice(0, 16);
   return s.replace(/(\d{1,4})/g, "$1 ").trim();
 }
-
-// Prevent non-digit key presses (allow nav keys/backspace/delete/tab)
 function allowOnlyDigitsKeyDown(e) {
   const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab", "Home", "End"];
   if (allowed.includes(e.key)) return;
   if (!/^\d$/.test(e.key)) e.preventDefault();
 }
 
-/* --- Badges --- */
+/* ================================
+   Small UI atoms
+================================== */
 const BrandBadge = ({ brand }) => {
   const c = "h-6";
-  if (brand === "visa") return (<svg viewBox="0 0 48 16" className={c}><rect width="48" height="16" rx="3" fill="#1A1F71" /><text x="8" y="11.5" fontSize="9" fill="#fff">VISA</text></svg>);
-  if (brand === "mastercard") return (<svg viewBox="0 0 48 16" className={c}><rect width="48" height="16" rx="3" fill="#000" /><circle cx="20" cy="8" r="5" fill="#EB001B" /><circle cx="28" cy="8" r="5" fill="#F79E1B" /></svg>);
-  if (brand === "amex") return (<svg viewBox="0 0 48 16" className={c}><rect width="48" height="16" rx="3" fill="#2E77BC" /><text x="4" y="11.5" fontSize="7" fill="#fff">AMERICAN</text><text x="4" y="15.5" fontSize="7" fill="#fff">EXPRESS</text></svg>);
-  if (brand === "discover") return (<svg viewBox="0 0 48 16" className={c}><rect width="48" height="16" rx="3" fill="#F06000" /><text x="6" y="11.5" fontSize="8" fill="#fff">DISCOVER</text></svg>);
-  return <div className="h-6 px-2 rounded bg-gray-200 text-gray-700 grid place-items-center text-xs">CARD</div>;
+  if (brand === "visa")
+    return (
+      <svg viewBox="0 0 48 16" className={c}>
+        <rect width="48" height="16" rx="3" fill="#1A1F71" />
+        <text x="8" y="11.5" fontSize="9" fill="#fff">VISA</text>
+      </svg>
+    );
+  if (brand === "mastercard")
+    return (
+      <svg viewBox="0 0 48 16" className={c}>
+        <rect width="48" height="16" rx="3" fill="#000" />
+        <circle cx="20" cy="8" r="5" fill="#EB001B" />
+        <circle cx="28" cy="8" r="5" fill="#F79E1B" />
+      </svg>
+    );
+  if (brand === "amex")
+    return (
+      <svg viewBox="0 0 48 16" className={c}>
+        <rect width="48" height="16" rx="3" fill="#2E77BC" />
+        <text x="4" y="11.5" fontSize="7" fill="#fff">AMERICAN</text>
+        <text x="4" y="15.5" fontSize="7" fill="#fff">EXPRESS</text>
+      </svg>
+    );
+  if (brand === "discover")
+    return (
+      <svg viewBox="0 0 48 16" className={c}>
+        <rect width="48" height="16" rx="3" fill="#F06000" />
+        <text x="6" y="11.5" fontSize="8" fill="#fff">DISCOVER</text>
+      </svg>
+    );
+  return (
+    <div className="h-6 px-2 rounded bg-gray-200 text-gray-700 grid place-items-center text-xs">CARD</div>
+  );
 };
 const AcceptedStrip = () => (
   <div className="flex items-center gap-2">
@@ -71,31 +101,62 @@ const AcceptedStrip = () => (
     <BrandBadge brand="discover" />
   </div>
 );
+const Row = ({ label, value }) => (
+  <div className="flex justify-between">
+    <span className="text-[13px] text-[#94A3B8]">{label}</span>
+    <span className="text-[13px] text-[#E2E8F0]">{value}</span>
+  </div>
+);
+const LabelWrap = ({ label, error, children }) => (
+  <label className="block text-sm">
+    <span className="u-label">{label}</span>
+    <div className="mt-1.5">{children}</div>
+    {error ? <p className="u-err">{error}</p> : null}
+  </label>
+);
+const Stepper = ({ step = 1, total = 2 }) => (
+  <div className="flex items-center gap-2">
+    {Array.from({ length: total }).map((_, i) => (
+      <span
+        key={i}
+        className={`h-2.5 w-10 rounded-full ${i < step ? "bg-[#E2E8F0]" : "bg-[#475569]"}`}
+        aria-hidden
+      />
+    ))}
+    <span className="sr-only">Step {step} of {total}</span>
+  </div>
+);
 
-export default function RegisterPayment() {
-  const nav = useNavigate();
-  const { state: personal } = useLocation();
+/* ================================
+   Main page
+================================== */
+export default function RegisterOnePage() {
+  // step: 1 = personal, 2 = payment, 3 = receipt
+  const [step, setStep] = useState(1);
 
-  useEffect(() => { if (!personal) nav("/register"); }, [personal, nav]);
+  // personal form
+  const [personal, setPersonal] = useState({
+    fullName: "",
+    nic: "",
+    email: "",
+    phone: "",
+    type: "individual", // "individual" | "family"
+    count: 2,
+  });
 
-  /* ---------- Compute amount (locked) ---------- */
-  const computedAmount = useMemo(() => {
-    if (!personal) return 0;
-    if (personal.type === "family") {
-      const c = Math.max(2, parseInt(personal.count, 10) || 2);
-      return c * PRICING.familyPerPerson;
-    }
-    return PRICING.individual;
-  }, [personal]);
-
-  /* ---------- State ---------- */
-  const [payment, setPayment] = useState({ provider: "card", status: "pending", currency: "LKR", card: { brand: "", last4: "", expMonth: "", expYear: "" } });
+  // payment state
+  const [payment, setPayment] = useState({
+    provider: "card",
+    status: "pending",
+    currency: "LKR",
+    card: { brand: "", last4: "", expMonth: "", expYear: "" },
+  });
   const [serverError, setServerError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [open, setOpen] = useState(false);
   const [result, setResult] = useState(null);
 
-  const [cardName, setCardName] = useState(personal?.fullName || "");
+  // card fields
+  const [cardName, setCardName] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [exp, setExp] = useState("");
   const [cvc, setCvc] = useState("");
@@ -104,39 +165,72 @@ export default function RegisterPayment() {
 
   const [threeDSOpen, setThreeDSOpen] = useState(false);
   const [otp, setOtp] = useState("");
-
   const numberRef = useRef(null);
   const { brand, cvcLen } = useMemo(() => detectBrand(cardNumber), [cardNumber]);
 
-  /* ---------- Validation ---------- */
-  const errors = useMemo(() => {
+  // compute amount
+  const computedAmount = useMemo(() => {
+    if (personal.type === "family") {
+      const c = Math.max(2, parseInt(personal.count, 10) || 2);
+      return c * PRICING.familyPerPerson;
+    }
+    return PRICING.individual;
+  }, [personal.type, personal.count]);
+
+  // personal validation
+  const personalErrors = useMemo(() => {
     const e = {};
-    if (!personal?.fullName?.trim()) e.fullName = "Required";
-    if (!emailRegex.test(String(personal?.email || "").toLowerCase())) e.email = "Invalid email";
-    if (!phoneRegex.test(String(personal?.phone || ""))) e.phone = "Use 07XXXXXXXX";
-    if (!nicRegex.test(String(personal?.nic || "").toUpperCase())) e.nic = "Invalid NIC";
-    if (!["individual", "family"].includes(personal?.type)) e.type = "Pick category";
-    if (personal?.type === "family") {
-      const c = parseInt(personal?.count, 10);
+    if (!personal.fullName.trim()) e.fullName = "Required";
+    if (!emailRegex.test(String(personal.email || "").toLowerCase())) e.email = "Invalid email";
+    if (!phoneRegex.test(String(personal.phone || ""))) e.phone = "Use 07XXXXXXXX";
+    if (!nicRegex.test(String(personal.nic || "").toUpperCase())) e.nic = "Invalid NIC";
+    if (!["individual", "family"].includes(personal.type)) e.type = "Pick category";
+    if (personal.type === "family") {
+      const c = parseInt(personal.count, 10);
       if (!Number.isFinite(c) || c < 2) e.count = "Family count must be ≥ 2";
     }
     if (!(computedAmount > 0)) e.amount = "Amount not available";
+    return e;
+  }, [personal, computedAmount]);
 
+  // payment validation
+  const paymentErrors = useMemo(() => {
+    const e = {};
     const rawNum = digitsOnly(cardNumber);
     if (!cardName.trim()) e.cardName = "Cardholder name required";
-    if (rawNum.length !== 16) e.cardNumber = "Card number must be 16 digits"; // no Luhn now
-
+    if (rawNum.length !== 16) e.cardNumber = "Card number must be 16 digits";
     const { mm, yy } = parseExpiry(exp);
     const m = Number(mm);
     if (!(mm && yy && m >= 1 && m <= 12) || isPastExpiry(mm, yy)) e.exp = "Invalid expiry";
-
     if (!/^\d{3}$/.test(cvc)) e.cvc = `CVC must be ${cvcLen} digits`;
     return e;
-  }, [personal, computedAmount, cardName, cardNumber, exp, cvc, cvcLen]);
+  }, [cardName, cardNumber, exp, cvc, cvcLen]);
 
-  const back = () => nav("/register");
+  // navigation handlers
+  const goNextFromPersonal = () => {
+    if (Object.keys(personalErrors).length) {
+      // touch all? you can add more UX if needed
+      return;
+    }
+    setStep(2);
+  };
 
-  /* ---------- API submit ---------- */
+  const resetAll = () => {
+    setStep(1);
+    setPersonal({ fullName: "", nic: "", email: "", phone: "", type: "individual", count: 2 });
+    setCardName("");
+    setCardNumber("");
+    setExp("");
+    setCvc("");
+    setSaveCard(true);
+    setPayment({ provider: "card", status: "pending", currency: "LKR", card: { brand: "", last4: "", expMonth: "", expYear: "" }});
+    setServerError("");
+    setResult(null);
+    setOtp("");
+    setThreeDSOpen(false);
+  };
+
+  // API submit
   const submitToAPI = async () => {
     setSubmitting(true);
     setServerError("");
@@ -163,45 +257,40 @@ export default function RegisterPayment() {
     };
 
     try {
-      const res = await fetch(API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setServerError(data?.message || `Error ${res.status}`);
-      } else {
-        setResult(data);
-        setOpen(true);
-      }
+      const { data } = await api.post("/checkout", payload);
+      setResult(data);
+      setPayment((p) => ({ ...p, status: "paid" }));
+      setStep(3);
     } catch (err) {
-      setServerError(err.message || "Network error");
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        "Network error";
+      setServerError(msg);
     } finally {
       setSubmitting(false);
     }
   };
 
-  /* ---------- 3-D Secure flow (simulated) ---------- */
+  // 3-D Secure simulate
   const start3DS = async (e) => {
     e.preventDefault();
     setCardTouched(true);
-    if (Object.keys(errors).length) return;
+    if (Object.keys(paymentErrors).length) return;
     setThreeDSOpen(true);
     setOtp("");
   };
-
   const confirm3DS = async () => {
     if (!/^\d{6}$/.test(otp)) return;
     setThreeDSOpen(false);
     setSubmitting(true);
     await new Promise((r) => setTimeout(r, 1100));
     setSubmitting(false);
-    setPayment((p) => ({ ...p, status: "paid" }));
     await submitToAPI();
   };
 
-  /* ---------- Handlers ---------- */
+  // input handlers
   const onNumberChange = (v) => setCardNumber(formatCardNumber(v));
   const onExpChange = (v) => setExp(formatExpiryForTyping(v));
   const onExpBlur = () => {
@@ -219,7 +308,6 @@ export default function RegisterPayment() {
   };
   const onCvcChange = (v) => setCvc(digitsOnly(v).slice(0, 3));
 
-  /* ---------- UI ---------- */
   return (
     <div className="min-h-screen relative bg-transparent">
       {/* Background + overlay */}
@@ -233,216 +321,344 @@ export default function RegisterPayment() {
       {/* Top bar */}
       <header className="absolute top-0 inset-x-0 z-20">
         <nav className="max-w-7xl mx-auto h-14 px-5 flex items-center justify-between">
-          <button onClick={back} className="text-[#E2E8F0] hover:text-white px-3 py-1.5 rounded-md hover:bg-white/10 transition">
-            ← Back
+          <div className="text-[#E2E8F0] px-3 py-1.5 rounded-md">Sri Dalada Vandanā</div>
+          <Stepper step={step} total={3} />
+          <button
+            onClick={resetAll}
+            className="text-[#E2E8F0] hover:text-white px-3 py-1.5 rounded-md hover:bg-white/10 transition"
+          >
+            Reset
           </button>
         </nav>
       </header>
 
-      {/* Transparent outer wrapper */}
+      {/* Content */}
       <main className="relative z-10 min-h-screen flex items-center justify-center px-4 py-24">
         <div className="w-full max-w-5xl bg-transparent border-0 rounded-2xl p-0 text-[#E2E8F0]">
-          {/* Title row */}
+          {/* Title */}
           <div className="mb-6 md:mb-7">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-[22px] md:text-[24px] leading-[1.2] font-semibold">Complete Payment</h2>
-                <p className="text-[13px] text-[#94A3B8] mt-1">Pay securely to receive your QR ticket</p>
+                <h2 className="text-[22px] md:text-[24px] leading-[1.2] font-semibold">
+                  {step === 1 ? "Registration" : step === 2 ? "Complete Payment" : "Receipt"}
+                </h2>
+                <p className="text-[13px] text-[#94A3B8] mt-1">
+                  {step === 1 ? "Enter your details" : step === 2 ? "Pay securely to receive your QR ticket" : "Payment details & QR ticket"}
+                </p>
               </div>
-              <Stepper step={2} />
+              <Stepper step={step} total={3} />
             </div>
           </div>
 
-          {/* Order + Card form */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Order Summary */}
-            <section className="lg:col-span-1">
-              <div className="rounded-xl border border-[#334155] bg-[#0b152c]/40 p-5">
-                <h3 className="text-[16px] font-semibold">Order Summary</h3>
-                <div className="mt-4 space-y-2 text-[13px]">
-                  <Row label="Name" value={personal?.fullName || "-"} />
-                  <Row label="NIC" value={personal?.nic || "-"} />
-                  <Row
-                    label="Type"
-                    value={
-                      personal?.type
-                        ? personal.type + (personal.type === "family" ? ` (${personal.count})` : "")
-                        : "-"
-                    }
+          {/* Steps */}
+          {step === 1 && (
+            <section className="rounded-xl border border-[#334155] bg-[#0b152c]/40 p-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+                <LabelWrap label="Full name" error={personalErrors.fullName}>
+                  <input
+                    className="u-input"
+                    placeholder="Dinusha Lakmal"
+                    value={personal.fullName}
+                    onChange={(e) => setPersonal((p) => ({ ...p, fullName: e.target.value }))}
                   />
-                  <Row label="Amount (LKR)" value={computedAmount.toLocaleString("en-LK")} />
-                </div>
-
-                <div className="mt-6 space-y-2 text-[11px] text-[#94A3B8]">
-                  <p>Test card: <span className="font-medium text-[#E2E8F0]">4242 4242 4242 4242</span> (future expiry, any CVC).</p>
-                  <p>3-D Secure demo will ask for a 6-digit code.</p>
-                </div>
-
-                <div className="mt-6 flex items-center justify-between border-t border-[#334155] pt-4">
-                  <span className="text-[13px] text-[#94A3B8]">Status</span>
-                  <span
-                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${
-                      payment.status === "paid"
-                        ? "bg-emerald-500/15 text-emerald-300"
-                        : payment.status === "pending"
-                        ? "bg-amber-500/15 text-amber-300"
-                        : "bg-rose-500/15 text-rose-300"
-                    }`}
-                  >
-                    {payment.status}
-                  </span>
-                </div>
-              </div>
-            </section>
-
-            {/* Payment form */}
-            <section className="lg:col-span-2">
-              <form onSubmit={start3DS} noValidate className="rounded-xl border border-[#334155] bg-[#0b152c]/40 p-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[16px] font-semibold">Pay with card</h3>
-                  <AcceptedStrip />
-                </div>
-
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-                  <LabelWrap label="Cardholder name" error={cardTouched && errors.cardName}>
+                </LabelWrap>
+                <LabelWrap label="NIC" error={personalErrors.nic}>
+                  <input
+                    className="u-input"
+                    placeholder="200012345678 / 981234567V"
+                    value={personal.nic}
+                    onChange={(e) => setPersonal((p) => ({ ...p, nic: e.target.value }))}
+                  />
+                </LabelWrap>
+                <LabelWrap label="Email" error={personalErrors.email}>
+                  <input
+                    className="u-input"
+                    placeholder="you@example.com"
+                    value={personal.email}
+                    onChange={(e) => setPersonal((p) => ({ ...p, email: e.target.value }))}
+                  />
+                </LabelWrap>
+                <LabelWrap label="Phone (07XXXXXXXX)" error={personalErrors.phone}>
+                  <input
+                    className="u-input"
+                    placeholder="0712345678"
+                    value={personal.phone}
+                    onChange={(e) => setPersonal((p) => ({ ...p, phone: e.target.value }))}
+                  />
+                </LabelWrap>
+                <LabelWrap label="Type" error={personalErrors.type}>
+                  <div className="flex gap-3">
+                    <label className="flex items-center gap-2 text-[14px]">
+                      <input
+                        type="radio"
+                        name="rtype"
+                        checked={personal.type === "individual"}
+                        onChange={() => setPersonal((p) => ({ ...p, type: "individual" }))}
+                      />
+                      Individual (LKR {PRICING.individual})
+                    </label>
+                    <label className="flex items-center gap-2 text-[14px]">
+                      <input
+                        type="radio"
+                        name="rtype"
+                        checked={personal.type === "family"}
+                        onChange={() => setPersonal((p) => ({ ...p, type: "family" }))}
+                      />
+                      Family (LKR {PRICING.familyPerPerson} / person)
+                    </label>
+                  </div>
+                </LabelWrap>
+                {personal.type === "family" && (
+                  <LabelWrap label="Family count (≥ 2)" error={personalErrors.count}>
                     <input
                       className="u-input"
-                      placeholder="Dinusha Lakmal"
-                      value={cardName}
-                      onChange={(e) => setCardName(e.target.value)}
-                      onBlur={() => setCardTouched(true)}
+                      type="number"
+                      min={2}
+                      value={personal.count}
+                      onChange={(e) =>
+                        setPersonal((p) => ({ ...p, count: Math.max(2, Number(e.target.value) || 2) }))
+                      }
                     />
                   </LabelWrap>
+                )}
+              </div>
 
-                  <LabelWrap label="Card number" error={cardTouched && errors.cardNumber}>
-                    <div className="relative">
+              <div className="mt-6 flex items-center justify-between">
+                <div className="text-[13px] text-[#94A3B8]">
+                  Amount (LKR):{" "}
+                  <span className="text-[#E2E8F0] font-semibold">{computedAmount.toLocaleString("en-LK")}</span>
+                </div>
+                <button
+                  onClick={goNextFromPersonal}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#4F46E5] px-7 py-2.5 text-[14px] font-semibold text-white shadow-lg hover:bg-[#6366F1] focus:outline-none focus:ring-2 focus:ring-[#6366F1]"
+                >
+                  Next: Payment →
+                </button>
+              </div>
+            </section>
+          )}
+
+          {step === 2 && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Summary */}
+              <section className="lg:col-span-1">
+                <div className="rounded-xl border border-[#334155] bg-[#0b152c]/40 p-5">
+                  <h3 className="text-[16px] font-semibold">Order Summary</h3>
+                  <div className="mt-4 space-y-2 text-[13px]">
+                    <Row label="Name" value={personal.fullName || "-"} />
+                    <Row label="NIC" value={personal.nic || "-"} />
+                    <Row
+                      label="Type"
+                      value={
+                        personal.type === "family"
+                          ? `family (${personal.count})`
+                          : "individual"
+                      }
+                    />
+                    <Row label="Amount (LKR)" value={computedAmount.toLocaleString("en-LK")} />
+                  </div>
+
+                  <div className="mt-6 space-y-2 text-[11px] text-[#94A3B8]">
+                    <p>
+                      Test card: <span className="font-medium text-[#E2E8F0]">4242 4242 4242 4242</span> (future expiry, any CVC).
+                    </p>
+                    <p>3-D Secure demo will ask for a 6-digit code.</p>
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-between border-t border-[#334155] pt-4">
+                    <span className="text-[13px] text-[#94A3B8]">Status</span>
+                    <span
+                      className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${
+                        payment.status === "paid"
+                          ? "bg-emerald-500/15 text-emerald-300"
+                          : payment.status === "pending"
+                          ? "bg-amber-500/15 text-amber-300"
+                          : "bg-rose-500/15 text-rose-300"
+                      }`}
+                    >
+                      {payment.status}
+                    </span>
+                  </div>
+                </div>
+              </section>
+
+              {/* Payment form */}
+              <section className="lg:col-span-2">
+                <form onSubmit={start3DS} noValidate className="rounded-xl border border-[#334155] bg-[#0b152c]/40 p-5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[16px] font-semibold">Pay with card</h3>
+                    <AcceptedStrip />
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+                    <LabelWrap label="Cardholder name" error={cardTouched && paymentErrors.cardName}>
                       <input
-                        ref={numberRef}
+                        className="u-input"
+                        placeholder="Dinusha Lakmal"
+                        value={cardName}
+                        onChange={(e) => setCardName(e.target.value)}
+                        onBlur={() => setCardTouched(true)}
+                      />
+                    </LabelWrap>
+
+                    <LabelWrap label="Card number" error={cardTouched && paymentErrors.cardNumber}>
+                      <div className="relative">
+                        <input
+                          ref={numberRef}
+                          inputMode="numeric"
+                          pattern="\\d*"
+                          maxLength={19}
+                          className="u-input pr-14"
+                          placeholder="4242 4242 4242 4242"
+                          value={cardNumber}
+                          onChange={(e) => onNumberChange(e.target.value)}
+                          onKeyDown={allowOnlyDigitsKeyDown}
+                          onBlur={() => setCardTouched(true)}
+                        />
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                          <BrandBadge brand={brand} />
+                        </div>
+                      </div>
+                    </LabelWrap>
+
+                    <LabelWrap label="Expiry (MM/YY)" error={cardTouched && paymentErrors.exp}>
+                      <input
                         inputMode="numeric"
-                        pattern="\d*"
-                        maxLength={19}              // 16 digits + 3 spaces
-                        className="u-input pr-14"
-                        placeholder="4242 4242 4242 4242"
-                        value={cardNumber}
-                        onChange={(e) => onNumberChange(e.target.value)}
+                        pattern="\\d*"
+                        maxLength={5}
+                        className="u-input"
+                        placeholder="12/28"
+                        value={exp}
+                        onChange={(e) => onExpChange(e.target.value)}
+                        onBlur={onExpBlur}
+                        onKeyDown={allowOnlyDigitsKeyDown}
+                      />
+                    </LabelWrap>
+
+                    <LabelWrap label="CVC" error={cardTouched && paymentErrors.cvc}>
+                      <input
+                        inputMode="numeric"
+                        pattern="\\d*"
+                        maxLength={3}
+                        className="u-input"
+                        placeholder="123"
+                        value={cvc}
+                        onChange={(e) => onCvcChange(e.target.value)}
                         onKeyDown={allowOnlyDigitsKeyDown}
                         onBlur={() => setCardTouched(true)}
                       />
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                        <BrandBadge brand={brand} />
-                      </div>
-                    </div>
-                  </LabelWrap>
+                    </LabelWrap>
+                  </div>
 
-                  <LabelWrap label="Expiry (MM/YY)" error={cardTouched && errors.exp}>
+                  <label className="mt-6 flex items-center gap-2 text-[13px] text-[#E2E8F0]">
                     <input
-                      inputMode="numeric"
-                      pattern="\d*"
-                      maxLength={5}
-                      className="u-input"
-                      placeholder="12/28"
-                      value={exp}
-                      onChange={(e) => onExpChange(e.target.value)}
-                      onBlur={onExpBlur}
-                      onKeyDown={allowOnlyDigitsKeyDown}
+                      type="checkbox"
+                      className="h-4 w-4 rounded border border-[#334155] bg-transparent"
+                      checked={saveCard}
+                      onChange={(e) => setSaveCard(e.target.checked)}
                     />
-                  </LabelWrap>
+                    Save card for faster checkout next time
+                  </label>
 
-                  <LabelWrap label="CVC" error={cardTouched && errors.cvc}>
-                    <input
-                      inputMode="numeric"
-                      pattern="\d*"
-                      maxLength={3}
-                      className="u-input"
-                      placeholder="123"
-                      value={cvc}
-                      onChange={(e) => onCvcChange(e.target.value)}
-                      onKeyDown={allowOnlyDigitsKeyDown}
-                      onBlur={() => setCardTouched(true)}
-                    />
-                  </LabelWrap>
-                </div>
+                  {serverError && <div className="mt-4 text-[#FCA5A5] text-[13px]">{serverError}</div>}
 
-                <label className="mt-6 flex items-center gap-2 text-[13px] text-[#E2E8F0]">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border border-[#334155] bg-transparent"
-                    checked={saveCard}
-                    onChange={(e) => setSaveCard(e.target.checked)}
-                  />
-                  Save card for faster checkout next time
-                </label>
+                  <div className="mt-6 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="inline-flex items-center gap-2 rounded-xl border border-[#334155] px-5 py-2.5 text-[14px] text-[#E2E8F0] hover:bg-white/10"
+                    >
+                      ← Back
+                    </button>
 
-                {serverError && <div className="mt-4 text-[#FCA5A5] text-[13px]">{serverError}</div>}
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#4F46E5] px-7 py-2.5 text-[14px] font-semibold text-white shadow-lg hover:bg-[#6366F1] focus:outline-none focus:ring-2 focus:ring-[#6366F1] disabled:opacity-60"
+                    >
+                      {submitting ? (
+                        <>
+                          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                          Processing…
+                        </>
+                      ) : (
+                        <>Pay LKR {computedAmount.toLocaleString("en-LK")}</>
+                      )}
+                    </button>
+                  </div>
+                </form>
 
-                <div className="mt-6 flex items-center justify-end">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#4F46E5] px-7 py-2.5 text-[14px] font-semibold text-white shadow-lg hover:bg-[#6366F1] focus:outline-none focus:ring-2 focus:ring-[#6366F1] disabled:opacity-60"
-                  >
-                    {submitting ? (
-                      <>
-                        <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                        Processing…
-                      </>
-                    ) : (
-                      <>Pay LKR {computedAmount.toLocaleString("en-LK")}</>
-                    )}
-                  </button>
-                </div>
-              </form>
+                {/* Receipt (step 3 renders below) */}
+              </section>
+            </div>
+          )}
 
-              {/* Receipt */}
-              {open && (
-                <div className="mt-6 rounded-xl border border-[#334155] bg-[#0b152c]/40 p-5">
-                  {result?.ticket ? (
-                    <div className="grid md:grid-cols-2 gap-6 items-start">
-                      <div>
-                        <h4 className="text-[16px] font-semibold">Payment successful</h4>
-                        <p className="text-[13px] text-[#94A3B8] mt-1">
-                          Ticket issued for {result.ticket.fullName} — {result.ticket.type}
-                          {result.ticket.type === "family" ? ` (${result.ticket.count})` : ""}
-                        </p>
-                        <p className="text-slate-600 text-sm mt-1">
-                          Assigned counter:{" "}
-                          <span className="font-semibold text-indigo-600">
-                            {result?.ticket?.assignedCounterName || "Not assigned"}
-                          </span>
-                        </p>
-                        <div className="mt-4 p-3 rounded-lg bg-emerald-500/10 text-emerald-300 text-[13px]">
-                          Status: Paid • {result.ticket?.payment?.card?.brand?.toUpperCase() || "CARD"} • **** {result.ticket?.payment?.card?.last4}
-                        </div>
-                      </div>
-                      <div className="justify-self-end">
-                        <img
-                          alt="QR Code"
-                          src={result.qr?.dataUrl || result.ticket?.qrDataUrl}
-                          className="w-48 h-48 border border-[#334155] bg-[#0F172A]"
-                          style={{ imageRendering: "pixelated" }}
-                        />
-                        <a
-                          className="mt-3 inline-block rounded-xl bg-[#4F46E5] px-4 py-2 text-white hover:bg-[#6366F1]"
-                          href={result.qr?.dataUrl || result.ticket?.qrDataUrl}
-                          download={`ticket_${result.ticket.type}_${result.ticket.nic}.png`}
-                        >
-                          Download QR
-                        </a>
-                      </div>
+          {step === 3 && (
+            <section className="rounded-xl border border-[#334155] bg-[#0b152c]/40 p-5">
+              {result?.ticket ? (
+                <div className="grid md:grid-cols-2 gap-6 items-start">
+                  <div>
+                    <h4 className="text-[16px] font-semibold">Payment successful</h4>
+                    <p className="text-[13px] text-[#94A3B8] mt-1">
+                      Ticket issued for {result.ticket.fullName} — {result.ticket.type}
+                      {result.ticket.type === "family" ? ` (${result.ticket.count})` : ""}
+                    </p>
+                    <p className="text-slate-600 text-sm mt-1">
+                      Assigned counter:{" "}
+                      <span className="font-semibold text-indigo-600">
+                        {result?.ticket?.assignedCounterName || "Not assigned"}
+                      </span>
+                    </p>
+                    <div className="mt-4 p-3 rounded-lg bg-emerald-500/10 text-emerald-300 text-[13px]">
+                      Status: Paid • {result.ticket?.payment?.card?.brand?.toUpperCase() || "CARD"} • ****{" "}
+                      {result.ticket?.payment?.card?.last4}
                     </div>
-                  ) : (
-                    <>
-                      <h4 className="text-[16px] font-semibold">Something went wrong</h4>
-                      <p className="text-[13px] text-[#94A3B8] mt-1">{serverError || "Please try again."}</p>
-                    </>
-                  )}
+
+                    <div className="mt-6 flex gap-3">
+                      <button
+                        className="rounded-xl bg-[#4F46E5] px-4 py-2 text-white hover:bg-[#6366F1]"
+                        onClick={resetAll}
+                      >
+                        New Registration
+                      </button>
+                    </div>
+                  </div>
+                  <div className="justify-self-end">
+                    <img
+                      alt="QR Code"
+                      src={result.qr?.dataUrl || result.ticket?.qrDataUrl}
+                      className="w-48 h-48 border border-[#334155] bg-[#0F172A]"
+                      style={{ imageRendering: "pixelated" }}
+                    />
+                    <a
+                      className="mt-3 inline-block rounded-xl bg-[#4F46E5] px-4 py-2 text-white hover:bg-[#6366F1]"
+                      href={result.qr?.dataUrl || result.ticket?.qrDataUrl}
+                      download={`ticket_${result.ticket.type}_${result.ticket.nic}.png`}
+                    >
+                      Download QR
+                    </a>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  <h4 className="text-[16px] font-semibold">Something went wrong</h4>
+                  <p className="text-[13px] text-[#94A3B8] mt-1">{serverError || "Please try again."}</p>
+                  <div className="mt-6">
+                    <button
+                      onClick={() => setStep(2)}
+                      className="rounded-xl bg-[#4F46E5] px-4 py-2 text-white hover:bg-[#6366F1]"
+                    >
+                      Back to Payment
+                    </button>
+                  </div>
+                </>
               )}
             </section>
-          </div>
+          )}
         </div>
       </main>
 
+      {/* Style helpers */}
       <style>{`
         .u-label { font-size: 12px; line-height: 1.2; font-weight: 600; color: #E2E8F0; display: inline-block; }
         .u-err { font-size: 11px; color: #FCA5A5; margin-top: 6px; }
@@ -460,7 +676,9 @@ export default function RegisterPayment() {
           <div className="w-full max-w-sm rounded-2xl bg-[#0F172A] border border-[#334155] p-6 shadow-2xl text-[#E2E8F0]">
             <div className="flex items-center justify-between">
               <h4 className="text-[16px] font-semibold">3-D Secure Verification</h4>
-              <button className="text-[#94A3B8] hover:text-white" onClick={() => setThreeDSOpen(false)} aria-label="Close">✕</button>
+              <button className="text-[#94A3B8] hover:text-white" onClick={() => setThreeDSOpen(false)} aria-label="Close">
+                ✕
+              </button>
             </div>
             <p className="text-[13px] text-[#94A3B8] mt-2">
               We sent a one-time passcode to your phone. Enter the 6-digit code to authorize this payment.
@@ -474,7 +692,10 @@ export default function RegisterPayment() {
               onChange={(e) => setOtp(e.target.value.replace(/\D+/g, "").slice(0, 6))}
             />
             <div className="mt-4 flex items-center justify-end gap-2">
-              <button className="rounded-lg border border-[#334155] px-4 py-2 text-[#E2E8F0] hover:bg-white/10" onClick={() => setThreeDSOpen(false)}>
+              <button
+                className="rounded-lg border border-[#334155] px-4 py-2 text-[#E2E8F0] hover:bg-white/10"
+                onClick={() => setThreeDSOpen(false)}
+              >
                 Cancel
               </button>
               <button
@@ -488,41 +709,6 @@ export default function RegisterPayment() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-/* Helpers */
-function Row({ label, value }) {
-  return (
-    <div className="flex justify-between">
-      <span className="text-[13px] text-[#94A3B8]">{label}</span>
-      <span className="text-[13px] text-[#E2E8F0]">{value}</span>
-    </div>
-  );
-}
-function LabelWrap({ label, error, children }) {
-  return (
-    <label className="block text-sm">
-      <span className="u-label">{label}</span>
-      <div className="mt-1.5">{children}</div>
-      {error ? <p className="u-err">{error}</p> : null}
-    </label>
-  );
-}
-function Stepper({ step = 1 }) {
-  return (
-    <div className="flex items-center gap-2">
-      {[1, 2].map((s) => (
-        <span
-          key={s}
-          className={`h-2.5 w-10 rounded-full ${
-            s <= step ? "bg-[#E2E8F0]" : "bg-[#475569]"
-          }`}
-          aria-hidden
-        />
-      ))}
-      <span className="sr-only">Step {step} of 2</span>
     </div>
   );
 }

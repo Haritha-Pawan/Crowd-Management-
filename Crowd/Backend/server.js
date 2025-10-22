@@ -25,14 +25,6 @@ import spotRouter from './src/Modules/Parking/Route/spot.route.js';
 
 
 
-
-
-
-
-
-
-
-
 // ✅ Notifications route
 import notificationRoutes from './src/Modules/notifications/Route/notification.route.js';
 
