@@ -23,6 +23,8 @@ import ResetPassword from "./Pages/ResetPassword.jsx";
 import QRScanner from "./Components/Counter/QRScanner.jsx";
 import Landingpage from "./Pages/landingpage.jsx";
 import RegisterPayment from "./Pages/RegisterPayment.jsx";
+import ProtectedRoute from "./Components/ProtectedRoute.jsx";
+
 
 
 const App = () => {
@@ -32,41 +34,123 @@ const App = () => {
       <Toaster position="top-right" />
      
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<Landingpage />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-
-        <Route path="/Organizer/*" element={<Organizer />} />
-        <Route path="/reserve" element={<Reserve />} />
-
-        <Route path="/Coordinator/*" element={<Coordinator />} />
-
-        <Route path="/parking" element={<ParkingZone />} />
-
-        <Route path="/zone" element={<Parking />} />
-        <Route path="/payment" element={<Payment />} />
-        <Route path="/counterStaff" element={<CounterDashboard />} />
-
-        <Route path="/attendee/*" element={<Attendee />} />
-        <Route path="/CounterDashboard/*" element={<CounterDashboard />} />
-          <Route path='/attendee/*' element={<Attendee />} />
-          <Route path='/overview' element={<Overview />} />
-          <Route path='/profile' element={<Profile />} />
-          <Route path='/admin/*' element={<Admin />} />
-          <Route path='/organizer/*' element={<Organizer />} />
-          <Route path='/reserve' element={<Reserve />} />
-         <Route path="/register/payment" element={<RegisterPayment />} />
-          <Route path="/QRScanner" element={<QRScanner/>}/>
-        <Route path="/overview" element={<Overview />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/admin/*" element={<Admin />} />
-        <Route path="/organizer/*" element={<Organizer />} />
-        <Route path="/reserve" element={<Reserve />} />
-        <Route path="/" element={<AttendeDetails />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/register/payment" element={<RegisterPayment />} />
 
-        </Routes>
+        {/* Protected Routes */}
+        <Route
+          path="/attendee/*"
+          element={
+            <ProtectedRoute>
+              <Attendee />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/overview"
+          element={
+            <ProtectedRoute>
+              <Overview />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/*"
+          element={
+            <ProtectedRoute>
+              <Admin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/organizer/*"
+          element={
+            <ProtectedRoute>
+              <Organizer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reserve"
+          element={
+            <ProtectedRoute>
+              <Reserve />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/parking"
+          element={
+            <ProtectedRoute>
+              <ParkingZone />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/zone"
+          element={
+            <ProtectedRoute>
+              <Parking />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment"
+          element={
+            <ProtectedRoute>
+              <Payment />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/counterStaff"
+          element={
+            <ProtectedRoute>
+              <CounterDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/QRScanner"
+          element={
+            <ProtectedRoute>
+              <QRScanner />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/Coordinator/*"
+          element={
+            <ProtectedRoute>
+              <Coordinator />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/AttendeDetails"
+          element={
+            <ProtectedRoute>
+              <AttendeDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Optional 404 page */}
+        <Route path="*" element={<h1>404 - Page Not Found</h1>} />
+      </Routes>
       
 
     </>
