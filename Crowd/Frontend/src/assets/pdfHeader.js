@@ -2,10 +2,10 @@
 // Reusable business header for all PDFs in your app.
 
 export const BUSINESS_INFO = {
-  name: "CrowdFlow ",
+  name: "CrowdFlow (SLIIT)",
   tagline: "Smart Event & Crowd Management",
   address: "Sri Lanka Institute of Information Technology",
-  phone: "+94 77 123 4567",
+  phone: "+94 71 234 5678",
   email: "info@crowdflow.lk",
   website: "www.crowdflow.lk",
   // Optional: dataURL logo (PNG/JPG). Keep width ~18–24

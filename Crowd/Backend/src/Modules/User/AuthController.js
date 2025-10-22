@@ -12,6 +12,7 @@ export const login = async (req, res) => {   // <--- added export here
     if (!user) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
+    // find attende 
 
     // compare password
     const isMatch = await bcrypt.compare(password, user.password);
@@ -21,7 +22,7 @@ export const login = async (req, res) => {   // <--- added export here
 
     // create JWT token
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id, role: user.role,username: user.username, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -33,6 +34,10 @@ export const login = async (req, res) => {   // <--- added export here
         id: user._id,
         email: user.email,
         role: user.role,
+        username: user.username,
+        email: user.email
+
+        
       },
     });
   } catch (error) {

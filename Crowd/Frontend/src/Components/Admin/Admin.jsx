@@ -37,6 +37,7 @@ const Admin = () => {
             <div className="Right flex flex-10/12">
       
               <Routes>
+                
                 <Route path="/" element={<AdminOverview/>}/>
                 <Route path="/AdminOverview" element={<AdminOverview/>}/>
                 <Route path="/UserManagement" element={<UserManagement/>} />
@@ -44,6 +45,7 @@ const Admin = () => {
                 <Route path="/AttendeDetails" element={<AttendeDetails/>} />
                 <Route path="/AttendeDetails" element={<AttendeDetails/>} />
                 <Route path="/ParkingManagement" element={<ParkingManagement/>} />
+
               </Routes>
             
            </div>

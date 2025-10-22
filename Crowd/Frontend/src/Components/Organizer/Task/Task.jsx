@@ -5,308 +5,177 @@ import axios from "axios";
 import { ClipboardList, CheckCircle2, AlertTriangle, TimerReset } from "lucide-react";
 import AddTask from "../Task/AddTask";
 
-// ✅ PDF deps
+// ✅ NEW: PDF deps
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+// Adjust the path if needed (e.g., "../../utils/pdfHeader")
 import { addBusinessHeader, BUSINESS_INFO } from "../../../assets/pdfHeader";
 
 const API = "http://localhost:5000/api";
 
-
-const normalizeStatus = (s) => {
-  const v = String(s || "todo").toLowerCase().replace(" ", "_");
-  const ok = new Set(["todo", "in_progress", "done", "blocked"]);
-  return ok.has(v) ? v : "todo";
-};
-const normalizePriority = (p) => {
-  const v = String(p || "medium").toLowerCase();
-  return ["low", "medium", "high", "urgent"].includes(v) ? v : "medium";
-};
-const ymdLocal = (d) => {
-  if (!d) return "";
-  const dt = new Date(d);
-  const y = dt.getFullYear();
-  const m = String(dt.getMonth() + 1).padStart(2, "0");
-  const day = String(dt.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-};
-const normalizeTask = (t) => ({
-  ...t,
-  status: normalizeStatus(t.status),
-  priority: normalizePriority(t.priority),
-  dueDate: t.dueDate ? ymdLocal(t.dueDate) : "",
-  title: (t.title || "").trim(),
-  description: (t.description || "").trim(),
-  coordinator: (t.coordinator || "").trim(),
-});
-
-const todayYmd = () => {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-};
-const isOverdue = (task) => {
-  if (!task.dueDate || task.status === "done") return false;
-  return task.dueDate < todayYmd(); // lexical compare ok for YYYY-MM-DD
-};
-
-/* ------------------------ Light payload validation (belt & suspenders) ------------------------ */
-const validatePayload = (p) => {
-  const e = [];
-  const title = (p.title || "").trim();
-  if (!title || title.length < 3) e.push("Title too short");
-  const pr = String(p.priority || "").toLowerCase();
-  if (!["low", "medium", "high", "urgent"].includes(pr)) e.push("Bad priority");
-  const st = String(p.status || "").toLowerCase();
-  if (!["todo", "in_progress", "done", "blocked"].includes(st)) e.push("Bad status");
-  const ymd = p.dueDate ? String(p.dueDate).slice(0, 10) : "";
-  const today = todayYmd();
-  if (ymd && st !== "done" && ymd < today) e.push("Due date in the past");
-  return e;
-};
-
-/* ------------------------ Parse staffs helper ------------------------ */
-function parseOtherStaffs(val) {
-  if (Array.isArray(val)) return val.filter(Boolean);
-  return String(val || "")
-    .split(/\r?\n|,/) // split on newlines or commas
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-/* ------------------------ Component ------------------------ */
 const Task = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [tasks, setTasks] = useState([]);
 
-  const [loading, setLoading] = useState(true);
-
-  // Load tasks once (with normalization + error handling)
+  // Load tasks once
   useEffect(() => {
     (async () => {
-      try {
-        const { data } = await axios.get(`${API}/tasks`);
-        setTasks(Array.isArray(data) ? data.map(normalizeTask) : []);
-      } catch (err) {
-        console.error(err);
-        alert("Failed to load tasks");
-      } finally {
-        setLoading(false);
-      }
+      const { data } = await axios.get(`${API}/tasks`);
+      setTasks(data);
     })();
   }, []);
 
-  // Derived lists (based on normalized status)
-  const pendingTasks = useMemo(
-    () => tasks.filter((t) => t.status !== "done"),
-    [tasks]
-  );
-  const completedTasks = useMemo(
-    () => tasks.filter((t) => t.status === "done"),
-    [tasks]
-  );
+  // Derived lists
+  const pendingTasks = useMemo(() => tasks.filter(t => t.status !== "done"), [tasks]);
+  const completedTasks = useMemo(() => tasks.filter(t => t.status === "done"), [tasks]);
 
   // Cards
   const total = tasks.length;
-  const inProgress = tasks.filter((t) => t.status === "in_progress").length;
+  const inProgress = tasks.filter(t => t.status === "in_progress").length;
   const completed = completedTasks.length;
-  const overdue = tasks.filter(isOverdue).length;
+  const overdue = tasks.filter(t => {
+    if (!t.dueDate || t.status === "done") return false;
+    const due = new Date(t.dueDate);
+    const today = new Date(); today.setHours(0,0,0,0);
+    return due < today;
+  }).length;
 
-  /* ------------------------ CRUD handlers ------------------------ */
+  // CRUD handlers (API lives here)
   const createTask = async (payload) => {
-    const errs = validatePayload(payload);
-    if (errs.length) return alert(errs.join("\n"));
-    try {
-      const { data } = await axios.post(`${API}/tasks`, payload);
-      setTasks((prev) => [normalizeTask(data), ...prev]);
-      setIsPopupOpen(false);
-    } catch (e) {
-      console.error(e);
-      alert("Create failed");
-    }
+    const { data } = await axios.post(`${API}/tasks`, payload);
+    setTasks(prev => [data, ...prev]);
+    setIsPopupOpen(false);
   };
 
   const updateTask = async (id, payload) => {
-    const errs = validatePayload(payload);
-    if (errs.length) return alert(errs.join("\n"));
-    try {
-      const { data } = await axios.put(`${API}/tasks/${id}`, payload);
-      setTasks((prev) => prev.map((t) => (t._id === id ? normalizeTask(data) : t)));
-      setEditingTask(null);
-    } catch (e) {
-      console.error(e);
-      alert("Update failed");
-    }
+    const { data } = await axios.put(`${API}/tasks/${id}`, payload);
+    setTasks(prev => prev.map(t => (t._id === id ? data : t)));
+    setEditingTask(null);
   };
 
   const markDone = async (id) => {
-    const current = tasks.find((t) => t._id === id);
-    if (!current) return;
-    if (current.status === "done") return; // already done
-    try {
-      const { data } = await axios.put(`${API}/tasks/${id}`, { status: "done" });
-      setTasks((prev) => prev.map((t) => (t._id === id ? normalizeTask(data) : t)));
-    } catch (e) {
-      console.error(e);
-      alert("Failed to mark as done");
-    }
+    const { data } = await axios.put(`${API}/tasks/${id}`, { status: "done" });
+    setTasks(prev => prev.map(t => (t._id === id ? data : t)));
   };
 
   const removeTask = async (id) => {
-    const current = tasks.find((t) => t._id === id);
-    if (!current) return;
-    if (!confirm(`Delete task "${current.title}"? This cannot be undone.`)) return;
-
-    try {
-      await axios.delete(`${API}/tasks/${id}`);
-      setTasks((prev) => prev.filter((t) => t._id !== id));
-    } catch (e) {
-      console.error(e);
-      alert("Delete failed");
-    }
+    await axios.delete(`${API}/tasks/${id}`);
+    setTasks(prev => prev.filter(t => t._id !== id));
   };
 
-  /* ------------------------ Export PDF (guarded) ------------------------ */
+  // ---------- NEW: Export PDF ----------
   const generatePdf = () => {
-    if (!Array.isArray(tasks) || tasks.length === 0) {
-      alert("No tasks to export.");
-      return;
-    }
-    try {
-      const doc = new jsPDF();
+    const doc = new jsPDF();
 
-      const headerInfo = { ...(BUSINESS_INFO || {}) };
-      const safeAddHeader =
-        typeof addBusinessHeader === "function" ? addBusinessHeader : () => {};
+    // Repeat header on each page
+    const headerInfo = {
+      ...BUSINESS_INFO,
+      // You can override per-report here if needed:
+      // name: "Your Org Name",
+      // logo: "data:image/png;base64,...."
+    };
 
-      const didDrawPage = (data) => {
-        safeAddHeader(doc, headerInfo);
-        // footer with page numbers
-        const pageCount = doc.getNumberOfPages();
-        doc.setFontSize(9).setTextColor(120);
-        doc.text(
-          `Page ${data.pageNumber} of ${pageCount}`,
-          doc.internal.pageSize.getWidth() - 20,
-          doc.internal.pageSize.getHeight() - 10,
-          { align: "right" }
-        );
-      };
-
-      // Title + filename
-      const reportTitle = "Task Report";
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, "0");
-      const dd = String(today.getDate()).padStart(2, "0");
-      const fileName = `Task_Report_${yyyy}-${mm}-${dd}.pdf`;
-
-      // Build table rows
-      const toRow = (t) => ({
-        title: t.title || "—",
-        coordinator: t.coordinator || "—",
-        priority: priorityLabel(t.priority || "medium"),
-        status: statusLabel(t.status || "todo"),
-        due: t.dueDate || "—",
-        others: parseOtherStaffs(t.otherStaffs || []).join(", ") || "—",
-      });
-
-      const pendingRows = pendingTasks.map(toRow);
-      const completedRows = completedTasks.map(toRow);
-
-      // common columns
-      const columns = [
-        { header: "Title", dataKey: "title" },
-        { header: "Coordinator", dataKey: "coordinator" },
-        { header: "Priority", dataKey: "priority" },
-        { header: "Status", dataKey: "status" },
-        { header: "Due", dataKey: "due" },
-        { header: "Other Staffs", dataKey: "others" },
-      ];
-
-      // First page header draw
-      didDrawPage({ pageNumber: 1 });
-
-      // Report title + meta under header
-      doc.setFont("helvetica", "bold").setFontSize(14);
-      doc.text(reportTitle, 14, 40);
-      doc.setFont("helvetica", "normal").setFontSize(10);
-      doc.text(`Generated: ${yyyy}-${mm}-${dd}`, 14, 46);
+    // Will be called for each page (including first)
+    const didDrawPage = (data) => {
+      addBusinessHeader(doc, headerInfo);
+      // footer with page numbers
+      const pageCount = doc.getNumberOfPages();
+      doc.setFontSize(9).setTextColor(120);
       doc.text(
-        `Totals: ${total} | In Progress: ${inProgress} | Completed: ${completed} | Overdue: ${overdue}`,
-        14,
-        52
+        `Page ${data.pageNumber} of ${pageCount}`,
+        doc.internal.pageSize.getWidth() - 20,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: "right" }
       );
+    };
 
-      // Pending section
-      doc.setFont("helvetica", "bold").setFontSize(12);
-      doc.text(`Pending Tasks (${pendingRows.length})`, 14, 62);
+    // Title
+    const reportTitle = "Task Report";
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const fileName = `Task_Report_${yyyy}-${mm}-${dd}.pdf`;
 
-      autoTable(doc, {
-        startY: 66,
-        head: [columns.map((c) => c.header)],
-        body: pendingRows.map((r) => columns.map((c) => r[c.dataKey])),
-        styles: { fontSize: 9, cellPadding: 2 },
-        headStyles: { fillColor: [40, 44, 52], textColor: 255 },
-        didDrawPage,
-        margin: { left: 14, right: 14 },
-        tableWidth: "auto",
-      });
+    // Build table rows
+    const toRow = (t) => ({
+      title: t.title || "—",
+      coordinator: t.coordinator || "—",
+      priority: priorityLabel(t.priority || "medium"),
+      status: statusLabel(t.status || "todo"),
+      due: t.dueDate ? String(t.dueDate).split("T")[0] : "—",
+      others: parseOtherStaffs(t.otherStaffs || []).join(", ") || "—",
+    });
 
-      // Completed section (continue where last table ended)
-      const nextY = doc.lastAutoTable?.finalY ? doc.lastAutoTable.finalY + 10 : 66;
-      doc.setFont("helvetica", "bold").setFontSize(12);
-      doc.text(`Completed Tasks (${completedRows.length})`, 14, nextY);
+    const pendingRows = pendingTasks.map(toRow);
+    const completedRows = completedTasks.map(toRow);
 
-      autoTable(doc, {
-        startY: nextY + 4,
-        head: [columns.map((c) => c.header)],
-        body: completedRows.map((r) => columns.map((c) => r[c.dataKey])),
-        styles: { fontSize: 9, cellPadding: 2 },
-        headStyles: { fillColor: [40, 44, 52], textColor: 255 },
-        didDrawPage,
-        margin: { left: 14, right: 14 },
-        tableWidth: "auto",
-      });
+    // common columns
+    const columns = [
+      { header: "Title", dataKey: "title" },
+      { header: "Coordinator", dataKey: "coordinator" },
+      { header: "Priority", dataKey: "priority" },
+      { header: "Status", dataKey: "status" },
+      { header: "Due", dataKey: "due" },
+      { header: "Other Staffs", dataKey: "others" },
+    ];
 
-      doc.save(fileName);
-    } catch (e) {
-      console.error(e);
-      alert("Failed to generate PDF");
-    }
+    // First page header draw
+    didDrawPage({ pageNumber: 1 });
+
+    // Report title + meta under header
+    doc.setFont("helvetica", "bold").setFontSize(14);
+    doc.text(reportTitle, 14, 40);
+    doc.setFont("helvetica", "normal").setFontSize(10);
+    doc.text(`Generated: ${yyyy}-${mm}-${dd}`, 14, 46);
+    doc.text(`Totals: ${total} | In Progress: ${inProgress} | Completed: ${completed} | Overdue: ${overdue}`, 14, 52);
+
+    // Pending section
+    doc.setFont("helvetica", "bold").setFontSize(12);
+    doc.text(`Pending Tasks (${pendingRows.length})`, 14, 62);
+
+    autoTable(doc, {
+      startY: 66,
+      head: [columns.map(c => c.header)],
+      body: pendingRows.map(r => columns.map(c => r[c.dataKey])),
+      styles: { fontSize: 9, cellPadding: 2 },
+      headStyles: { fillColor: [40, 44, 52], textColor: 255 },
+      didDrawPage,
+      margin: { left: 14, right: 14 },
+      tableWidth: "auto",
+    });
+
+    // Completed section (continue where last table ended)
+    const nextY = doc.lastAutoTable?.finalY ? doc.lastAutoTable.finalY + 10 : 66;
+    doc.setFont("helvetica", "bold").setFontSize(12);
+    doc.text(`Completed Tasks (${completedRows.length})`, 14, nextY);
+
+    autoTable(doc, {
+      startY: nextY + 4,
+      head: [columns.map(c => c.header)],
+      body: completedRows.map(r => columns.map(c => r[c.dataKey])),
+      styles: { fontSize: 9, cellPadding: 2 },
+      headStyles: { fillColor: [40, 44, 52], textColor: 255 },
+      didDrawPage,
+      margin: { left: 14, right: 14 },
+      tableWidth: "auto",
+    });
+
+    doc.save(fileName);
   };
 
   return (
     <div className="p-12 2xl:h-screen w-full">
       <div className="header text-white text-3xl font-bold">Task Management</div>
-      <div className="sub-heading text-gray-300 text-xl">
-        Create tasks and assign a coordinator
-      </div>
+      <div className="sub-heading text-gray-300 text-xl">Create tasks and assign a coordinator</div>
 
       {/* Cards */}
       <div className="card grid 2xl:grid-cols-4 lg:grid-cols-4 mt-8 md:grid-cols-2 gap-3 mx-auto">
-        <Card
-          title="Total Tasks"
-          icon={<ClipboardList color="#2f80ed" size={30} />}
-          count={String(total)}
-        />
-        <Card
-          title="In Progress"
-          icon={<TimerReset color="#f59e0b" size={30} />}
-          count={String(inProgress)}
-        />
-        <Card
-          title="Completed"
-          icon={<CheckCircle2 color="#4ade80" size={30} />}
-          count={String(completed)}
-        />
-        <Card
-          title="Overdue"
-          icon={<AlertTriangle color="#ef4444" size={30} />}
-          count={String(overdue)}
-        />
+        <Card title="Total Tasks" icon={<ClipboardList color="#2f80ed" size={30} />} count={String(total)} />
+        <Card title="In Progress" icon={<TimerReset color="#f59e0b" size={30} />} count={String(inProgress)} />
+        <Card title="Completed" icon={<CheckCircle2 color="#4ade80" size={30} />} count={String(completed)} />
+        <Card title="Overdue" icon={<AlertTriangle color="#ef4444" size={30} />} count={String(overdue)} />
       </div>
 
       {/* Actions */}
@@ -318,17 +187,11 @@ const Task = () => {
           + Add Task
         </button>
 
-        {/* Export PDF */}
+        {/* ✅ NEW: Export PDF */}
         <button
           onClick={generatePdf}
-          disabled={loading || tasks.length === 0}
-          className={`mt-5 inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm text-white
-            ${loading || tasks.length === 0
-              ? "border-white/10 bg-white/5 opacity-60 cursor-not-allowed"
-              : "border-white/10 bg-white/5 hover:bg-white/10"}`}
-          title={
-            loading ? "Loading tasks..." : tasks.length === 0 ? "No tasks to export" : "Export PDF"
-          }
+          className="mt-5 inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
+          title="Export PDF"
         >
           <ClipboardList size={16} />
           Export PDF
@@ -394,18 +257,26 @@ const Task = () => {
   );
 };
 
-/* ------------------------ Row & UI helpers ------------------------ */
+/* helper to render otherStaffs line-by-line */
+function parseOtherStaffs(val) {
+  if (Array.isArray(val)) return val.filter(Boolean);
+  return String(val || "")
+    .split(/\r?\n|,/)     // split on newlines or commas
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
 function TaskRow({ t, done = false, onDone, onEdit, onDelete }) {
   const staffList = parseOtherStaffs(t.otherStaffs);
-
-  const completeDisabled = t.status === "done" || t.status === "blocked";
 
   return (
     <div className="rounded-xl border border-white/10 bg-gradient-to-br from-slate-800/60 to-slate-900/60 p-4 text-white shadow-sm">
       {/* Title + badges */}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="font-semibold hover:underline truncate">{t.title}</div>
+          <div className="font-semibold hover:underline truncate">
+            {t.title}
+          </div>
 
           {/* Assigned + Details */}
           <div className="mt-1 text-sm text-slate-300">
@@ -414,7 +285,10 @@ function TaskRow({ t, done = false, onDone, onEdit, onDelete }) {
               {t.coordinator ? `${t.coordinator} (Coordinator)` : "—"}
             </span>
             <br />
-            Description: <span className="text-white">{t.description || "—"}</span>
+            Description:{" "}
+            <span className="text-white">
+              {t.description || "—"}
+            </span>
             <br />
             Other Staffs:
             {staffList.length === 0 ? (
@@ -433,12 +307,20 @@ function TaskRow({ t, done = false, onDone, onEdit, onDelete }) {
         <div className="flex shrink-0 flex-col items-end gap-2">
           <div className="text-sm text-slate-300">
             <span className="mr-1">Due:</span>
-            <span className="text-white">{t.dueDate || "—"}</span>
+            <span className="text-white">
+              {t.dueDate ? t.dueDate.split("T")[0] : "—"}
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <Pill label={priorityLabel(t.priority)} color={priorityColor(t.priority)} />
-            <Pill label={statusLabel(done ? "done" : t.status)} color={statusColor(done ? "done" : t.status)} />
+            <Pill
+              label={priorityLabel(t.priority)}
+              color={priorityColor(t.priority)}
+            />
+            <Pill
+              label={statusLabel(done ? "done" : t.status)}
+              color={statusColor(done ? "done" : t.status)}
+            />
           </div>
         </div>
       </div>
@@ -457,14 +339,8 @@ function TaskRow({ t, done = false, onDone, onEdit, onDelete }) {
         {!done && (
           <button
             onClick={onDone}
-            disabled={completeDisabled}
-            className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs
-              ${
-                completeDisabled
-                  ? "border-white/10 bg-white/5 opacity-60 cursor-not-allowed"
-                  : "border-emerald-400/20 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/15"
-              }`}
-            title={t.status === "blocked" ? "Task is blocked" : "Mark Done"}
+            className="inline-flex items-center gap-1 rounded-md border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-xs text-emerald-300 hover:bg-emerald-400/15"
+            title="Mark Done"
           >
             <RefreshCcw size={14} /> Complete
           </button>
@@ -504,7 +380,6 @@ function Pill({ label, color }) {
   );
 }
 
-/* ------------------------ Label & color helpers ------------------------ */
 function priorityLabel(p = "medium") {
   const v = String(p || "medium").toLowerCase();
   if (v === "high") return "High";

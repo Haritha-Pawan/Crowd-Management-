@@ -54,6 +54,6 @@ import mongoose from "mongoose";
  );
 
  //create and export the Counter model
- const Counter = mongoose.model("Counter",CounterSchema);
+const Counter = mongoose.models.Counter || mongoose.model("Counter", CounterSchema);
 
  export default Counter;

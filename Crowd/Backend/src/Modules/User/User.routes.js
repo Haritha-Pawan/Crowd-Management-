@@ -6,7 +6,9 @@ import {
   updateUser,
   deleteUser,
   getAllAttendees2,
-  getRegistrationsPerDay
+  getRegistrationsPerDay,
+  sendMessageToAllAttendees
+
   
 } from "../User/User.controller.js";
 
@@ -14,12 +16,14 @@ const router = express.Router();
 //get attendees count
 router.post("/attendees/new", getAllAttendees2);
 
-//get registrations per day
-router.get("/attendee-daily-count", getRegistrationsPerDay);
-
 // GET all users
 router.get("/", getAllUsers);
 
+//register daily count
+router.get("/attendee-daily-count", getRegistrationsPerDay);
+
+//send message to all attendees
+router.post("/attendees/send-message", sendMessageToAllAttendees);
 
 // POST new user
 router.post("/", createUser);
@@ -33,8 +37,6 @@ router.put("/:id", updateUser);
 
 // DELETE user
 router.delete("/:id", deleteUser);
-
-
 
 
 
