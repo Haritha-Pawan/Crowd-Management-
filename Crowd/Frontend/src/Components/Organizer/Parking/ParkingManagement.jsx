@@ -3,8 +3,7 @@ import {
   ChartNoAxesCombined,
   CircleDotIcon,
   Edit,
-  Locate,
-  LocationEdit,
+  Locate,          // ⬅️ use this instead of LocationEdit
   Search,
   Trash2Icon,
 } from "lucide-react";
@@ -16,6 +15,7 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import EditForm from "./EditForm";
 
+const API = "http://localhost:5000/api";
 
 const ParkingManagement = () => {
   const [isAddPopupOpen, setAddIsPopupOpen] = useState(false);
@@ -26,15 +26,15 @@ const ParkingManagement = () => {
 
   const buttons = ["Parking Zones", "Reservation", "Real-time View"];
 
-  // ---- single fetcher for /api/places ----
+  // ---- single fetcher for /api/zone ----
   const fetchPlaces = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/zone`);
-      console.log("[PM] GET /places:", res.data);
+      const res = await axios.get(`${API}/zone`);
+      console.log("[PM] GET /zone:", res.data);
       const list = res?.data?.data ?? res?.data ?? [];
       if (Array.isArray(list)) setPlaces(list);
       else {
-        console.error("[PM] Unexpected shape for /places:", res.data);
+        console.error("[PM] Unexpected shape for /zone:", res.data);
         toast.error("Invalid places response");
       }
       if (res?.data?.error) toast.error(res.data.error);
@@ -44,11 +44,47 @@ const ParkingManagement = () => {
     }
   };
 
+  // 🔹 NEW: GET /api/spots/metrics and merge into `places`
+  const fetchAndMergeMetrics = async () => {
+    try {
+      const { data } = await axios.get(`${API}/spots/metrics`);
+      const byZone = Array.isArray(data?.byZone) ? data.byZone : [];
+
+      // zoneId -> { capacity, occupied, available }
+      const map = new Map();
+      for (const z of byZone) map.set(String(z.zoneId), z);
+
+      // merge into places (capacity/occupied only; UI derives available)
+      setPlaces((prev) =>
+        Array.isArray(prev)
+          ? prev.map((p) => {
+              const m = map.get(String(p._id));
+              if (!m) return p;
+              return {
+                ...p,
+                capacity: m.capacity ?? p.capacity ?? 0,
+                occupied: m.occupied ?? p.occupied ?? 0,
+                // optional: keep if you ever need it
+                availableFromMetrics: m.available,
+              };
+            })
+          : prev
+      );
+    } catch (e) {
+      console.error("[PM] Fetch metrics failed:", e);
+      toast.error(e?.response?.data?.error || "Failed to fetch parking metrics");
+    }
+  };
+
+  // initial load
   useEffect(() => {
-    fetchPlaces();
+    (async () => {
+      await fetchPlaces();           // get zones first
+      await fetchAndMergeMetrics();  // then enrich with live metrics
+    })();
   }, []);
 
-  // ---- totals / cards ----
+  // ---- totals / cards (no UI change) ----
   const totalCapacity = useMemo(
     () => places.reduce((t, z) => t + (Number(z?.capacity) || 0), 0),
     [places]
@@ -73,11 +109,13 @@ const ParkingManagement = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this place?")) return;
     try {
-      const res = await axios.delete(`http://localhost:5000/api/zone/${id}`);
+      const res = await axios.delete(`${API}/zone/${id}`);
       console.log("[PM] DELETE /zone/:id:", res.data);
 
       toast.success(res?.data?.message ?? "Place deleted");
       setPlaces((prev) => prev.filter((z) => z._id !== id));
+      // refresh metrics after deletion so totals/tiles stay correct
+      await fetchAndMergeMetrics();
     } catch (err) {
       console.error("[PM] Delete failed:", err);
       toast.error("Failed to delete place");
@@ -90,8 +128,6 @@ const ParkingManagement = () => {
       <div className="sub-heading text-gray-300 text-xl ">
         Manage parking places and reservations
       </div>
-
-   
 
       <div className="flex gap-6 mt-6 justify-end">
         {buttons.map((btn) => (
@@ -138,14 +174,20 @@ const ParkingManagement = () => {
             <AddForm
               isOpen={isAddPopupOpen}
               onClose={() => setAddIsPopupOpen(false)}
-              refresh={fetchPlaces}              // unified refresh
+              refresh={async () => {
+                await fetchPlaces();
+                await fetchAndMergeMetrics(); // keep metrics in sync after add
+              }}
             />
 
             <EditForm
               isOpen={isEditPopupOpen}
               onClose={() => setEditIsPopupOpen(false)}
-              id={selectedId}                     // pass the right prop name
-              refresh={fetchPlaces}              // unified refresh
+              id={selectedId}
+              refresh={async () => {
+                await fetchPlaces();
+                await fetchAndMergeMetrics(); // keep metrics in sync after edit
+              }}
             />
 
             {/* Places List */}
@@ -177,7 +219,7 @@ const ParkingManagement = () => {
                       </div>
 
                       <div className="sub-heading flex mt-2 text-gray-300 items-center text-sm">
-                        <LocationEdit size={20} />
+                        <Locate size={20} />
                         <div className="ml-2">{place.location}</div>
                       </div>
 
