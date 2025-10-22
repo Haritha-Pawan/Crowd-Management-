@@ -6,7 +6,9 @@ import {
   updateUser,
   deleteUser,
   getAllAttendees2,
-  getRegistrationsPerDay
+  getRegistrationsPerDay,
+  sendMessageToAllAttendees
+
   
 } from "../User/User.controller.js";
 
@@ -19,6 +21,9 @@ router.get("/", getAllUsers);
 
 //register daily count
 router.get("/attendee-daily-count", getRegistrationsPerDay);
+
+//send message to all attendees
+router.post("/attendees/send-message", sendMessageToAllAttendees);
 
 // POST new user
 router.post("/", createUser);

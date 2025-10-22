@@ -2,6 +2,8 @@ import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function ResetPassword() {
   const { token } = useParams();
@@ -39,18 +41,27 @@ function ResetPassword() {
       });
       const data = await response.json();
       if (response.ok) {
-        setMessage(data.message);
-        setError("");
-        naviaget('/login');
+        toast.success('🔐 Password reset successful!', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        setTimeout(() => {
+          naviaget('/login');
+        }, 3000);
       } else {
-        setError(data.message || "Password reset failed");
+        toast.error(data.message || "Password reset failed");
       }
     } catch (err) {
-      setError("Failed to reset password. Please try again.");
+      toast.error("Failed to reset password. Please try again.");
     }
   };
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 p-4  ">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 p-4">
+      <ToastContainer />
       <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
         <div className="flex justify-center mb-6">
           <link rel="stylesheet" href="/logo.png" />
