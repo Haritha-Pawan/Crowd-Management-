@@ -5,8 +5,14 @@ import Notification from "../model/notification.model.js";
  * We do NOT require auth here. Frontend simply passes ?role=Attendee (or in body).
  * This keeps testing and wiring dead simple.
  */
-const getRoleFromReq = (req) =>
-  (req.query.role || req.body.role || "").trim();
+const getRoleFromReq = (req = {}) => {
+  const role =
+    req.query?.role ||
+    req.body?.role ||
+    req.headers?.["x-user-role"] ||
+    req.headers?.["x-role"];
+  return (role || "").trim();
+};
 
 /**
  * POST /api/notifications
@@ -51,7 +57,7 @@ export const createNotification = async (req, res) => {
 export const getInbox = async (req, res) => {
   try {
     const role = getRoleFromReq(req);
-    const limit = Math.min(parseInt(req.query.limit || "50", 10), 200);
+    const limit = Math.min(parseInt(req.query?.limit || "50", 10), 200);
 
     if (!role) {
       return res.status(422).json({ message: "role is required (query or body)" });

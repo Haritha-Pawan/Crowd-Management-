@@ -56,7 +56,7 @@ export const createForCoordinator = async (req, res) => {
 export const coordInbox = async (req, res) => {
   try {
     const { id, role, name, email } = getUser(req);
-    console.log("coordInbox request", { id, role, name, email });
+    //console.log("coordInbox request", { id, role, name, email });
     if (!id && !name) {
       return res.status(422).json({ message: "Missing user identity (id or name)" });
     }

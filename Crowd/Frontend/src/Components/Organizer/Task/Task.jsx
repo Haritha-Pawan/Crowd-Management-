@@ -1,6 +1,6 @@
 // Task.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { Pencil, RefreshCcw, Trash2 } from "lucide-react";
+import { Pencil, RefreshCcw, Trash2, Search } from "lucide-react";
 import axios from "axios";
 import { ClipboardList, CheckCircle2, AlertTriangle, TimerReset } from "lucide-react";
 import AddTask from "../Task/AddTask";
@@ -17,6 +17,7 @@ const Task = () => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [tasks, setTasks] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Load tasks once
   useEffect(() => {
@@ -27,13 +28,45 @@ const Task = () => {
   }, []);
 
   // Derived lists
-  const pendingTasks = useMemo(() => tasks.filter(t => t.status !== "done"), [tasks]);
-  const completedTasks = useMemo(() => tasks.filter(t => t.status === "done"), [tasks]);
+  const baseCompletedTasks = useMemo(
+    () => tasks.filter((t) => t.status === "done"),
+    [tasks]
+  );
+
+  const filteredTasks = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return tasks;
+
+    return tasks.filter((t) => {
+      const fields = [
+        t.title,
+        t.coordinator,
+        t.status,
+        t.priority,
+        t.description,
+        t.dueDate ? t.dueDate.split("T")[0] : "",
+        parseOtherStaffs(t.otherStaffs || []).join(" "),
+      ];
+
+      return fields.some((field) =>
+        String(field || "").toLowerCase().includes(term)
+      );
+    });
+  }, [tasks, searchTerm]);
+
+  const pendingTasks = useMemo(
+    () => filteredTasks.filter((t) => t.status !== "done"),
+    [filteredTasks]
+  );
+  const completedTasks = useMemo(
+    () => filteredTasks.filter((t) => t.status === "done"),
+    [filteredTasks]
+  );
 
   // Cards
   const total = tasks.length;
   const inProgress = tasks.filter(t => t.status === "in_progress").length;
-  const completed = completedTasks.length;
+  const completed = baseCompletedTasks.length;
   const overdue = tasks.filter(t => {
     if (!t.dueDate || t.status === "done") return false;
     const due = new Date(t.dueDate);
@@ -179,7 +212,30 @@ const Task = () => {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-3">
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[240px]">
+          <Search
+            size={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search tasks by title, coordinator, status, or due date"
+            className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-8 text-sm text-white placeholder:text-white/50 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
+          />
+          {searchTerm ? (
+            <button
+              type="button"
+              onClick={() => setSearchTerm("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
+            >
+              Clear
+            </button>
+          ) : null}
+        </div>
+
         <button
           onClick={() => setIsPopupOpen(true)}
           className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 px-10 cursor-pointer font-medium mt-5 rounded-md hover:opacity-70 text-white"
@@ -221,7 +277,11 @@ const Task = () => {
             Pending Tasks ({pendingTasks.length})
           </div>
           {pendingTasks.length === 0 ? (
-            <div className="text-gray-400 text-sm">No pending tasks.</div>
+            <div className="text-gray-400 text-sm">
+              {searchTerm.trim()
+                ? "No tasks match your search."
+                : "No pending tasks."}
+            </div>
           ) : (
             <div className="space-y-4">
               {pendingTasks.map((t) => (
@@ -243,7 +303,11 @@ const Task = () => {
             Completed Tasks ({completedTasks.length})
           </div>
           {completedTasks.length === 0 ? (
-            <div className="text-gray-400 text-sm">No completed tasks yet.</div>
+            <div className="text-gray-400 text-sm">
+              {searchTerm.trim()
+                ? "No tasks match your search."
+                : "No completed tasks yet."}
+            </div>
           ) : (
             <div className="space-y-4">
               {completedTasks.map((t) => (
