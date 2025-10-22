@@ -1,6 +1,7 @@
 // src/pages/register/RegisterPersonal.jsx
 import React, { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { toast } from "react-hot-toast";
 
 const nicRegex = /^(?:\d{12}|\d{9}[VvXx])$/;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -17,6 +18,7 @@ export default function RegisterPersonal() {
     count: "",
     password: "",
     confirm: "",
+    role: "Attendee",
   });
 
   const set = (k) => (e) =>
@@ -29,22 +31,65 @@ export default function RegisterPersonal() {
 
   const errors = useMemo(() => {
     const e = {};
-    if (!form.fullName.trim());
-    if (!emailRegex.test(form.email.trim().toLowerCase())) e.email = "Invalid email";
-    if (!phoneRegex.test(form.phone.trim())) e.phone = "Use 07XXXXXXXX";
-    if (!nicRegex.test(form.nic.trim().toUpperCase())) e.nic = "Invalid NIC number";
-    if (isFamily) {
-      const c = parseInt(form.count, 10);
-      if (!Number.isFinite(c) || c < 2) e.count = "Family count must be more than 2";
+    const name = form.fullName.trim();
+    if (!name) e.fullName = "Full name is required";
+    else if (name.length < 3) e.fullName = "Full name must be at least 3 characters";
+
+    const email = form.email.trim().toLowerCase();
+    if (!emailRegex.test(email)) e.email = "Invalid email";
+
+    const phone = form.phone.trim();
+    if (!phoneRegex.test(phone)) e.phone = "Use 07XXXXXXXX";
+
+    const nic = form.nic.trim().toUpperCase();
+    if (!nicRegex.test(nic)) e.nic = "Invalid NIC number";
+
+    const type = form.type;
+    if (!type) {
+      e.type = "Select a category";
+    } else if (!["individual", "family"].includes(type)) {
+      e.type = "Select a valid category";
     }
-    if (form.password && form.password !== form.confirm) e.confirm = "Passwords do not match";
+
+    if (type === "family") {
+      const c = parseInt(form.count, 10);
+      if (!Number.isFinite(c) || c < 2) e.count = "Family count must be at least 2 attendees";
+    }
+
+    const password = form.password.trim();
+    if (!password) e.password = "Password is required";
+    else if (password.length < 6) e.password = "Password must be at least 6 characters";
+
+    const confirm = form.confirm.trim();
+    if (!confirm) e.confirm = "Confirm your password";
+    if (password && confirm && password !== confirm) e.confirm = "Passwords do not match";
+
     return e;
-  }, [form, isFamily]);
+  }, [form]);
 
   const next = (e) => {
     e.preventDefault();
-    if (Object.keys(errors).length) return;
-    nav("/register/payment", { state: form });
+    const keys = Object.keys(errors);
+    if (keys.length) {
+      const firstMessage = errors[keys[0]];
+      if (firstMessage) toast.error(firstMessage);
+      return;
+    }
+
+    const sanitized = {
+      ...form,
+      fullName: form.fullName.trim(),
+      email: form.email.trim().toLowerCase(),
+      phone: form.phone.trim(),
+      nic: form.nic.trim().toUpperCase(),
+      type: form.type,
+      count: form.type === "family" ? String(form.count).trim() : "",
+      password: form.password.trim(),
+      confirm: form.confirm.trim(),
+      role: "Attendee",
+    };
+
+    nav("/register/payment", { state: sanitized });
   };
 
   return (
@@ -143,13 +188,17 @@ export default function RegisterPersonal() {
             </Field>
 
             {/* Row 3 */}
-            <Field label="Category" required>
+            <Field label="Category" required error={errors.type}>
               <select
                 className="u-input"
-                value={form.type}
+                value={form.type || ""}
                 onChange={set("type")}
                 aria-label="Category"
+                aria-invalid={!!errors.type}
               >
+                <option value="" disabled>
+                  Select category
+                </option>
                 <option value="individual">Individual</option>
                 <option value="family">Family</option>
               </select>
@@ -172,13 +221,14 @@ export default function RegisterPersonal() {
             )}
 
             {/* Row 4 */}
-            <Field label="Password" required>
+            <Field label="Password" required error={errors.password}>
               <input
                 className="u-input"
                 type="password"
                 value={form.password}
                 onChange={set("password")}
-                placeholder="••••••••"
+                placeholder="******"
+                aria-invalid={!!errors.password}
               />
             </Field>
 
@@ -188,7 +238,7 @@ export default function RegisterPersonal() {
                 type="password"
                 value={form.confirm}
                 onChange={set("confirm")}
-                placeholder="••••••••"
+                placeholder="******"
                 aria-invalid={!!errors.confirm}
               />
             </Field>
