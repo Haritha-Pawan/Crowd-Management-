@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import CountUp from "react-countup";
 import { Play } from "lucide-react";
+import img from '../assets/images/handawa.png';
 
 const AboutUs = () => {
   const stats = [
@@ -33,9 +34,9 @@ const AboutUs = () => {
 
           {/* Main Large Image */}
           <motion.img
-            src="https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=800&q=80"
+            src={img}
             alt="CrowdFlow Team"
-            className="rounded-2xl shadow-xl w-full h-[350px] object-cover"
+            className="rounded-2xl shadow-xl w-full h-[300px] object-cover"
             whileHover={{ scale: 1.03 }}
             transition={{ duration: 0.3 }}
           />
@@ -51,7 +52,7 @@ const AboutUs = () => {
           {/* Top two small images */}
           <div className="grid grid-cols-2 gap-4">
             <motion.img
-              src="https://images.unsplash.com/photo-1600880292089-90e6a0e7a1c5?auto=format&fit=crop&w=600&q=80"
+              src={img}
               alt="Smart Transport"
               className="rounded-2xl shadow-lg h-[160px] w-full object-cover"
               whileHover={{ scale: 1.05 }}
@@ -65,7 +66,7 @@ const AboutUs = () => {
           </div>
 
           {/* Description */}
-          <p className="text-black leading-relaxed">
+          <p className="text-black opacity-70 leading-relaxed">
             CrowdFlow is transforming Sri Lanka’s public transport and crowd
             management. Passengers can easily track buses, book seats, and view
             real-time movement — while organizers and bus owners gain insights,
