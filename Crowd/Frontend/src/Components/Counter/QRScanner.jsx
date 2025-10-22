@@ -1,13 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Scanner, useDevices } from "@yudiel/react-qr-scanner";
-import { Camera, Pause, Play, ScanLine } from "lucide-react"; // icons for UI
+import { Camera, Pause, Play, ScanLine } from "lucide-react";
+import { toast } from "react-hot-toast";
 
-const parseReservationId = (text) => {
-  const m = String(text).match(/reservation:([a-f0-9]{24})/i);
-  if (m) return m[1];
-  const hex = String(text).match(/^[a-f0-9]{24}$/i);
-  return hex ? hex[0] : null;
-};
+const API_SCAN = "http://localhost:5000/api/checkout/scan";
 
 export default function QRScanner({ onFound }) {
   const devices = useDevices();
@@ -15,6 +11,8 @@ export default function QRScanner({ onFound }) {
   const [paused, setPaused] = useState(false);
   const [last, setLast] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastTicket, setLastTicket] = useState(null);
 
   const defaultBackCam = useMemo(() => {
     const env = devices.find((d) => /back|rear|environment/i.test(d.label));
@@ -25,17 +23,45 @@ export default function QRScanner({ onFound }) {
     if (!deviceId && defaultBackCam) setDeviceId(defaultBackCam);
   }, [defaultBackCam, deviceId]);
 
-  const handleScan = (codes) => {
+  const handleScan = async (codes) => {
     if (!codes || !codes.length) return;
     const text = codes[0].rawValue || codes[0].raw || "";
     if (!text || text === last) return;
     setLast(text);
     setPaused(true);
+    setError("");
 
-    const reservationId = parseReservationId(text);
-    onFound?.({ text, reservationId });
-
-    setTimeout(() => setPaused(false), 1500);
+    try {
+      setIsSubmitting(true);
+      const res = await fetch(API_SCAN, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ qr: text }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = data?.message || `Scan failed (${res.status})`;
+        toast.error(message);
+        setError(message);
+        setLastTicket(null);
+      } else {
+        const message = data?.message || "Check-in successful";
+        toast.success(message);
+        setError("");
+        setLastTicket(data.ticket || null);
+        if (data.ticket) {
+          window.dispatchEvent(new CustomEvent("qr-scan-success", { detail: data.ticket }));
+        }
+        onFound?.(data.ticket || text);
+      }
+    } catch (err) {
+      const message = err?.message || "Network error";
+      toast.error(message);
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+      setTimeout(() => setPaused(false), 1200);
+    }
   };
 
   const handleError = (e) => {
@@ -84,7 +110,7 @@ export default function QRScanner({ onFound }) {
           <Scanner
             onScan={handleScan}
             onError={handleError}
-            paused={paused}
+            paused={paused || isSubmitting}
             constraints={deviceId ? { deviceId } : { facingMode: "environment" }}
             styles={{
               container: { width: "100%", aspectRatio: "1/1" },
@@ -111,6 +137,32 @@ export default function QRScanner({ onFound }) {
           )}
           {error && <div className="text-red-400 mt-2">Error: {error}</div>}
         </div>
+
+        {lastTicket && (
+          <div className="mt-4 p-4 rounded-xl bg-slate-900/80 border border-indigo-500/30 text-sm text-gray-100 space-y-1">
+            <div className="text-indigo-300 font-semibold text-base">Last attendee</div>
+            <div><span className="font-semibold text-white">Name:</span> {lastTicket.fullName}</div>
+            <div><span className="font-semibold text-white">NIC:</span> {lastTicket.nic}</div>
+            <div>
+              <span className="font-semibold text-white">Type:</span> {lastTicket.type}
+              {lastTicket.type === "family" ? ` (${lastTicket.count})` : ""}
+            </div>
+            <div>
+              <span className="font-semibold text-white">Assigned counter:</span>{" "}
+              {lastTicket.assignedCounterName || lastTicket.assignedCounterDetails?.name || "—"}
+            </div>
+            <div>
+              <span className="font-semibold text-white">Checked-in at:</span>{" "}
+              {lastTicket.checkedInAt
+                ? new Date(lastTicket.checkedInAt).toLocaleString("en-GB", { hour12: false })
+                : "Just now"}
+            </div>
+            <div>
+              <span className="font-semibold text-white">Total scans:</span>{" "}
+              {lastTicket.scanCount ?? 1}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
