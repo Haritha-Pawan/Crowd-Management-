@@ -5,7 +5,8 @@ import {
   getUserById,
   updateUser,
   deleteUser,
-  getAllAttendees2
+  getAllAttendees2,
+  getRegistrationsPerDay
   
 } from "../User/User.controller.js";
 
@@ -16,6 +17,8 @@ router.post("/attendees/new", getAllAttendees2);
 // GET all users
 router.get("/", getAllUsers);
 
+//register daily count
+router.get("/attendee-daily-count", getRegistrationsPerDay);
 
 // POST new user
 router.post("/", createUser);
