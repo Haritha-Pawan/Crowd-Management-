@@ -150,11 +150,9 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 
-// User routes
+// User routes(lahiru)
 app.use('/users', userRouter);
-
 app.use('/auth', AuthRoutes);
-
 //other routes
 app.use('/other', OtherRoutes);
 
@@ -185,7 +183,7 @@ mongoose
 
 
 
-// Auth & Users
+// Auth & Users routes
 app.use("/auth", AuthRoutes);
 app.use("/users", userRouter);
 
