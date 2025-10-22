@@ -342,165 +342,169 @@ export default function RegisterPayment() {
 
             {/* Payment form */}
             <section className="lg:col-span-2">
-              <form onSubmit={start3DS} noValidate className="rounded-xl border border-[#334155] bg-[#0b152c]/40 p-5">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[16px] font-semibold">Pay with card</h3>
-                  <AcceptedStrip />
-                </div>
+              <div className="flex flex-col lg:flex-row lg:items-start lg:gap-6">
+                <form
+                  onSubmit={start3DS}
+                  noValidate
+                  className="flex-1 rounded-xl border border-[#334155] bg-[#0b152c]/40 p-5"
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[16px] font-semibold">Pay with card</h3>
+                    <AcceptedStrip />
+                  </div>
 
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-                  <LabelWrap label="Cardholder name" error={cardTouched && errors.cardName}>
-                    <input
-                      className="u-input"
-                      placeholder="Dinusha Lakmal"
-                      value={cardName}
-                      onChange={(e) => setCardName(e.target.value)}
-                      onBlur={() => setCardTouched(true)}
-                    />
-                  </LabelWrap>
-
-                  <LabelWrap label="Card number" error={cardTouched && errors.cardNumber}>
-                    <div className="relative">
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+                    <LabelWrap label="Cardholder name" error={cardTouched && errors.cardName}>
                       <input
-                        ref={numberRef}
-                        inputMode="numeric"
-                        className="u-input pr-14"
-                        placeholder="4242 4242 4242 4242"
-                        value={cardNumber}
-                        onChange={(e) => onNumberChange(e.target.value)}
+                        className="u-input"
+                        placeholder="Dinusha Lakmal"
+                        value={cardName}
+                        onChange={(e) => setCardName(e.target.value)}
                         onBlur={() => setCardTouched(true)}
                       />
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                        <BrandBadge brand={brand} />
-                      </div>
-                    </div>
-                  </LabelWrap>
+                    </LabelWrap>
 
-                  <LabelWrap label="Expiry (MM/YY)" error={cardTouched && errors.exp}>
-                    <input
-                      inputMode="numeric"
-                      className="u-input"
-                      placeholder="12/28"
-                      value={exp}
-                      onChange={(e) => onExpChange(e.target.value)}
-                      onBlur={() => setCardTouched(true)}
-                    />
-                  </LabelWrap>
-
-                  <LabelWrap label="CVC" error={cardTouched && errors.cvc}>
-                    <input
-                      inputMode="numeric"
-                      className="u-input"
-                      placeholder={brand === "amex" ? "1234" : "123"}
-                      value={cvc}
-                      onChange={(e) => onCvcChange(e.target.value)}
-                      onBlur={() => setCardTouched(true)}
-                    />
-                  </LabelWrap>
-                </div>
-
-                <label className="mt-6 flex items-center gap-2 text-[13px] text-[#E2E8F0]">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border border-[#334155] bg-transparent"
-                    checked={saveCard}
-                    onChange={(e) => setSaveCard(e.target.checked)}
-                  />
-                  Save card for faster checkout next time
-                </label>
-
-                {serverError && <div className="mt-4 text-[#FCA5A5] text-[13px]">{serverError}</div>}
-
-                <div className="mt-6 flex items-center justify-end">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#4F46E5] px-7 py-2.5 text-[14px] font-semibold text-white shadow-lg hover:bg-[#6366F1] focus:outline-none focus:ring-2 focus:ring-[#6366F1] disabled:opacity-60"
-                  >
-                    {submitting ? (
-                      <>
-                        <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>Pay LKR {computedAmount.toLocaleString("en-LK")}</>
-                    )}
-                  </button>
-                </div>
-              </form>
-
-              {/* Receipt (unchanged logic, styled to match) */}
-              {open && (
-                <div className="mt-6 rounded-xl border border-[#334155] bg-[#0b152c]/40 p-5">
-                  {result?.ticket ? (
-                    <div className="grid md:grid-cols-2 gap-6 items-start">
-                      <div>
-                        <h4 className="text-[16px] font-semibold">Payment successful</h4>
-                        <p className="text-[13px] text-[#94A3B8] mt-1">
-                          Ticket issued for {result.ticket.fullName} - {result.ticket.type}
-                          {result.ticket.type === "family" ? ` (${result.ticket.count})` : ""}
-                        </p>
-                        <div className="mt-4 p-3 rounded-lg bg-emerald-500/10 text-emerald-300 text-[13px]">
-                          Status: Paid | {result.ticket?.payment?.card?.brand?.toUpperCase() || "CARD"} | **** {result.ticket?.payment?.card?.last4}
+                    <LabelWrap label="Card number" error={cardTouched && errors.cardNumber}>
+                      <div className="relative">
+                        <input
+                          ref={numberRef}
+                          inputMode="numeric"
+                          className="u-input pr-14"
+                          placeholder="4242 4242 4242 4242"
+                          value={cardNumber}
+                          onChange={(e) => onNumberChange(e.target.value)}
+                          onBlur={() => setCardTouched(true)}
+                        />
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                          <BrandBadge brand={brand} />
                         </div>
+                      </div>
+                    </LabelWrap>
 
-                        {assignedCounter ? (
-                          <div className="mt-4 rounded-lg border border-emerald-400/40 bg-emerald-500/10 p-3 text-emerald-200 text-[13px]">
-                            <p className="text-[13px] font-semibold text-emerald-100">
-                              Assigned Counter: <span className="text-white">{assignedCounterName}</span>
-                            </p>
-                            <div className="mt-2 space-y-1.5">
-                              {assignedCounter.status ? (
+                    <LabelWrap label="Expiry (MM/YY)" error={cardTouched && errors.exp}>
+                      <input
+                        inputMode="numeric"
+                        className="u-input"
+                        placeholder="12/28"
+                        value={exp}
+                        onChange={(e) => onExpChange(e.target.value)}
+                        onBlur={() => setCardTouched(true)}
+                      />
+                    </LabelWrap>
+
+                    <LabelWrap label="CVC" error={cardTouched && errors.cvc}>
+                      <input
+                        inputMode="numeric"
+                        className="u-input"
+                        placeholder={brand === "amex" ? "1234" : "123"}
+                        value={cvc}
+                        onChange={(e) => onCvcChange(e.target.value)}
+                        onBlur={() => setCardTouched(true)}
+                      />
+                    </LabelWrap>
+                  </div>
+
+                  <label className="mt-6 flex items-center gap-2 text-[13px] text-[#E2E8F0]">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border border-[#334155] bg-transparent"
+                      checked={saveCard}
+                      onChange={(e) => setSaveCard(e.target.checked)}
+                    />
+                    Save card for faster checkout next time
+                  </label>
+
+                  {serverError && <div className="mt-4 text-[#FCA5A5] text-[13px]">{serverError}</div>}
+
+                  <div className="mt-6 flex items-center justify-end">
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#4F46E5] px-7 py-2.5 text-[14px] font-semibold text-white shadow-lg hover:bg-[#6366F1] focus:outline-none focus:ring-2 focus:ring-[#6366F1] disabled:opacity-60"
+                    >
+                      {submitting ? (
+                        <>
+                          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>Pay LKR {computedAmount.toLocaleString("en-LK")}</>
+                      )}
+                    </button>
+                  </div>
+                </form>
+
+                {/* Receipt (unchanged logic, styled to match) */}
+                {open && (
+                  <div className="mt-6 lg:mt-0 lg:w-[420px] xl:w-[460px] rounded-xl border border-[#334155] bg-[#0b152c]/40 p-6">
+                    {result?.ticket ? (
+                      <div className="flex flex-col md:flex-row md:items-start md:gap-8">
+                        <div className="flex-1">
+                          <h4 className="text-[16px] font-semibold">Payment successful</h4>
+                          <p className="text-[13px] text-[#94A3B8] mt-1">
+                            Ticket issued for {result.ticket.fullName} - {result.ticket.type}
+                            {result.ticket.type === "family" ? ` (${result.ticket.count})` : ""}
+                          </p>
+                          <div className="mt-4 p-3 rounded-lg bg-emerald-500/10 text-emerald-300 text-[13px]">
+                            Status: Paid | {result.ticket?.payment?.card?.brand?.toUpperCase() || "CARD"} | ****{" "}
+                            {result.ticket?.payment?.card?.last4}
+                          </div>
+
+                          {assignedCounter ? (
+                            <div className="mt-4 rounded-lg border border-emerald-400/40 bg-emerald-500/10 p-3 text-emerald-200 text-[13px]">
+                              <p className="text-[13px] font-semibold text-emerald-100">
+                                Assigned Counter: <span className="text-white">{assignedCounterName}</span>
+                              </p>
+                              <div className="mt-2 space-y-1.5">
+                                {assignedCounter.status ? (
+                                  <div>
+                                    Mode: <span className="text-white">{assignedCounter.status}</span>
+                                  </div>
+                                ) : null}
+                                {assignedCounter.entrance ? (
+                                  <div>
+                                    Entrance: <span className="text-white">{assignedCounter.entrance}</span>
+                                  </div>
+                                ) : null}
                                 <div>
-                                  Mode: <span className="text-white">{assignedCounter.status}</span>
+                                  Count: <span className="text-white">{assignedCounter.load ?? 0}</span>
                                 </div>
-                              ) : null}
-                              {assignedCounter.entrance ? (
-                                <div>
-                                  Entrance: <span className="text-white">{assignedCounter.entrance}</span>
-                                </div>
-                              ) : null}
-                              <div>
-                                Load: <span className="text-white">{assignedCounter.load ?? 0}</span>
-                                {Number.isFinite(assignedCounter.capacity) && assignedCounter.capacity > 0
-                                  ? ` / ${assignedCounter.capacity} capacity`
-                                  : ""}
                               </div>
                             </div>
-                          </div>
-                        ) : (
-                          <div className="mt-4 rounded-lg border border-amber-400/40 bg-amber-500/10 p-3 text-amber-100 text-[13px]">
-                            Counter assignment pending. Please check with the help desk on arrival.
-                          </div>
-                        )}
+                          ) : (
+                            <div className="mt-4 rounded-lg border border-amber-400/40 bg-amber-500/10 p-3 text-amber-100 text-[13px]">
+                              Counter assignment pending. Please check with the help desk on arrival.
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-6 md:mt-0 md:self-start flex flex-col items-center gap-4">
+                          <img
+                            alt="QR Code"
+                            src={result.qr?.dataUrl || result.ticket?.qrDataUrl}
+                            className="w-48 h-48 border border-[#334155] bg-[#0F172A]"
+                            style={{ imageRendering: "pixelated" }}
+                          />
+                          <a
+                            className="inline-block rounded-xl bg-[#4F46E5] px-4 py-2 text-white hover:bg-[#6366F1]"
+                            href={result.qr?.dataUrl || result.ticket?.qrDataUrl}
+                            download={`ticket_${result.ticket.type}_${result.ticket.nic}.png`}
+                          >
+                            Download QR
+                          </a>
+                          <p className="text-[12px] text-[#94A3B8] text-center max-w-[16rem]">
+                            Show this QR at the assigned counter for faster entry.
+                          </p>
+                        </div>
                       </div>
-                      <div className="justify-self-end text-center">
-                        <img
-                          alt="QR Code"
-                          src={result.qr?.dataUrl || result.ticket?.qrDataUrl}
-                          className="w-48 h-48 border border-[#334155] bg-[#0F172A]"
-                          style={{ imageRendering: "pixelated" }}
-                        />
-                        <a
-                          className="mt-3 inline-block rounded-xl bg-[#4F46E5] px-4 py-2 text-white hover:bg-[#6366F1]"
-                          href={result.qr?.dataUrl || result.ticket?.qrDataUrl}
-                          download={`ticket_${result.ticket.type}_${result.ticket.nic}.png`}
-                        >
-                          Download QR
-                        </a>
-                        <p className="mt-2 text-[12px] text-[#94A3B8]">
-                          Show this QR at the assigned counter for faster entry.
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <h4 className="text-[16px] font-semibold">Something went wrong</h4>
-                      <p className="text-[13px] text-[#94A3B8] mt-1">{serverError || "Please try again."}</p>
-                    </>
-                  )}
-                </div>
-              )}
+                    ) : (
+                      <>
+                        <h4 className="text-[16px] font-semibold">Something went wrong</h4>
+                        <p className="text-[13px] text-[#94A3B8] mt-1">{serverError || "Please try again."}</p>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </section>
           </div>
         </div>
