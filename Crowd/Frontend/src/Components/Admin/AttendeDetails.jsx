@@ -82,7 +82,6 @@ function AttendeDetails() {
               <th className="pb-3">NIC</th>
               <th className="pb-3">Phone Number</th>
               <th className="pb-3">Email</th>
-              <th className="pb-3">QR Code</th>
             </tr>
           </thead>
           <tbody>
@@ -94,17 +93,7 @@ function AttendeDetails() {
                 <td className="py-3">
                   <span className="font-bold">{attendee.email?.split("@")[0]}</span>@{attendee.email?.split("@")[1]}
                 </td>
-                <td className="py-3">
-                  {/* If backend already sends QR code URL, use it directly */}
-                  <img
-                    src={
-                      attendee.qrCode ||
-                      `https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=${attendee.fullName}`
-                    }
-                    alt="QR Code"
-                    className="w-12 h-12"
-                  />
-                </td>
+               
               </tr>
             ))}
           </tbody>
