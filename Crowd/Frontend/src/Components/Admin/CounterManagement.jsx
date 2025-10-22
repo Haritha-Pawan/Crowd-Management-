@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import AddCounter from "./AddCounter";
 import EditCounter from "./EditCounter";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const API = "http://localhost:5000/api";
 
@@ -101,6 +103,75 @@ const CounterManagement = () => {
     setCounters((prev) => prev.filter((c) => c._id !== id));
   };
 
+  const downloadReport = () => {
+    if (!counters.length) {
+      window.alert("No counter data available to export.");
+      return;
+    }
+
+    const doc = new jsPDF({ orientation: "landscape" });
+    const generatedAt = new Date();
+
+    doc.setFontSize(16);
+    doc.text("Counter Management Report", 14, 16);
+
+    doc.setFontSize(10);
+    doc.text(`Generated: ${generatedAt.toLocaleString()}`, 14, 24);
+    doc.text(
+      `Total Counters: ${counters.length} | Active: ${active} | Total Capacity: ${totalCapacity} | Current Load: ${loadSum}`,
+      14,
+      30
+    );
+
+    const body = counters.map((c, index) => {
+      const liveLoad = getLiveLoad(c);
+      const assignedLoad = getAssignedLoad(c);
+      const capacity = toNumber(c.capacity);
+      const pct = capacity ? Math.min(100, Math.round((liveLoad / capacity) * 100)) : 0;
+      const lastScan =
+        c.scanStats?.lastScanAt && !Number.isNaN(new Date(c.scanStats.lastScanAt).getTime())
+          ? new Date(c.scanStats.lastScanAt).toLocaleString()
+          : "-";
+
+      return [
+        index + 1,
+        c.name || "-",
+        c.status || "-",
+        c.entrance || "-",
+        capacity || 0,
+        liveLoad,
+        assignedLoad,
+        `${pct}%`,
+        c.staff || "-",
+        lastScan,
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 36,
+      head: [
+        [
+          "#",
+          "Counter",
+          "Status",
+          "Entrance",
+          "Capacity",
+          "Live Load",
+          "Assigned Load",
+          "Occupancy",
+          "Staff",
+          "Last Scan",
+        ],
+      ],
+      body,
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [37, 99, 235] },
+    });
+
+    const fileStamp = generatedAt.toISOString().split("T")[0];
+    doc.save(`counter-management-${fileStamp}.pdf`);
+  };
+
   return (
     <div className="p-12 2xl:h-screen">
       <div className="header text-white text-3xl font-bold">Counter Management</div>
@@ -113,13 +184,21 @@ const CounterManagement = () => {
         ))}
       </div>
 
-      {/* Add Counter */}
-      <button
-        onClick={() => setIsPopupOpen(true)}
-        className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 px-10 cursor-pointer font-medium mt-5 rounded-md hover:opacity-70 text-white"
-      >
-        + Add Counter
-      </button>
+      {/* Actions */}
+      <div className="flex flex-wrap gap-3 mt-5">
+        <button
+          onClick={() => setIsPopupOpen(true)}
+          className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 px-10 cursor-pointer font-medium rounded-md hover:opacity-70 text-white"
+        >
+          + Add Counter
+        </button>
+        <button
+          onClick={downloadReport}
+          className="border border-white/20 bg-white/5 p-2 px-6 cursor-pointer font-medium rounded-md text-white hover:bg-white/10"
+        >
+          Download PDF
+        </button>
+      </div>
 
       {/* Modal (uses the AddCounter from earlier) */}
       {isPopupOpen && (

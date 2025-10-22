@@ -20,7 +20,7 @@ const formatDateTime = (value) => {
 };
 
 const CounterStaffOverview = () => {
-  const [stats, setStats] = useState({ total: 0, checkedIn: 0, pending: 0, checkedInAttendees: 0 });
+  const [stats, setStats] = useState({ total: 0, totalAttendees: 0, checkedIn: 0, pending: 0, checkedInAttendees: 0 });
   const [scanLogs, setScanLogs] = useState([]);
   const [loadingStats, setLoadingStats] = useState(false);
   const [loadingLogs, setLoadingLogs] = useState(false);
@@ -34,6 +34,7 @@ const CounterStaffOverview = () => {
       if (!res.ok) throw new Error(data?.message || `Failed to load stats (${res.status})`);
       setStats({
         total: Number(data.total) || 0,
+        totalAttendees: Number(data.totalAttendees) || Number(data.total) || 0,
         checkedIn: Number(data.checkedIn) || 0,
         pending: Number.isFinite(data.pending)
           ? Number(data.pending)
@@ -79,19 +80,23 @@ const CounterStaffOverview = () => {
 
   const cards = useMemo(() => {
     const totalTickets = stats.total || 0;
+    const totalAttendees = stats.totalAttendees || totalTickets;
     const checkedInTickets = stats.checkedIn || 0;
     const pendingTickets = stats.pending ?? Math.max(0, totalTickets - checkedInTickets);
     const checkedInAttendees = stats.checkedInAttendees || checkedInTickets;
+    const pendingAttendees = Math.max(0, totalAttendees - checkedInAttendees);
 
     const checkedPct = totalTickets ? Math.round((checkedInTickets / totalTickets) * 100) : 0;
-    const pendingPct = totalTickets ? Math.round((pendingTickets / totalTickets) * 100) : 0;
+    const pendingPctAttendees = totalAttendees
+      ? Math.round((pendingAttendees / totalAttendees) * 100)
+      : 0;
 
     return [
       {
         title: "Total Attendees",
         icon: <Users size={26} className="text-sky-200" />,
-        count: totalTickets.toLocaleString("en-LK"),
-        summary: `${checkedInTickets.toLocaleString("en-LK")} tickets generated`,
+        count: totalAttendees.toLocaleString("en-LK"),
+        summary: `${totalTickets.toLocaleString("en-LK")} tickets generated`,
       },
       {
         title: "Checked In",
@@ -102,8 +107,10 @@ const CounterStaffOverview = () => {
       {
         title: "Pending",
         icon: <Clock1 size={26} className="text-amber-200" />,
-        count: pendingTickets.toLocaleString("en-LK"),
-        summary: `${pendingPct}% of tickets still outstanding`,
+        count: pendingAttendees.toLocaleString("en-LK"),
+        summary: `${pendingPctAttendees}% of attendees still pending (${pendingTickets.toLocaleString(
+          "en-LK"
+        )} tickets)`,
       },
     ];
   }, [stats]);

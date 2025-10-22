@@ -63,25 +63,36 @@ async function pickCounterAndIncrementLoad(people = 1) {
   const counters = await Counter.find({ isActive: { $ne: false } }).lean();
   if (!counters.length) return null;
 
+  const totalLoad = counters.reduce(
+    (sum, c) => sum + (Number.isFinite(Number(c.load)) ? Number(c.load) : 0),
+    0
+  );
+  const counterCount = counters.length;
+  const targetPerCounter =
+    counterCount > 0 ? Math.ceil((totalLoad + people) / counterCount) : people;
+
   const scored = counters
     .map((c) => {
       const capacity = Number(c.capacity) || 0;
-      const load     = Number(c.load) || 0;
-      const status   = String(c.status || "").toLowerCase(); // 'entry' | 'both' | 'exit'
-      const statusPriority = status === "entry" ? 0 : status === "both" ? 1 : status === "exit" ? 2 : 3;
-      const hasRoom  = capacity > 0 ? load + people <= capacity : true;
-      const ratio    = capacity > 0 ? load / capacity : load;
-      return { c, hasRoom, ratio, load, statusPriority };
+      const load = Number(c.load) || 0;
+      const status = String(c.status || "").toLowerCase(); // 'entry' | 'both' | 'exit'
+      const statusPriority =
+        status === "entry" ? 0 : status === "both" ? 1 : status === "exit" ? 2 : 3;
+      const hasRoom = capacity > 0 ? load + people <= capacity : true;
+      const deficit = targetPerCounter - load;
+      return { c, hasRoom, deficit, load, statusPriority };
     })
     .sort((a, b) => {
+      if (a.deficit !== b.deficit) return b.deficit - a.deficit; // prefer counters furthest below target
       if (a.statusPriority !== b.statusPriority) return a.statusPriority - b.statusPriority;
-      if (a.ratio !== b.ratio) return a.ratio - b.ratio;
-      if (a.load  !== b.load)  return a.load  - b.load;
+      if (a.load !== b.load) return a.load - b.load;
       return 0;
     });
 
-  const pool = scored.filter((x) => x.hasRoom);
-  const best = (pool.length ? pool : scored)[0]?.c;
+  const pool = scored.filter((x) => x.hasRoom && x.deficit > 0);
+  const fallback = pool.length ? pool : scored.filter((x) => x.hasRoom);
+  const candidates = fallback.length ? fallback : scored;
+  const best = candidates[0]?.c;
   if (!best?._id) return null;
 
   const updated = await Counter.findByIdAndUpdate(
@@ -494,10 +505,26 @@ export const getTicketStats = async (_req, res) => {
   try {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const [totalTickets, checkedInTickets, scannedToday, checkedInCountsAgg] = await Promise.all([
+    const [totalTickets, checkedInTickets, scannedToday, totalCountsAgg, checkedInCountsAgg] = await Promise.all([
       Ticket.countDocuments(),
       Ticket.countDocuments({ checkedIn: true }),
       Ticket.countDocuments({ lastScanAt: { $gte: startOfDay } }),
+      Ticket.aggregate([
+        {
+          $group: {
+            _id: null,
+            total: {
+              $sum: {
+                $cond: [
+                  { $and: [{ $ne: ["$count", null] }, { $ne: ["$count", ""] }] },
+                  { $toInt: "$count" },
+                  1,
+                ],
+              },
+            },
+          },
+        },
+      ]),
       Ticket.aggregate([
         { $match: { checkedIn: true } },
         {
@@ -517,9 +544,11 @@ export const getTicketStats = async (_req, res) => {
       ]),
     ]);
     const pendingTickets = Math.max(0, totalTickets - checkedInTickets);
+    const totalAttendees = totalCountsAgg[0]?.total || totalTickets;
     const checkedInAttendees = checkedInCountsAgg[0]?.total || 0;
     res.json({
       total: totalTickets,
+      totalAttendees,
       checkedIn: checkedInTickets,
       pending: pendingTickets,
       scannedToday,
