@@ -169,3 +169,63 @@ export const getSpot = async (req, res) => {
     return res.status(500).json({ error: err?.message || "Server error" });
   }
 };
+
+
+/** GET /api/spots/metrics
+ *  Returns total capacity, occupied, available, and per-zone breakdown.
+ *  It counts ParkingSpot docs by status per zoneId.
+ */
+export const getOccupancyMetrics = async (req, res) => {
+  try {
+    // group by zoneId & status
+    const grouped = await ParkingSpot.aggregate([
+      {
+        $group: {
+          _id: { zoneId: "$zoneId", status: "$status" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // build per-zone map
+    const byZoneMap = new Map(); // key: zoneId string
+    for (const row of grouped) {
+      const zoneId = String(row._id.zoneId);
+      const status = row._id.status;
+      const count  = row.count;
+
+      if (!byZoneMap.has(zoneId)) {
+        byZoneMap.set(zoneId, { zoneId, capacity: 0, occupied: 0, available: 0 });
+      }
+      const z = byZoneMap.get(zoneId);
+      z.capacity += count;                // every status contributes to total capacity
+      if (status === "occupied") z.occupied += count;
+      if (status === "available") z.available += count; // convenience; will normalize below
+    }
+
+    // finalize by-zone & totals
+    const byZone = Array.from(byZoneMap.values()).map(z => {
+      const available = Math.max(0, z.capacity - z.occupied); // normalize
+      return { ...z, available };
+    });
+
+    const totals = byZone.reduce(
+      (acc, z) => {
+        acc.capacity += z.capacity;
+        acc.occupied += z.occupied;
+        acc.available += z.available;
+        return acc;
+      },
+      { capacity: 0, occupied: 0, available: 0 }
+    );
+    const occupancyRate = totals.capacity
+      ? +( (totals.occupied / totals.capacity) * 100 ).toFixed(1)
+      : 0;
+
+    return res.json({ totals: { ...totals, occupancyRate }, byZone });
+  } catch (err) {
+    console.error("getOccupancyMetrics error:", err);
+    return res.status(500).json({ error: err?.message || "Server error" });
+  }
+};
+

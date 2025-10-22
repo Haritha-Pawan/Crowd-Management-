@@ -24,6 +24,7 @@ import QRScanner from "./Components/Counter/QRScanner.jsx";
 import Landingpage from "./Pages/landingpage.jsx";
 import RegisterPayment from "./Pages/RegisterPayment.jsx";
 import ProtectedRoute from "./Components/ProtectedRoute.jsx";
+import NotFound from "./Pages/NotFound.jsx";
 
 
 
@@ -149,7 +150,7 @@ const App = () => {
         />
 
         {/* Optional 404 page */}
-        <Route path="*" element={<h1>404 - Page Not Found</h1>} />
+        <Route path="*" element={<NotFound/>} />
       </Routes>
       
 

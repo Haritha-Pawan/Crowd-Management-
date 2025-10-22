@@ -232,7 +232,7 @@ export default function DaladaLanding() {
     
     {/* --- Left: Brand --- */}
     <div className="flex items-center gap-3">
-      <svg width="28" height="28" viewBox="0 0 24 24" className={colors.navInk}>
+      <svg width="28" height="28" viewBox="0 0 24 24" className="text-[">
         <path fill="currentColor" d="M12 2l2 3H10l2-3Zm0 4c3.866 0 7 3.134 7 7h-2a5 5 0 1 0-10 0H5c0-3.866 3.134-7 7-7Zm-8 9h16l2 5H2l2-5Z"/>
       </svg>
       <div className="leading-tight">

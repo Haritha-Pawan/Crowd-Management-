@@ -22,7 +22,7 @@ const numberToCurrency = (n) => `Rs:${Number(n || 0).toFixed(2)}`;
    - drops " - ... " suffixes (e.g., "Zone A - Main Entrance" -> "zone a") */
 const zoneKeyFromText = (s) => {
   const txt = norm(s.zoneName ?? s.zone ?? "");
-  if (!txt) return "unknown-zone";
+  if (!txt) return "";
   // keep the part before " - "
   const base = txt.split(/\s*-\s*/)[0];
   // collapse spaces & non-alnum to single dashes
@@ -119,7 +119,7 @@ const mapSpotToView = (s, i) => {
     id: s._id ?? s.id ?? key,                   // fallback id = key
     name: s.label || `Spot ${s.spotNumber ?? i + 1}`,
     status,                                     // "available" | "occupied" | "reserved"
-    zone: s.zoneName || s.zone || "Unknown Zone",
+    zone: s.zoneName || s.zone || "",
     priceText: numberToCurrency(priceNum),
     distance: s.distanceText || `${30 + i * 2}m`, // placeholder unless backend provides distance
     type: s.type ?? "Standard",
@@ -293,7 +293,7 @@ const RealTime = () => {
               <div className="details mt-5">
                 <div className="price flex justify-between mb-4 text-[13px]">
                   Price per Hour
-                  <div className="price text-white">{spot.priceText}</div>
+                  <div className="price text-white">100.00</div>
                 </div>
 
                 <div className="Distance flex justify-between mb-4 text-[13px]">
@@ -307,10 +307,9 @@ const RealTime = () => {
                 </div>
 
                 <div className="features-container mb-2">
-                  <div className="text-[13px] mb-2">Features</div>
                   <div className="flex flex-wrap gap-2">
                     {spot.features.length === 0 && (
-                      <span className="text-xs text-gray-400">—</span>
+                      <span className="text-xs text-gray-400"></span>
                     )}
                     {spot.features.map((feature, idx) => (
                       <span
