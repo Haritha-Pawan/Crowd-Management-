@@ -1,5 +1,6 @@
-import {isValidObjectId} from 'mongoose';
+import { isValidObjectId } from 'mongoose';
 import Counter from '../model/counter.model.js';
+import ScanLog from '../../Register/Model/scanLog.model.js';
 
 export const createCounter = async(req,res) => {
     try{
@@ -22,16 +23,81 @@ export const createCounter = async(req,res) => {
 };
 
 
-export const getallCounter = async(req,res) => {
-  
-    try{
-        const counterT = await Counter.find();
-        res.json(counterT);
+export const getallCounter = async (req, res) => {
+  try {
+    const includeScanLoad =
+      String(req.query.includeScanLoad).toLowerCase() === "true" ||
+      String(req.query.withScanLoad).toLowerCase() === "true";
+    const { counterId } = req.query;
+
+    const filter = {};
+    if (counterId) {
+      if (!isValidObjectId(counterId)) {
+        return res.status(400).json({ message: "Invalid counterId query parameter" });
+      }
+      filter._id = counterId;
     }
-    catch(err){
-        res.status(500).json({message:err.message});
+
+    const counters = await Counter.find(filter).lean();
+    if (!includeScanLoad || !counters.length) {
+      return res.json(counters);
     }
-}
+
+    const ids = counters
+      .map((c) => c?._id)
+      .filter((id) => !!id);
+
+    if (!ids.length) {
+      return res.json(
+        counters.map((c) => ({
+          ...c,
+          assignedLoad: Number(c.load) || 0,
+          loadFromScanLogs: 0,
+          scanStats: { totalScans: 0, totalAttendees: 0, lastScanAt: null },
+        }))
+      );
+    }
+
+    const scanStats = await ScanLog.aggregate([
+      { $match: { counterId: { $in: ids } } },
+      {
+        $group: {
+          _id: "$counterId",
+          totalAttendees: { $sum: { $ifNull: ["$count", 1] } },
+          totalScans: { $sum: 1 },
+          lastScanAt: { $max: "$createdAt" },
+        },
+      },
+    ]);
+
+    const statsMap = new Map();
+    for (const doc of scanStats) {
+      statsMap.set(String(doc._id), {
+        totalAttendees: doc.totalAttendees || 0,
+        totalScans: doc.totalScans || 0,
+        lastScanAt: doc.lastScanAt || null,
+      });
+    }
+
+    const enriched = counters.map((c) => {
+      const stats = statsMap.get(String(c._id));
+      return {
+        ...c,
+        assignedLoad: Number(c.load) || 0,
+        loadFromScanLogs: stats?.totalAttendees ?? 0,
+        scanStats: {
+          totalAttendees: stats?.totalAttendees ?? 0,
+          totalScans: stats?.totalScans ?? 0,
+          lastScanAt: stats?.lastScanAt ?? null,
+        },
+      };
+    });
+
+    res.json(enriched);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
 export const updateCounter = async(req,res) =>{
     try{

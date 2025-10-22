@@ -119,14 +119,7 @@ const AddCounter = ({ isOpen, onClose, onCreate }) => {
           </div>
 
           <div className="flex gap-5 mt-4">
-            <div>
-              <label className="text-white flex mb-1 font-bold">Current Load</label>
-              <input
-                value={form.load} onChange={set("load")}
-                type="number" min="0" placeholder="e.g., 60"
-                className="text-white bg-[#272f40] border border-white/20 rounded-md p-2 w-[300px] placeholder:text-gray-500"
-              />
-            </div>
+            
 
             <div>
               <label className="text-white flex mb-1 font-bold">Assigned Staff</label>

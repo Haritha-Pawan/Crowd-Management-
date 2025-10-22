@@ -42,34 +42,19 @@ function Login() {
       const res = await axios.post("http://localhost:5000/auth", { email, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", res.data.user.role);
-      const role = res.data.user.role;
+      
 
+      //sessionStorage.setItem("user", JSON.stringify(res.data.user));n
+        sessionStorage.setItem("coodinatorName",res.data.user.username);
+        sessionStorage.setItem("coodinatorEmail",res.data.user.email);
+
+      const role = res.data.user.role;
       if (role === "admin") navigate("/admin");
       else if (role === "organizer") navigate("/organizer/Organizer");
       else if (role === "Attendee") navigate("/attendee/dashboard");
       else if (role === "Coordinator") navigate("/Coordinator");
       else if (role === "Staff") navigate("/counterStaff");
       else navigate("/");
-
-
-      if (role === "admin") {
-        navigate("/admin");
-      } else if (role === "organizer") {
-        navigate("/organizer/Organizer");
-      } else if (role === "Attendee") {
-        navigate("/attendee/dashboard");
-      }else if (role === "Coordinator") {
-        navigate("/Coordinator");
-      }else if (role === "Staff") {
-        navigate("/counterStaff");
-      }
-      else if (role === "Attendee") {
-        navigate("/attendee");
-      }
-       else {
-        navigate("/");
-      }
-
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     }

@@ -2,6 +2,7 @@ import User from "../User/User.model.js";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import Attendee from "../User/AttendeModel.js";
+import { sendSMS } from "../utils/sendSMS.js";
 
 // Display all users
 export const getAllUsers = async (req, res, next) => {
@@ -115,7 +116,7 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({ message: "Server error while deleting user" });
   }
 };
-//get all attendees
+
 export const getAllAttendees = async (req, res) => {
   try {
     const attendees = await Attendee.find().sort({ createdAt: -1 });
@@ -192,3 +193,37 @@ export const getRegistrationsPerDay = async (req, res) => {
 };
 
 
+
+ //Send a text message to all attendees
+
+export const sendMessageToAllAttendees = async (req, res) => {
+  try {
+    const { message } = req.body;
+  
+    if (!message) {
+      return res.status(400).json({ message: "Message content is required." });
+    }
+
+
+    // Fetch all attendees with phone numbers
+    const attendees = await Attendee.find({}, "phoneNumber");
+    if (!attendees || attendees.length === 0) {
+      return res.status(404).json({ message: "No attendees found." });
+    }
+    const phoneNumbers = attendees
+      .map((attendee) => attendee.phoneNumber)
+      .filter(Boolean); // remove null/undefined numbers
+
+    // Send SMS to each attendee
+    for (const number of phoneNumbers) {
+      await sendSMS(number, message);
+    }
+
+    res.status(200).json({
+      message: `✅ Message sent successfully to ${phoneNumbers.length} attendees.`,
+    });
+  } catch (err) {
+    console.error("❌ Error sending messages:", err);
+    res.status(500).json({ message: "Server error while sending messages." });
+  }
+};

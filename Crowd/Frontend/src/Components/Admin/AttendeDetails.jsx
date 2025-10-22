@@ -2,20 +2,19 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 function AttendeDetails() {
-  // state for all attendees (original from backend)
+  
   const [allAttendees, setAllAttendees] = useState([]);
-  // state for attendees shown in the table (filtered)
   const [attendees, setAttendees] = useState([]);
 
   // fetch attendees from backend when component mounts
   useEffect(() => {
     const fetchAttendees = async () => {
       try {
-        // 🔹 Replace URL with your real API endpoint
+      
         const res = await axios.get('http://localhost:5000/other/attendance'); 
-        // ensure data matches your backend structure
+   
         setAllAttendees(res.data); 
-        setAttendees(res.data); // initially show all
+        setAttendees(res.data); 
       } catch (err) {
         console.error('Error fetching attendees:', err);
       }
@@ -40,7 +39,7 @@ function AttendeDetails() {
   const handleDeleteAll = async () => {
     if (window.confirm("Are you sure you want to delete all attendees?")) {
       try {
-        await axios.delete('http://localhost:5000/other/attendance/delete"'); // adjust route to your backend
+        await axios.delete('http://localhost:5000/other/attendance/delete"'); 
         setAllAttendees([]);
         setAttendees([]);
       } catch (err) {
@@ -58,7 +57,7 @@ function AttendeDetails() {
 
       <button
         onClick={handleDeleteAll}
-        className="absolute top-12 right-12 p-3 px-8 rounded-md cursor-pointer bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
+        className="absolute top-12 right-16 p-2 px-4 rounded-md cursor-pointer border border-white/10 bg-white/5 text-white font-medium shadow-lg hover:opacity-80 focus:outline-none transition-all"
       >
         + Remove All
       </button>
@@ -82,7 +81,6 @@ function AttendeDetails() {
               <th className="pb-3">NIC</th>
               <th className="pb-3">Phone Number</th>
               <th className="pb-3">Email</th>
-              <th className="pb-3">QR Code</th>
             </tr>
           </thead>
           <tbody>
@@ -94,12 +92,7 @@ function AttendeDetails() {
                 <td className="py-3">
                   <span className="font-bold">{attendee.email?.split("@")[0]}</span>@{attendee.email?.split("@")[1]}
                 </td>
-                <td className="py-3">
-                 
-                  {/* Example fallback if no URL provided */}
-                   <img src={`https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=${attendee.fullName}`} alt="QR Code" className="w-12 h-12" /> 
-                     
-                </td>
+               
               </tr>
             ))}
           </tbody>

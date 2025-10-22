@@ -3,6 +3,7 @@ import { LineChart as ReLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 
 function AttendeeLineChart() {
   const [data, setData] = useState([]);
+  console.log(data);
 
   useEffect(() => {
     fetch('http://localhost:5000/users/attendee-daily-count')
@@ -24,6 +25,7 @@ function AttendeeLineChart() {
         </ReLineChart>
       </ResponsiveContainer>
     </div>
+    
   );
 }
 
