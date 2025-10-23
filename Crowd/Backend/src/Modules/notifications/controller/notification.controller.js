@@ -1,5 +1,23 @@
 import Notification from "../model/notification.model.js";
 
+/**
+ * We do NOT require auth here. Frontend simply passes ?role=Attendee (or in body).
+ * This keeps testing and wiring dead simple.
+ */
+const getRoleFromReq = (req = {}) => {
+  const role =
+    req.query?.role ||
+    req.body?.role ||
+    req.headers?.["x-user-role"] ||
+    req.headers?.["x-role"];
+  return (role || "").trim();
+};
+
+/**
+ * POST /api/notifications
+ * Body: { title, message, recipientRoles: string[] }
+ * - Broadcasts to each role room (both "role:X" and legacy "X")
+ */
 const toLower = (s) => String(s || "").trim().toLowerCase();
 const titleCase = (s) => s ? (s[0].toUpperCase() + s.slice(1).toLowerCase()) : s;
 
@@ -38,6 +56,8 @@ export const createNotification = async (req, res) => {
 /** GET /api/notifications/inbox  (JWT required) */
 export const getInbox = async (req, res) => {
   try {
+    const role = getRoleFromReq(req);
+    const limit = Math.min(parseInt(req.query?.limit || "50", 10), 200);
     const userId = req.user?.id;
     const roleJWT = toLower(req.user?.role);
     const limit = Math.min(parseInt(req.query.limit || "50", 10), 200);

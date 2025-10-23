@@ -1,4 +1,5 @@
 import Task from "../model/task.model.js";
+import {notifyCoordinatorByName } from "../../notifications/notifications/notification.service.js"
 
 // GET /api/tasks
 export const listTasks = async (_req, res) => {
@@ -17,7 +18,6 @@ export const getTask = async (req, res) => {
 export const createTask = async (req, res) => {
   const body = { ...req.body };
 
-  // keep it simple: tiny checks + normalize to match your UI
   if (!body.title || !body.title.trim()) {
     return res.status(400).json({ message: "Title is required" });
   }
@@ -25,6 +25,20 @@ export const createTask = async (req, res) => {
   if (body.status) body.status = String(body.status).toLowerCase().replace(" ", "_");
 
   const created = await Task.create(body);
+
+  if (body.coordinator && String(body.coordinator).trim()) {
+      try {
+        await notifyCoordinatorByName(
+          body.coordinator,
+          "New Task Assigned",
+          `You have been assigned a new task: "${body.title}"`
+        );
+      } catch (nErr) {
+        console.error("createTask -> notification error:", nErr);
+        // do not block task creation on notification failure
+      }
+    }
+
   res.status(201).json(created);
 };
 

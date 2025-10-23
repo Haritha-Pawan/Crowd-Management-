@@ -5,6 +5,28 @@ const notificationSchema = new mongoose.Schema(
     title:   { type: String, required: true },
     message: { type: String, required: true },
 
+    recipientType: {
+      type: String,
+      enum: ["role", "user"],   // "user" also covers name-targeting if you want
+      required: true,
+    },
+
+    // Broadcast to roles only (no direct user targeting)
+    recipientRoles: [{
+      type: String,
+      enum: ["Attendee", "Organizer", "Staff", "Coordinator"],
+      required: false,
+    }],
+
+    recipientName: { type: String, required: false },
+
+    recipientUserIds: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
+      index: true,
+    }],
+
     // store roles in lowercase
     recipientRoles: [{
       type: String,
