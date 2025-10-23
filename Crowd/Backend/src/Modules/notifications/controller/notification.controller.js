@@ -60,7 +60,6 @@ export const getInbox = async (req, res) => {
     const limit = Math.min(parseInt(req.query?.limit || "50", 10), 200);
     const userId = req.user?.id;
     const roleJWT = toLower(req.user?.role);
-    const limit = Math.min(parseInt(req.query.limit || "50", 10), 200);
 
     if (!userId || !roleJWT) {
       return res.status(422).json({ message: "Missing user or role in token" });
