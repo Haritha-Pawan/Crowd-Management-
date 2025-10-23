@@ -99,6 +99,8 @@ const CounterManagement = () => {
   };
 
   const removeCounter = async (id) => {
+    const ok = window.confirm("Are you sure you want to delete this counter?");
+    if (!ok) return;
     await axios.delete(`${API}/counter/${id}`);
     setCounters((prev) => prev.filter((c) => c._id !== id));
   };

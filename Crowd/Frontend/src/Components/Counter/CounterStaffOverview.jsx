@@ -133,7 +133,7 @@ const CounterStaffOverview = () => {
         <div className="rounded-[32px] border border-white/10 bg-gradient-to-br from-[#153068] to-[#1d4190] px-10 py-9 text-white shadow-2xl shadow-black/30">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
+              <h1 className="text-2xl font-semibold tracking-tight md:text-4xl">
                 Counter Staff Dashboard
               </h1>
               <p className="mt-1 text-sm text-indigo-100/80">
@@ -149,7 +149,7 @@ const CounterStaffOverview = () => {
             </Link>
           </div>
 
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-1 grid gap-15 sm:grid-cols-2 xl:grid-cols-3">
             {cards.map((card) => (
               <div
                 key={card.title}
@@ -159,8 +159,8 @@ const CounterStaffOverview = () => {
                   {card.title}
                   {card.icon}
                 </div>
-                <div className="mt-4 text-5xl font-semibold tracking-tight">{card.count}</div>
-                <p className="mt-3 text-xs text-indigo-100/70">{card.summary}</p>
+                <div className="mt-1 text-4xl font-semibold tracking-tight">{card.count}</div>
+                <p className="mt-2 text-xs text-indigo-100/70">{card.summary}</p>
                 {loadingStats && <p className="mt-4 text-[11px] text-indigo-200/80">Refreshing data...</p>}
               </div>
             ))}
