@@ -51,7 +51,7 @@ function Login() {
       const role = res.data.user.role;
       if (role === "admin") navigate("/admin");
       else if (role === "organizer") navigate("/organizer/Organizer");
-      else if (role === "Attendee") navigate("/attendee/dashboard");
+      else if (role === "Attendee") navigate("/attendee");
       else if (role === "Coordinator") navigate("/Coordinator");
       else if (role === "Staff") navigate("/counterStaff");
       else navigate("/");

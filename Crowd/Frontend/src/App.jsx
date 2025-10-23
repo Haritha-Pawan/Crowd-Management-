@@ -141,7 +141,7 @@ const App = () => {
           }
         />
         <Route
-          path="/AttendeDetails"
+          path="/AttendeDetails/*"
           element={
             <ProtectedRoute>
               <AttendeDetails />

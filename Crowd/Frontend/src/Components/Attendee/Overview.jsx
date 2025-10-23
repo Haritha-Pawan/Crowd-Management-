@@ -1,6 +1,7 @@
 // Attendee/Overview.jsx
 import { useEffect, useRef, useState } from "react";
 import { Car, QrCode, MapPin, TriangleAlert, CalendarCheck2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { io } from "socket.io-client";
 import NotificationBell from "../../Components/NotificationBell";
@@ -86,10 +87,10 @@ export default function Overview() {
   ];
 
   const btndetails = [
-    { icon: <Car size={24} color="#4CB6DD" />, text: "Check Parking Availability", to: "./parking" },
-    { icon: <MapPin size={24} color="red" />, text: "View Event Map", to: "./map" },
-    { icon: <TriangleAlert size={24} color="#f0c51b" />, text: "Submit Complaint", to: "./complaint" },
-    { icon: <CalendarCheck2 size={24} color="#0EEF7E" />, text: "Event Schedule", to: "./schedule" },
+    { icon: <Car size={24} color="#4CB6DD" />, text: "Check Parking Availability", to: "/attendee/parking" },
+    { icon: <MapPin size={24} color="red" />, text: "View Event Map", to: null },
+    { icon: <TriangleAlert size={24} color="#f0c51b" />, text: "Submit Complaint", to: "/attendee/incidentReport" },
+    { icon: <CalendarCheck2 size={24} color="#0EEF7E" />, text: "Event Schedule", to: null },
   ];
 
   return (
@@ -157,15 +158,26 @@ export default function Overview() {
           <div className="text-xl font-bold text-white">Quick Action</div>
           <div className="text-(--color-secondary)">Use this for event entry and services</div>
 
-          {btndetails.map((b, index) => (
-            <div
-              key={index}
-              className="bg-white/10 border border-white/10 shadow-md text-white font-semibold p-2 rounded-md mt-4 text-center cursor-pointer hover:bg-[#2563eb] transition flex gap-5"
-            >
-              <div className="icon">{b.icon}</div>
-              {b.text}
-            </div>
-          ))}
+          {btndetails.map((b, index) =>
+            b.to ? (
+              <Link
+                key={index}
+                to={b.to}
+                className="bg-white/10 border border-white/10 shadow-md text-white font-semibold p-2 rounded-md mt-4 text-center cursor-pointer hover:bg-[#2563eb] transition flex gap-5"
+              >
+                <div className="icon">{b.icon}</div>
+                {b.text}
+              </Link>
+            ) : (
+              <div
+                key={index}
+                className="bg-white/10 border border-white/10 shadow-md text-white font-semibold p-2 rounded-md mt-4 text-center flex gap-5 opacity-60 cursor-not-allowed"
+              >
+                <div className="icon">{b.icon}</div>
+                {b.text}
+              </div>
+            )
+          )}
         </div>
       </div>
 
