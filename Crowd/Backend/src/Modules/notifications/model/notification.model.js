@@ -8,7 +8,7 @@ const notificationSchema = new mongoose.Schema(
     recipientType: {
       type: String,
       enum: ["role", "user"],   // "user" also covers name-targeting if you want
-      required: true,
+      
     },
 
     // Broadcast to roles only (no direct user targeting)
