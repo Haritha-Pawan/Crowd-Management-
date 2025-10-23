@@ -1,6 +1,6 @@
 // src/pages/register/RegisterPersonal.jsx
-import React, { useMemo, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
 const nicRegex = /^(?:\d{12}|\d{9}[VvXx])$/;
@@ -9,7 +9,9 @@ const phoneRegex = /^0\d{9}$/;
 
 export default function RegisterPersonal() {
   const nav = useNavigate();
-  const [form, setForm] = useState({
+  const location = useLocation();
+
+  const emptyForm = {
     fullName: "",
     email: "",
     phone: "",
@@ -19,13 +21,70 @@ export default function RegisterPersonal() {
     password: "",
     confirm: "",
     role: "Attendee",
-  });
+  };
+
+  const toFormState = (data) => {
+    const src =
+      data && typeof data === "object"
+        ? data
+        : {};
+    return {
+    ...emptyForm,
+      fullName: src.fullName ?? "",
+      email: src.email ?? "",
+      phone: src.phone ?? "",
+      nic: src.nic ?? "",
+      type: src.type ?? "",
+      count: src.type === "family" ? String(src.count ?? "").trim() : "",
+      password: src.password ?? "",
+      confirm: src.confirm ?? "",
+      role: src.role ?? "Attendee",
+    };
+  };
+
+  const [form, setForm] = useState(() => toFormState(location.state));
+
+  useEffect(() => {
+    if (location.state) {
+      setForm(toFormState(location.state));
+    }
+  }, [location.state]);
 
   const set = (k) => (e) =>
     setForm((f) => ({
       ...f,
       [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value,
     }));
+
+  const handleFullNameChange = (e) => {
+    const sanitized = e.target.value.replace(/[^A-Za-z\s]/g, "");
+    setForm((f) => ({ ...f, fullName: sanitized }));
+  };
+
+  const handlePhoneChange = (e) => {
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+    setForm((f) => ({ ...f, phone: digits }));
+  };
+
+  const handleNicChange = (e) => {
+    const raw = e.target.value.toUpperCase();
+    const digits = raw.replace(/[^0-9]/g, "");
+    let suffix = raw.replace(/[^VX]/g, "").slice(0, 1);
+    let withDigits = suffix ? digits.slice(0, 9) : digits.slice(0, 12);
+
+    if (suffix && withDigits.length < 9) {
+      suffix = "";
+      withDigits = digits.slice(0, 12);
+    }
+
+    const sanitized = suffix ? `${withDigits}${suffix}` : withDigits;
+    setForm((f) => ({ ...f, nic: sanitized }));
+  };
+
+  const handleCountChange = (e) => {
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 3);
+    setForm((f) => ({ ...f, count: digits }));
+  };
 
   const isFamily = form.type === "family";
 
@@ -34,6 +93,7 @@ export default function RegisterPersonal() {
     const name = form.fullName.trim();
     if (!name) e.fullName = "Full name is required";
     else if (name.length < 3) e.fullName = "Full name must be at least 3 characters";
+    else if (/[^A-Za-z\s]/.test(name)) e.fullName = "Full name can only include letters";
 
     const email = form.email.trim().toLowerCase();
     if (!emailRegex.test(email)) e.email = "Invalid email";
@@ -148,7 +208,7 @@ export default function RegisterPersonal() {
               <input
                 className="u-input"
                 value={form.fullName}
-                onChange={set("fullName")}
+                onChange={handleFullNameChange}
                 placeholder=""
                 aria-invalid={!!errors.fullName}
               />
@@ -171,7 +231,9 @@ export default function RegisterPersonal() {
                 className="u-input"
                 type="tel"
                 value={form.phone}
-                onChange={set("phone")}
+                onChange={handlePhoneChange}
+                inputMode="numeric"
+                maxLength={10}
                 placeholder="07XXXXXXXX"
                 aria-invalid={!!errors.phone}
               />
@@ -181,7 +243,9 @@ export default function RegisterPersonal() {
               <input
                 className="u-input"
                 value={form.nic}
-                onChange={set("nic")}
+                onChange={handleNicChange}
+                inputMode="text"
+                maxLength={12}
                 placeholder=""
                 aria-invalid={!!errors.nic}
               />
@@ -208,10 +272,10 @@ export default function RegisterPersonal() {
               <Field label="Count" required error={errors.count} >
                 <input
                   className="u-input"
-                  type="number"
-                  min={2}
                   value={form.count}
-                  onChange={set("count")}
+                  onChange={handleCountChange}
+                  inputMode="numeric"
+                  maxLength={3}
                   placeholder="2"
                   aria-invalid={!!errors.count}
                 />

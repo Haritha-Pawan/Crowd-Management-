@@ -52,6 +52,18 @@ function formatExpiry(exp) {
   return yy ? `${mm}/${yy}` : mm;
 }
 
+function isExpiryInPast(mm, yy) {
+  if (!mm || !yy) return false;
+  const month = Number(mm);
+  if (!Number.isFinite(month) || month < 1 || month > 12) return false;
+  const now = new Date();
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const fullYear = yy.length === 2 ? Number(`20${yy}`) : Number(yy);
+  if (!Number.isFinite(fullYear)) return false;
+  const expiryMonthStart = new Date(fullYear, month - 1, 1);
+  return expiryMonthStart < currentMonthStart;
+}
+
 /* --- Badges --- */
 const BrandBadge = ({ brand }) => {
   const c = "h-6";
@@ -98,9 +110,6 @@ export default function RegisterPayment() {
 
   const [serverError, setServerError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [result, setResult] = useState(null);
-
   const [cardName, setCardName] = useState(personal?.fullName || "");
   const [cardNumber, setCardNumber] = useState("");
   const [exp, setExp] = useState("");
@@ -113,13 +122,6 @@ export default function RegisterPayment() {
 
   const numberRef = useRef(null);
   const { brand, cvcLen } = useMemo(() => detectBrand(cardNumber), [cardNumber]);
-  const assignedCounter =
-    result?.ticket?.assignedCounterDetails || result?.ticket?.assignedCounter || null;
-  const assignedCounterName =
-    assignedCounter?.name ||
-    result?.ticket?.assignedCounterName ||
-    result?.ticket?.counterCode ||
-    "";
 
   /* ---------- Validation ---------- */
   const errors = useMemo(() => {
@@ -143,11 +145,18 @@ export default function RegisterPayment() {
     const { mm, yy } = parseExpiry(exp);
     const mmNum = Number(mm);
     if (!(mm && yy && mmNum >= 1 && mmNum <= 12)) e.exp = "Invalid expiry";
+    else if (isExpiryInPast(mm, yy)) e.exp = "Expiry date can't be in the past";
     if (!/^\d{3,4}$/.test(cvc) || cvc.length !== cvcLen) e.cvc = `CVC must be ${cvcLen} digits`;
     return e;
   }, [personal, computedAmount, cardName, cardNumber, exp, cvc, cvcLen]);
 
-  const back = () => nav("/register");
+  const back = () => {
+    if (personal) {
+      nav("/register", { state: personal });
+    } else {
+      nav("/register");
+    }
+  };
 
   /* ---------- API submit ---------- */
   const submitToAPI = async () => {
@@ -192,9 +201,6 @@ export default function RegisterPayment() {
 
     setSubmitting(true);
     setServerError("");
-    setResult(null);
-    setOpen(false);
-
     try {
       const res = await fetch(API, {
         method: "POST",
@@ -206,11 +212,8 @@ export default function RegisterPayment() {
         const message = data?.message || `Error ${res.status}`;
         setServerError(message);
         toast.error(message);
-        setOpen(false);
         return;
       }
-      setResult(data);
-      setOpen(true);
       const assignedName =
         data?.ticket?.assignedCounter?.name ||
         data?.ticket?.assignedCounterName;
@@ -219,11 +222,11 @@ export default function RegisterPayment() {
           ? `Payment successful. Counter: ${assignedName}`
           : "Payment successful"
       );
+      nav("/register/success", { state: data });
     } catch (err) {
       const message = err.message || "Network error";
       setServerError(message);
       toast.error(message);
-      setOpen(false);
     } finally {
       setSubmitting(false);
     }
@@ -254,7 +257,16 @@ export default function RegisterPayment() {
 
   /* ---------- Handlers ---------- */
   const onNumberChange = (v) => setCardNumber(formatCardNumber(v, brand));
-  const onExpChange = (v) => setExp(formatExpiry(v));
+  const onExpChange = (v) =>
+    setExp((prev) => {
+      const formatted = formatExpiry(v);
+      const { mm, yy } = parseExpiry(formatted);
+      if (mm.length === 2 && yy.length === 2 && isExpiryInPast(mm, yy)) {
+        if (formatted !== prev) toast.error("Expiry date can't be in the past");
+        return prev;
+      }
+      return formatted;
+    });
   const onCvcChange = (v) => setCvc(digitsOnly(v).slice(0, cvcLen));
 
   /* ---------- UI (styled to match RegisterPersonal) ---------- */
@@ -386,6 +398,7 @@ export default function RegisterPayment() {
                         inputMode="numeric"
                         className="u-input"
                         placeholder="12/28"
+                        maxLength={5}
                         value={exp}
                         onChange={(e) => onExpChange(e.target.value)}
                         onBlur={() => setCardTouched(true)}
@@ -433,77 +446,6 @@ export default function RegisterPayment() {
                     </button>
                   </div>
                 </form>
-
-                {/* Receipt (unchanged logic, styled to match) */}
-                {open && (
-                  <div className="mt-6 lg:mt-0 lg:w-[420px] xl:w-[460px] rounded-xl border border-[#334155] bg-[#0b152c]/40 p-6">
-                    {result?.ticket ? (
-                      <div className="flex flex-col md:flex-row md:items-start md:gap-8">
-                        <div className="flex-1">
-                          <h4 className="text-[16px] font-semibold">Payment successful</h4>
-                          <p className="text-[13px] text-[#94A3B8] mt-1">
-                            Ticket issued for {result.ticket.fullName} - {result.ticket.type}
-                            {result.ticket.type === "family" ? ` (${result.ticket.count})` : ""}
-                          </p>
-                          <div className="mt-4 p-3 rounded-lg bg-emerald-500/10 text-emerald-300 text-[13px]">
-                            Status: Paid | {result.ticket?.payment?.card?.brand?.toUpperCase() || "CARD"} | ****{" "}
-                            {result.ticket?.payment?.card?.last4}
-                          </div>
-
-                          {assignedCounter ? (
-                            <div className="mt-4 rounded-lg border border-emerald-400/40 bg-emerald-500/10 p-3 text-emerald-200 text-[13px]">
-                              <p className="text-[13px] font-semibold text-emerald-100">
-                                Assigned Counter: <span className="text-white">{assignedCounterName}</span>
-                              </p>
-                              <div className="mt-2 space-y-1.5">
-                                {assignedCounter.status ? (
-                                  <div>
-                                    Mode: <span className="text-white">{assignedCounter.status}</span>
-                                  </div>
-                                ) : null}
-                                {assignedCounter.entrance ? (
-                                  <div>
-                                    Entrance: <span className="text-white">{assignedCounter.entrance}</span>
-                                  </div>
-                                ) : null}
-                                <div>
-                                  Count: <span className="text-white">{assignedCounter.load ?? 0}</span>
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="mt-4 rounded-lg border border-amber-400/40 bg-amber-500/10 p-3 text-amber-100 text-[13px]">
-                              Counter assignment pending. Please check with the help desk on arrival.
-                            </div>
-                          )}
-                        </div>
-                        <div className="mt-6 md:mt-0 md:self-start flex flex-col items-center gap-4">
-                          <img
-                            alt="QR Code"
-                            src={result.qr?.dataUrl || result.ticket?.qrDataUrl}
-                            className="w-48 h-48 border border-[#334155] bg-[#0F172A]"
-                            style={{ imageRendering: "pixelated" }}
-                          />
-                          <a
-                            className="inline-block rounded-xl bg-[#4F46E5] px-4 py-2 text-white hover:bg-[#6366F1]"
-                            href={result.qr?.dataUrl || result.ticket?.qrDataUrl}
-                            download={`ticket_${result.ticket.type}_${result.ticket.nic}.png`}
-                          >
-                            Download QR
-                          </a>
-                          <p className="text-[12px] text-[#94A3B8] text-center max-w-[16rem]">
-                            Show this QR at the assigned counter for faster entry.
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <h4 className="text-[16px] font-semibold">Something went wrong</h4>
-                        <p className="text-[13px] text-[#94A3B8] mt-1">{serverError || "Please try again."}</p>
-                      </>
-                    )}
-                  </div>
-                )}
               </div>
             </section>
           </div>
