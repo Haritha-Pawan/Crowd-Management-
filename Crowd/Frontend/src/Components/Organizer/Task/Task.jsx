@@ -216,14 +216,14 @@ const Task = () => {
         <div className="relative flex-1 min-w-[240px]">
           <Search
             size={16}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute mt-3 left-3 top-1/2 -translate-y-1/2 text-slate-400"
           />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search tasks by title, coordinator, status, or due date"
-            className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-9 pr-8 text-sm text-white placeholder:text-white/50 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
+            className="w-full rounded-lg border border-white/10 bg-white/5 mt-5 py-2 pl-9 pr-8 text-sm text-white placeholder:text-white/50 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40"
           />
           {searchTerm ? (
             <button
