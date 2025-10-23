@@ -61,6 +61,11 @@ export default function DaladaLanding() {
         return;
       }
 
+      if (role === "attendee " || role === "attendee") {
+        navigate("/attendee");
+        return;
+      }
+
       // default for regular users / attendees
       navigate("/profile");
     } catch (err) {
