@@ -26,6 +26,9 @@ import RegisterPayment from "./Pages/RegisterPayment.jsx";
 import ProtectedRoute from "./Components/ProtectedRoute.jsx";
 import RegisterSuccess from "./Pages/RegisterSuccess.jsx";
 
+import NotFound from "./Pages/NotFound.jsx";
+
+
 
 const App = () => {
   return (
@@ -70,9 +73,9 @@ const App = () => {
         <Route
           path="/admin/*"
           element={
-            <ProtectedRoute>
+           
               <Admin />
-            </ProtectedRoute>
+            
           }
         />
         <Route
@@ -149,7 +152,7 @@ const App = () => {
         />
 
         {/* Optional 404 page */}
-        <Route path="*" element={<h1>404 - Page Not Found</h1>} />
+        <Route path="*" element={<NotFound/>} />
       </Routes>
       
 

@@ -161,12 +161,12 @@ const UserManagement = () => {
     didDrawPage({ pageNumber: 1 });
     const nextY = addBusinessHeader(doc, headerInfo);
 
-    // Calculate stats dynamically
+    // Calculate stats dynamically (case-insensitive checks)
     const stats = {
       total: users.length,
-      active: users.filter((u) => u.status === "Active").length,
-      pending: users.filter((u) => u.status === "Pending").length,
-      organizers: users.filter((u) => u.role === "Organizer").length,
+      active: users.filter((u) => String(u.status || "").toLowerCase() === "active").length,
+      pending: users.filter((u) => String(u.status || "").toLowerCase() === "pending").length,
+      organizers: users.filter((u) => String(u.role || "").toLowerCase() === "organizer").length,
     };
 
     // Report title
@@ -191,13 +191,19 @@ const UserManagement = () => {
     ];
 
     // Prepare rows
-    const rows = users.map((u) => ({
-      fullName: u.fullName || "—",
-      email: u.email || "—",
-      role: u.role || "—",
-      status: u.status || "Active",
-      createdAt: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—",
-    }));
+    // Build rows with flexible name fallback (fullName, name, firstName + lastName)
+    const rows = users.map((u) => {
+      const fullName =
+        u.fullName || u.name || [u.firstName, u.lastName].filter(Boolean).join(" ") || "—";
+
+      return {
+        fullName,
+        email: u.email || "—",
+        role: u.role || "—",
+        status: u.status || "—",
+        createdAt: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—",
+      };
+    });
 
     // Table
     autoTable(doc, {
@@ -211,8 +217,8 @@ const UserManagement = () => {
       didDrawPage,
     });
 
-    // Save file
-    doc.save("user_report.pdf");
+    // Save file with generated filename
+    doc.save(fileName);
   };
 
   return (

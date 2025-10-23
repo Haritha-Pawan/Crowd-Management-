@@ -34,6 +34,41 @@ export default function DaladaLanding() {
     navigate("/login");
   };
 
+  // Navigate to role-specific profile/dashboard
+  const handleProfileNavigate = () => {
+    try {
+      setMenuOpen(false);
+      const rawRole = localStorage.getItem("userRole") || localStorage.getItem("role") || "";
+      const role = String(rawRole).toLowerCase();
+
+      if (role === "admin") {
+        navigate("/admin");
+        return;
+      }
+
+      if (role === "organizer") {
+        navigate("/organizer");
+        return;
+      }
+
+      if (role === "coordinator") {
+        navigate("/Coordinator");
+        return;
+      }
+
+      if (role === "staff" || role === "counter") {
+        navigate("/counterStaff");
+        return;
+      }
+
+      // default for regular users / attendees
+      navigate("/profile");
+    } catch (err) {
+      console.error("Error navigating to profile by role:", err);
+      navigate("/profile");
+    }
+  };
+
   // ---- language state (default English) ----
   const [lang, setLang] = useState("en");
   const copy = useMemo(
@@ -197,7 +232,7 @@ export default function DaladaLanding() {
     
     {/* --- Left: Brand --- */}
     <div className="flex items-center gap-3">
-      <svg width="28" height="28" viewBox="0 0 24 24" className={colors.navInk}>
+      <svg width="28" height="28" viewBox="0 0 24 24" className="text-[">
         <path fill="currentColor" d="M12 2l2 3H10l2-3Zm0 4c3.866 0 7 3.134 7 7h-2a5 5 0 1 0-10 0H5c0-3.866 3.134-7 7-7Zm-8 9h16l2 5H2l2-5Z"/>
       </svg>
       <div className="leading-tight">
@@ -233,7 +268,7 @@ export default function DaladaLanding() {
 
           {menuOpen && (
             <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg overflow-hidden z-30">
-              <Link to="/profile" className="block px-4 py-2 text-sm hover:bg-gray-100">Profile</Link>
+              <button onClick={handleProfileNavigate} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Profile</button>
               <Link to="/booking" className="block px-4 py-2 text-sm hover:bg-gray-100">My Bookings</Link>
               <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Logout</button>
             </div>
