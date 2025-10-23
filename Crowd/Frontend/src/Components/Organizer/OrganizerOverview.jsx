@@ -21,6 +21,7 @@ import NotificationBell from "../../Components/NotificationBell";
 // ✅ Base API endpoint (use your backend URL)
 const API = "http://localhost:5000/api";
 const api = axios.create({ baseURL: API, withCredentials: true });
+const LIVE_REFRESH_MS = 8000; // optional: refresh metrics/zones every 8s
 
 const OrganizerOverview = () => {
   const currentUser = {
@@ -31,6 +32,8 @@ const OrganizerOverview = () => {
 
   const [tasks, setTasks] = useState([]);
   const [zones, setZones] = useState([]);
+  const [metrics, setMetrics] = useState(null); // ← parking metrics { totals, byZone }
+  const [loading, setLoading] = useState(true);
   const [showComposer, setShowComposer] = useState(false);
   const [sent, setSent] = useState([]);
   const [form, setForm] = useState({
@@ -58,26 +61,49 @@ const OrganizerOverview = () => {
     return () => s.disconnect();
   }, [currentUser.role]);
 
-useEffect(() => {
-  const loadData = async () => {
+  // ✅ Fetch tasks, zones, and parking metrics
+  const loadAll = async () => {
     try {
-      const [taskRes, zoneRes] = await Promise.all([
+      setLoading(true);
+      const [taskRes, zoneRes, metricsRes] = await Promise.all([
         api.get("/tasks"),
-        api.get("/zone")
+        api.get("/zone"),
+        api.get("/spots/metrics"),
       ]);
 
-      // ✅ Safely extract arrays
-      setTasks(Array.isArray(taskRes.data) ? taskRes.data : taskRes.data.tasks || []);
-      setZones(Array.isArray(zoneRes.data) ? zoneRes.data : zoneRes.data.zones || []);
+      // tasks
+      setTasks(
+        Array.isArray(taskRes.data)
+          ? taskRes.data
+          : taskRes.data?.tasks || []
+      );
+
+      // zones
+      const z =
+        (Array.isArray(zoneRes.data) && zoneRes.data) ||
+        zoneRes.data?.zones ||
+        zoneRes.data?.data ||
+        [];
+      setZones(Array.isArray(z) ? z : []);
+
+      // metrics
+      setMetrics(metricsRes.data || null);
     } catch (err) {
-      console.error("Data loading failed:", err);
+      console.error("Overview load failed:", err);
       setTasks([]);
       setZones([]);
+      setMetrics(null);
+    } finally {
+      setLoading(false);
     }
   };
-  loadData();
-}, []);
 
+  useEffect(() => {
+    loadAll();
+  }, []);
+
+  // Optional: live refresh to keep parking up to date
+  
 
   // === Task metrics ===
   const totalTasks = tasks.length;
@@ -88,34 +114,36 @@ useEffect(() => {
     return new Date(t.dueDate) < new Date();
   }).length;
 
-  // === Parking metrics ===
-  const totalSlots = zones.reduce((s, z) => s + (Number(z.capacity) || 0), 0);
-  const occupied = zones.reduce((s, z) => s + (Number(z.load) || 0), 0);
-  const reserved = zones.reduce((s, z) => s + (Number(z.reserved) || 0), 0);
-  const available = Math.max(totalSlots - occupied - reserved, 0);
+  // === Parking metrics (from /spots/metrics) ===
+  const totals = metrics?.totals || { capacity: 0, occupied: 0, available: 0, occupancyRate: 0 };
 
-  // === Chart data ===
-  const taskPieData = [
-    { name: "Done", value: completed },
-    { name: "In Progress", value: inProgress },
-    {
-      name: "Other",
-      value: Math.max(totalTasks - completed - inProgress, 0)
+  // Build a map zoneId -> {capacity, occupied, available}
+  const byZoneMap = useMemo(() => {
+    const m = new Map();
+    if (metrics?.byZone) {
+      for (const z of metrics.byZone) m.set(String(z.zoneId), z);
     }
-  ];
-  const taskPieColors = ["#22c55e", "#f59e0b", "#64748b"];
+    return m;
+  }, [metrics]);
 
-  const parkingBarData = zones.map((z) => {
-    const cap = Number(z.capacity) || 0;
-    const occ = Number(z.load) || 0;
-    const res = Number(z.reserved) || 0;
-    return {
-      name: z.name || "Zone",
-      Occupied: Math.min(occ, cap),
-      Reserved: Math.min(res, Math.max(cap - occ, 0)),
-      Available: Math.max(cap - occ - res, 0)
-    };
-  });
+  // If you have a reservations API, you can compute reserved per zone here.
+  // For now, ‘reserved’ defaults to 0 and can be integrated later.
+  const parkingBarData = useMemo(() => {
+    return zones.map((z) => {
+      const zid = String(z._id || z.id || "");
+      const m = byZoneMap.get(zid);
+      const capacity = m?.capacity ?? Number(z.capacity) ?? 0;
+      const occupied = m?.occupied ?? Number(z.load) ?? 0;
+      const available = m?.available ?? Math.max(capacity - occupied, 0);
+      const reserved = 0; // TODO: replace with real reserved count if available
+      return {
+        name: z.name || "Zone",
+        Available: available,
+        Reserved: Math.min(reserved, Math.max(capacity - occupied, 0)),
+        Occupied: Math.min(occupied, capacity),
+      };
+    });
+  }, [zones, byZoneMap]);
 
   // === Team snapshot ===
   const team = useMemo(() => {
@@ -164,6 +192,14 @@ useEffect(() => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="w-full px-8 pt-8 pb-16">
+        <div className="text-white/80">Loading overview…</div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full px-8 pt-8 pb-16">
       {/* Header */}
@@ -199,13 +235,15 @@ useEffect(() => {
           { title: "Overdue", value: overdue }
         ]}
       />
+
+      {/* ✅ Parking KPIs driven by /spots/metrics */}
       <Section
         title="Parking"
         data={[
-          { title: "Total Slots", value: totalSlots },
-          { title: "Available", value: available },
-          { title: "Reserved", value: reserved },
-          { title: "Occupied", value: occupied }
+          { title: "Total Slots", value: totals.capacity },
+          { title: "Available", value: totals.available },
+          { title: "Reserved", value: 0 }, // replace later when you wire real reserved counts
+          { title: "Occupied", value: totals.occupied }
         ]}
       />
 
@@ -215,17 +253,21 @@ useEffect(() => {
           <ResponsiveContainer>
             <PieChart>
               <Pie
-                data={taskPieData}
+                data={[
+                  { name: "Done", value: completed },
+                  { name: "In Progress", value: inProgress },
+                  {
+                    name: "Other",
+                    value: Math.max(totalTasks - completed - inProgress, 0)
+                  }
+                ]}
                 dataKey="value"
                 nameKey="name"
                 innerRadius={55}
                 outerRadius={90}
               >
-                {taskPieData.map((_, i) => (
-                  <Cell
-                    key={i}
-                    fill={taskPieColors[i % taskPieColors.length]}
-                  />
+                {["#22c55e", "#f59e0b", "#64748b"].map((c, i) => (
+                  <Cell key={i} fill={c} />
                 ))}
               </Pie>
               <Legend />
@@ -234,12 +276,13 @@ useEffect(() => {
           </ResponsiveContainer>
         </ChartCard>
 
+        {/* ✅ Parking Utilization by Zone using metrics.byZone + zone names */}
         <ChartCard title="Parking Utilization by Zone">
           <ResponsiveContainer>
             <BarChart data={parkingBarData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
-              <YAxis />
+              <YAxis allowDecimals={false} />
               <Tooltip />
               <Legend />
               <Bar dataKey="Available" stackId="a" fill="#22c55e" />

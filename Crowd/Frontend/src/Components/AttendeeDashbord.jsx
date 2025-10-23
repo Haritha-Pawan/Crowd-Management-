@@ -3,7 +3,6 @@ import { Routes, Route, Outlet } from 'react-router-dom'; // Import Routes and R
 import Sidebar from '../Ui/SidebarDash.jsx';
 import { User, Car, TriangleAlert } from 'lucide-react';
 import Overview from './Attendee/Overview.jsx';
-import Profile from './Attendee/Profile.jsx';
 import SupportForm from './Attendee/SupportForm.jsx';
 
 

@@ -25,7 +25,7 @@ const AddUser = ({ isOpen, onClose }) => {
     e.preventDefault();
     console.log(input);
     if (!validate()) return;
-    sendRequest().then(() => navigate("/admin/UserManagement.jsx")); 
+    sendRequest().then(() => navigate("/Admin/UserManagement.jsx")); 
   };
 
   const sendRequest = async () => {

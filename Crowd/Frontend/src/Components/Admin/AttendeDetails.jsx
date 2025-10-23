@@ -2,20 +2,19 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 function AttendeDetails() {
-  // state for all attendees (original from backend)
+  
   const [allAttendees, setAllAttendees] = useState([]);
-  // state for attendees shown in the table (filtered)
   const [attendees, setAttendees] = useState([]);
 
   // fetch attendees from backend when component mounts
   useEffect(() => {
     const fetchAttendees = async () => {
       try {
-        // 🔹 Replace URL with your real API endpoint
+      
         const res = await axios.get('http://localhost:5000/other/attendance'); 
-        // ensure data matches your backend structure
+   
         setAllAttendees(res.data); 
-        setAttendees(res.data); // initially show all
+        setAttendees(res.data); 
       } catch (err) {
         console.error('Error fetching attendees:', err);
       }
@@ -40,7 +39,7 @@ function AttendeDetails() {
   const handleDeleteAll = async () => {
     if (window.confirm("Are you sure you want to delete all attendees?")) {
       try {
-        await axios.delete('http://localhost:5000/other/attendance/delete"'); // adjust route to your backend
+        await axios.delete('http://localhost:5000/other/attendance/delete"'); 
         setAllAttendees([]);
         setAttendees([]);
       } catch (err) {
@@ -82,7 +81,6 @@ function AttendeDetails() {
               <th className="pb-3">NIC</th>
               <th className="pb-3">Phone Number</th>
               <th className="pb-3">Email</th>
-              <th className="pb-3">QR Code</th>
             </tr>
           </thead>
           <tbody>
@@ -94,17 +92,7 @@ function AttendeDetails() {
                 <td className="py-3">
                   <span className="font-bold">{attendee.email?.split("@")[0]}</span>@{attendee.email?.split("@")[1]}
                 </td>
-                <td className="py-3">
-                  {/* If backend already sends QR code URL, use it directly */}
-                  <img
-                    src={
-                      attendee.qrCode ||
-                      `https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=${attendee.fullName}`
-                    }
-                    alt="QR Code"
-                    className="w-12 h-12"
-                  />
-                </td>
+               
               </tr>
             ))}
           </tbody>

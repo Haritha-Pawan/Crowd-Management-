@@ -6,7 +6,7 @@ import { MapPin, Car, ChevronRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const API = "http://localhost:5000/api";
-const LIVE_REFRESH_MS = 5000; // poll every 5s
+const LIVE_REFRESH_MS = 10000; // poll every 5s
 
 /* ---------- helpers ---------- */
 const getColorsByValue = (v) =>
@@ -381,6 +381,7 @@ export default function ParkingZone() {
     window.addEventListener("focus", onFocus);
     return () => {
       clearInterval(id);
+
       window.removeEventListener("focus", onFocus);
     };
   }, [fetchZones]);
