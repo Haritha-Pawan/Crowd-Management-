@@ -9,6 +9,7 @@ const EditCounter = ({ isOpen, onClose, counter, onUpdated }) => {
     entrance: "",
     status: "Entry",
     capacity: "",
+    load: "",
     staff: "",
     isActive: true,
   });
@@ -21,6 +22,7 @@ const EditCounter = ({ isOpen, onClose, counter, onUpdated }) => {
       entrance: counter.entrance ?? "",
       status: counter.status ?? "Entry", // "Entry" | "Exit" (add "Both" if your route allows)
       capacity: String(counter.capacity ?? ""),
+      load: String(counter.load ?? ""),
       staff: counter.staff ?? "",
       isActive: counter.isActive ?? true,
     });
@@ -40,14 +42,19 @@ const EditCounter = ({ isOpen, onClose, counter, onUpdated }) => {
     if (!String(form.capacity).trim()) return alert("Capacity is required");
 
     const capacity = parseInt(form.capacity, 10) || 0;
+    const load = form.load === "" ? 0 : parseInt(form.load, 10);
 
     if (capacity <= 0) return alert("Capacity must be greater than zero");
+    if (!Number.isNaN(load) && load > capacity) {
+      return alert("Load cannot exceed capacity");
+    }
 
     const payload = {
       name: form.name.trim(),
       entrance: form.entrance.trim(),
       status: form.status,
       capacity,
+      load: Number.isNaN(load) ? 0 : load,
       staff: form.staff.trim() || undefined,
       isActive: !!form.isActive,
     };
@@ -119,7 +126,14 @@ const EditCounter = ({ isOpen, onClose, counter, onUpdated }) => {
           </div>
 
           <div className="flex gap-5 mt-4">
-            
+            <div>
+              <label className="text-white flex mb-1 font-bold">Current Load</label>
+              <input
+                value={form.load} onChange={set("load")}
+                type="number" min="0" placeholder="e.g., 60"
+                className="text-white bg-[#272f40] border border-white/20 rounded-md p-2 w-[300px] placeholder:text-gray-500"
+              />
+            </div>
 
             <div>
               <label className="text-white flex mb-1 font-bold">Assigned Staff</label>
