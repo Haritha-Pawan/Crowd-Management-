@@ -22,7 +22,7 @@ export default function NotificationBell({ currentUser, socket }) {
     audioRef.current = new Audio("/new-notification-021-370045.mp3");
   }, []);
 
-  // initial fetch (UNREAD only)
+  // initial fetch (UNREAD only, server filters by JWT)
   useEffect(() => {
     const load = async () => {
       try {
@@ -41,17 +41,24 @@ export default function NotificationBell({ currentUser, socket }) {
     typeof userRole === "string" &&
     roles.some((r) => String(r).toLowerCase() === userRole.toLowerCase());
 
-  // realtime push (case-insensitive role match)
+  // realtime push (case-insensitive role match) — listen to both new & legacy events
   useEffect(() => {
     if (!socket) return;
+
     const handler = (doc) => {
       if (matchesMyRole(doc?.recipientRoles, currentUser?.role)) {
         setInbox((prev) => (prev.some((n) => n._id === doc._id) ? prev : [doc, ...prev]));
         audioRef.current?.play().catch(() => {});
       }
     };
+
     socket.on("notification:new", handler);
-    return () => socket.off("notification:new", handler);
+    socket.on("newNotification", handler); // legacy
+
+    return () => {
+      socket.off("notification:new", handler);
+      socket.off("newNotification", handler);
+    };
   }, [socket, currentUser?.role]);
 
   const list = useMemo(() => inbox.slice(0, 15), [inbox]);
