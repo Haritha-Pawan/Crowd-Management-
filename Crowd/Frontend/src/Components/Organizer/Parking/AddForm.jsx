@@ -13,17 +13,17 @@ const DISTANCE_REGEX = /^\d+(\.\d+)?\s*(m|km)?$/i;                    // 50, 50m
 const LAT_REGEX = /^-?(90(\.0+)?|[0-8]?\d(\.\d+)?)$/;                 // -90..90
 
 const sanitizeMoney = (v) => {
-  let s = v.replace(/[^\d.]/g, "");     // keep digits + dot
-  s = s.replace(/(\..*)\./g, "$1");     // single dot
-  s = s.replace(/^0+(?=\d)/, "");       // no leading zeros (except 0.x)
-  s = s.replace(/^(\d+)(\.\d{0,2}).*$/, "$1$2"); // max 2 decimals
+  let s = v.replace(/[^\d.]/g, "");     
+  s = s.replace(/(\..*)\./g, "$1");     
+  s = s.replace(/^0+(?=\d)/, "");       
+  s = s.replace(/^(\d+)(\.\d{0,2}).*$/, "$1$2"); 
   return s;
 };
 const sanitizeInteger = (v, maxLen = 5) => v.replace(/\D/g, "").slice(0, maxLen);
 const sanitizeLatitude = (v) => {
   let s = v.replace(/[^0-9.\-]/g, "");
-  s = s.replace(/(.*-).*-/g, "$1");     // one minus
-  s = s.replace(/(\..*)\./g, "$1");     // one dot
+  s = s.replace(/(.*-).*-/g, "$1");     
+  s = s.replace(/(\..*)\./g, "$1");     
   return s;
 };
 
