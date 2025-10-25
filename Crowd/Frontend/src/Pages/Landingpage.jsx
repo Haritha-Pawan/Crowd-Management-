@@ -61,6 +61,11 @@ export default function DaladaLanding() {
         return;
       }
 
+      if (role === "attendee " || role === "attendee") {
+        navigate("/attendee");
+        return;
+      }
+
       // default for regular users / attendees
       navigate("/profile");
     } catch (err) {
@@ -268,8 +273,8 @@ export default function DaladaLanding() {
 
           {menuOpen && (
             <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg overflow-hidden z-30">
-              <button onClick={handleProfileNavigate} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Profile</button>
-              <Link to="/booking" className="block px-4 py-2 text-sm hover:bg-gray-100">My Bookings</Link>
+              <button onClick={handleProfileNavigate} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Dashboard</button>
+              <Link to="/booking" className="block px-4 py-2 text-sm hover:bg-gray-100"></Link>
               <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Logout</button>
             </div>
           )}

@@ -103,10 +103,7 @@ const OrganizerOverview = () => {
   }, []);
 
   // Optional: live refresh to keep parking up to date
-  useEffect(() => {
-    const id = setInterval(loadAll, LIVE_REFRESH_MS);
-    return () => clearInterval(id);
-  }, []);
+  
 
   // === Task metrics ===
   const totalTasks = tasks.length;

@@ -24,6 +24,8 @@ import QRScanner from "./Components/Counter/QRScanner.jsx";
 import Landingpage from "./Pages/landingpage.jsx";
 import RegisterPayment from "./Pages/RegisterPayment.jsx";
 import ProtectedRoute from "./Components/ProtectedRoute.jsx";
+import RegisterSuccess from "./Pages/RegisterSuccess.jsx";
+
 import NotFound from "./Pages/NotFound.jsx";
 
 
@@ -42,7 +44,7 @@ const App = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/register/payment" element={<RegisterPayment />} />
-
+        <Route path="/register/success" element={<RegisterSuccess />} />
         {/* Protected Routes */}
         <Route
           path="/attendee/*"
@@ -71,9 +73,9 @@ const App = () => {
         <Route
           path="/admin/*"
           element={
-           
+              <ProtectedRoute>
               <Admin />
-            
+            </ProtectedRoute>
           }
         />
         <Route
@@ -141,7 +143,7 @@ const App = () => {
           }
         />
         <Route
-          path="/AttendeDetails"
+          path="/AttendeDetails/*"
           element={
             <ProtectedRoute>
               <AttendeDetails />

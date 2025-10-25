@@ -1,28 +1,45 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../User/User.model.js';
+import Ticket from '../Register/Model/ticket.model.js';
 import nodemailer from 'nodemailer';
 
 export const login = async (req, res) => {   // <--- added export here
   try {
     const { email, password } = req.body;
 
-    // find the user
-    const user = await User.findOne({ email });
-    if (!user) {
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    const rawPassword = typeof password === 'string' ? password : '';
+
+    if (!normalizedEmail || !rawPassword) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    // find the user (staff/admin/etc.) or fallback to attendee ticket
+    let account = await User.findOne({ email: normalizedEmail });
+    let isAttendee = false;
+
+    if (!account) {
+      account = await Ticket.findOne({ email: normalizedEmail });
+      isAttendee = Boolean(account);
+    }
+
+    if (!account) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
-    // find attende 
 
     // compare password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(rawPassword, account.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
+    const role = account.role || (isAttendee ? 'Attendee' : undefined);
+    const username = account.username || account.name || account.fullName || account.email;
+
     // create JWT token
     const token = jwt.sign(
-      { id: user._id, role: user.role,username: user.username, email: user.email },
+      { id: account._id, role, username, email: account.email },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -31,13 +48,16 @@ export const login = async (req, res) => {   // <--- added export here
       message: 'Login successful',
       token,
       user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-        username: user.username,
-        email: user.email
-
-        
+        id: account._id,
+        email: account.email,
+        role,
+        username,
+        ...(isAttendee
+          ? {
+              fullName: account.fullName,
+              ticketType: account.type,
+            }
+          : {}),
       },
     });
   } catch (error) {
