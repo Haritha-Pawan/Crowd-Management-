@@ -347,7 +347,7 @@ export default function DaladaLanding() {
       </section>
 
       {/* Your extra sections */}
-      <About/>
+     
       <Service />
       <Banner />
 
