@@ -29,7 +29,7 @@ function Service() {
   ];
 
   return (
-    <div className="py-5 px-4 md:px-20 text-center bg-white text-black">
+    <div className="py-5 px-4 md:px-20 text-center bg-white text-black mt-10">
       {/* Section Heading */}
       <h1 className="text-4xl font-bold mb-2">
         <span className="text-orange-500">Our </span>
