@@ -1,6 +1,6 @@
 # Stage 1: Build the Application
-# We use node:18 as the base for building and installing dependencies.
-FROM node:18 AS build
+# We use node:22 as the base for building and installing dependencies.
+FROM node:22 AS build
 
 # Set the working directory inside the container
 WORKDIR /usr/src/app
@@ -16,8 +16,8 @@ RUN npm install
 COPY . .
 
 # Stage 2: Create the Final Production Image
-# We use node:18 as the runtime image with all the necessary tools.
-FROM node:18
+# We use node:22 as the runtime image with all the necessary tools.
+FROM node:22
 
 # Set the working directory
 WORKDIR /usr/src/app
