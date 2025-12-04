@@ -36,26 +36,29 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 // ✅ HTTP server for Socket.IO
 const server = http.createServer(app);
 
-// ✅ Socket.IO server instance
+// ✅ Socket.IO server instance with dynamic CORS
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:5173', // your frontend URL
+    origin: FRONTEND_URL,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true
   }
 });
 
-// ✅ CORS + JSON
-app.use(
-  cors({
-    origin: 'http://localhost:5173',
-    credentials: true
-  })
-);
+// ✅ CORS middleware with dynamic origin
+const corsOptions = {
+  origin: FRONTEND_URL,
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // ✅ Static files (uploads)
@@ -63,7 +66,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 
 // ✅ MongoDB connection
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(MONGODB_URI)
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.error(err));
 
