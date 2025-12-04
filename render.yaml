@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: crowd-management-api
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd Crowd/Backend && npm install
+    startCommand: cd Crowd/Backend && npm start
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromDatabase:
+          name: crowd_management_db
+          property: connectionString
+    
+  - type: web
+    name: crowd-management-frontend
+    env: static
+    region: oregon
+    plan: free
+    buildCommand: cd Crowd/Frontend && npm install && npm run build
+    staticPublishPath: Crowd/Frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://crowd-management-api.onrender.com
+      - key: VITE_SOCKET_URL
+        value: https://crowd-management-api.onrender.com
+
+databases:
+  - name: crowd_management_db
+    databaseName: crowd_management
+    region: oregon
+    plan: free
