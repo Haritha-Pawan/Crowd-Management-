@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import Zone from '../model/Zone.model.js';
+import Zone from '../model/zone.model.js';
 import { createSpotsForZone } from './spot.controller.js';
 
 // helpers
