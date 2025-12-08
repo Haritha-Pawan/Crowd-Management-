@@ -21,7 +21,7 @@ import CounterDashboard from "./Components/Counter/CounterDashboard.jsx";
 import ForgotPassword from "./Pages/ForgotPassword.jsx";
 import ResetPassword from "./Pages/ResetPassword.jsx";
 import QRScanner from "./Components/Counter/QRScanner.jsx";
-import Landingpage from "./Pages/landingpage.jsx";
+import Landingpage from "./Pages/Landingpage.jsx";
 import RegisterPayment from "./Pages/RegisterPayment.jsx";
 import ProtectedRoute from "./Components/ProtectedRoute.jsx";
 import RegisterSuccess from "./Pages/RegisterSuccess.jsx";
