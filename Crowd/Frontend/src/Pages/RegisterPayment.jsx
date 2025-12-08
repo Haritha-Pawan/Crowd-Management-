@@ -3,7 +3,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
-const API = "http://localhost:5000/api/checkout";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API = `${API_BASE_URL}/api/checkout`;
 const nicRegex = /^(?:\d{12}|\d{9}[VvXx])$/;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const phoneRegex = /^0\d{9}$/;

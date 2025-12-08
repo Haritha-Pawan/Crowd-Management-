@@ -4,6 +4,8 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import assets from '../assets/assets.js';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,7 +41,7 @@ function Login() {
     if (!validate()) return;
 
     try {
-      const res = await axios.post("http://localhost:5000/auth", { email, password });
+      const res = await axios.post(`${API_BASE_URL}/auth`, { email, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", res.data.user.role);
 

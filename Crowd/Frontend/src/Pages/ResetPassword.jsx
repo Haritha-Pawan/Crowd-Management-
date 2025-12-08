@@ -5,12 +5,15 @@ import { Link } from "react-router-dom";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// 🔑 Use the environment variable for the deployed backend URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 function ResetPassword() {
   const { token } = useParams();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [message, setMessage] = useState(""); 
+  const [message, setMessage] = useState("");
   const naviaget = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -34,7 +37,8 @@ function ResetPassword() {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/auth/reset-password/${token}`, {
+      // 🟢 CORRECTED FETCH URL
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
@@ -60,6 +64,7 @@ function ResetPassword() {
     }
   };
   return (
+    // ... rest of the JSX ...
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 p-4">
       <ToastContainer />
       <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
