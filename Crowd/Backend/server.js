@@ -7,7 +7,7 @@ import { Server } from 'socket.io';
 import path from 'path';
 
 // ✅ Import existing routes
-import incidentRoutes from './src/Modules/Incident/Route/incident.route.js';
+import incidentRoutes from './src/Modules/Incident/Route/incident.Route.js';
 
 import zoneRouter from './src/Modules/Parking/Route/zone.Route.js';
 
