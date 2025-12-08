@@ -2,7 +2,7 @@ import { Car, Eye, Settings, TriangleAlert, User, UserPlus } from 'lucide-react'
 import React from 'react'
 import SidebarDash from '../../Ui/SidebarDash'
 import { Routes,Route } from 'react-router-dom';
-import Live from './Live/live';
+import Live from './Live/Live';
 import Task from './Task/Task';
 import ParkingManagement from './Parking/ParkingManagement';
 
