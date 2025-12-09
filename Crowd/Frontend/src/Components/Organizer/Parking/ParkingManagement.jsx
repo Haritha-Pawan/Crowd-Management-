@@ -15,7 +15,7 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import EditForm from "./EditForm";
 
-const API = "http://${API_BASE_URL}/api";
+const API = "https://crowd-management-api.onrender.com/api";
 
 const ParkingManagement = () => {
   const [isAddPopupOpen, setAddIsPopupOpen] = useState(false);
