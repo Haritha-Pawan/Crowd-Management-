@@ -3,7 +3,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const API = "http://${API_BASE_URL}/api";
+const API = "https://crowd-management-api.onrender.com/api";
+
 
 const FACILITY_OPTIONS = [
   "EV charging",

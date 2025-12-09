@@ -66,7 +66,8 @@ function addBusinessHeader(doc, info = BUSINESS_INFO) {
 }
 
 /* ========================= component ========================= */
-const API = "http://${API_BASE_URL}/api";
+const API = "https://crowd-management-api.onrender.com/api";
+
 const RES_API = `${API}/reservations`;
 
 const fmtLKR = (n) =>
