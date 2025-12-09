@@ -66,7 +66,7 @@ function addBusinessHeader(doc, info = BUSINESS_INFO) {
 }
 
 /* ========================= component ========================= */
-const API = "http://localhost:5000/api";
+const API = "http://${API_BASE_URL}/api";
 const RES_API = `${API}/reservations`;
 
 const fmtLKR = (n) =>

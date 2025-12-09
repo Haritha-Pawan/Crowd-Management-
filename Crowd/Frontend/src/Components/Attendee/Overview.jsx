@@ -8,7 +8,7 @@ import NotificationBell from "../../Components/NotificationBell";
 
 // ---- inline API helper ----
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "http://${API_BASE_URL}/api",
   withCredentials: true,
 });
 
@@ -50,7 +50,7 @@ export default function Overview() {
   useEffect(() => {
     if (socketRef.current) return; // prevent double init in React Strict Mode
 
-    const s = io("http://localhost:5000", { withCredentials: true });
+    const s = io("http://${API_BASE_URL}", { withCredentials: true });
     socketRef.current = s;
     setSocket(s);
 

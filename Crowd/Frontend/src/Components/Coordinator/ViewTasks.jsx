@@ -12,12 +12,12 @@ import {
 } from "lucide-react";
 import axios from "axios";
 
-const TASKS_API = "http://localhost:5000/api/tasks";
+const TASKS_API = "http://${API_BASE_URL}/api/tasks";
 
 // ---- notifications endpoints (adjust if needed) ----
-const NOTIF_API_MINE = "http://localhost:5000/api/coord-notifications/inbox";
-const NOTIF_API_READ_ONE = (id) => `http://localhost:5000/api/coord-notifications/${id}/read`;
-const NOTIF_API_READ_ALL = "http://localhost:5000/api/coord-notifications/read-all";
+const NOTIF_API_MINE = "http://${API_BASE_URL}/api/coord-notifications/inbox";
+const NOTIF_API_READ_ONE = (id) => `http://${API_BASE_URL}/api/coord-notifications/${id}/read`;
+const NOTIF_API_READ_ALL = "http://${API_BASE_URL}/api/coord-notifications/read-all";
 
 const ViewTasks = () => {
   const [tasks, setTasks] = useState([]);

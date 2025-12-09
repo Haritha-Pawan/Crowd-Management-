@@ -20,7 +20,7 @@ import {
 
 // ---- axios instance (adds JWT automatically) ----
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE?.replace(/\/+$/, "") || "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_BASE?.replace(/\/+$/, "") || "http://${API_BASE_URL}/api",
   withCredentials: true,
 });
 api.interceptors.request.use((config) => {

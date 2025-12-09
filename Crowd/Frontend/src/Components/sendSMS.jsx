@@ -15,7 +15,7 @@ export default function SendMessage() {
       setLoading(true);
 
       // ✅ Call your backend controller endpoint
-      const res = await axios.post("http://localhost:5000/users/attendees/send-message", {
+      const res = await axios.post("http://${API_BASE_URL}/users/attendees/send-message", {
         message,
       });
 

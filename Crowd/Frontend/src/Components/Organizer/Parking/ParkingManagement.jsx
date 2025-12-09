@@ -15,7 +15,7 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import EditForm from "./EditForm";
 
-const API = "http://localhost:5000/api";
+const API = "http://${API_BASE_URL}/api";
 
 const ParkingManagement = () => {
   const [isAddPopupOpen, setAddIsPopupOpen] = useState(false);

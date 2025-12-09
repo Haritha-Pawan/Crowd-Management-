@@ -6,7 +6,7 @@ function AttendeeLineChart() {
   console.log(data);
 
   useEffect(() => {
-    fetch('http://localhost:5000/users/attendee-daily-count')
+    fetch('http://${API_BASE_URL}/users/attendee-daily-count')
       .then(res => res.json())
       .then(setData)
       .catch(console.error);

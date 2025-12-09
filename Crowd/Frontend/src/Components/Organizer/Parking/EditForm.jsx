@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const API = "http://localhost:5000/api";
+const API = "http://${API_BASE_URL}/api";
 
 const FACILITY_OPTIONS = [
   "EV charging",

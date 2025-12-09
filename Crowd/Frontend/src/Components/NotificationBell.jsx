@@ -3,7 +3,7 @@ import { Bell, Check } from "lucide-react";
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "http://${API_BASE_URL}/api",
   withCredentials: true,
 });
 

@@ -11,7 +11,7 @@ function AttendeDetails() {
     const fetchAttendees = async () => {
       try {
       
-        const res = await axios.get('http://localhost:5000/other/attendance'); 
+        const res = await axios.get('http://${API_BASE_URL}/other/attendance'); 
    
         setAllAttendees(res.data); 
         setAttendees(res.data); 
@@ -39,7 +39,7 @@ function AttendeDetails() {
   const handleDeleteAll = async () => {
     if (window.confirm("Are you sure you want to delete all attendees?")) {
       try {
-        await axios.delete('http://localhost:5000/other/attendance/delete"'); 
+        await axios.delete('http://${API_BASE_URL}/other/attendance/delete"'); 
         setAllAttendees([]);
         setAttendees([]);
       } catch (err) {

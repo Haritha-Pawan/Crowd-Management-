@@ -13,7 +13,7 @@ const AdminOverview = () => {
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const res = await fetch("http://localhost:5000/other/attendance/count");
+        const res = await fetch("http://${API_BASE_URL}/other/attendance/count");
         const data = await res.json();
         setAttendeeCount(data.count);
       } catch (err) {
@@ -27,7 +27,7 @@ const AdminOverview = () => {
   useEffect(() => {
     const fetchTotalCounters = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/counter/totalCount");
+        const res = await fetch("http://${API_BASE_URL}/api/counter/totalCount");
         const data = await res.json();
         setTotalCounters(data.count);
       } catch (err) {

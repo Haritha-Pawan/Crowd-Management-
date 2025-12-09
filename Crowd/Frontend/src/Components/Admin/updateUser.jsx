@@ -33,7 +33,7 @@ const EditUser = ({ isOpen, onClose, user, onUserUpdated }) => {
     e.preventDefault();
     try {
       const res = await axios.put(
-        `http://localhost:5000/users/${user._id}`,
+        `http://${API_BASE_URL}/users/${user._id}`,
         formData
       );
       onUserUpdated(res.data); // update parent state

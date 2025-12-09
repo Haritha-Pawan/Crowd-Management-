@@ -3,7 +3,7 @@ import { Car, ChartNoAxesCombined, CircleDotIcon } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 
-const API = "http://localhost:5000/api";
+const API = "http://${API_BASE_URL}/api";
 
 /* ---------- tiny helpers ---------- */
 const norm = (v) => String(v ?? "").trim().toLowerCase();

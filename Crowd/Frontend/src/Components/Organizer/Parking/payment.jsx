@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 
 /** ================== CONFIG ================== */
-const PARKING_SPOTS_API = "http://localhost:5000/api/spots";
-const RESERVATION_CONFIRM_API = "http://localhost:5000/api/reservations/confirm";
+const PARKING_SPOTS_API = "http://${API_BASE_URL}/api/spots";
+const RESERVATION_CONFIRM_API = "http://${API_BASE_URL}/api/reservations/confirm";
 /** ============================================ */
 
 // ---------- helpers ----------

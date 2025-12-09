@@ -14,7 +14,7 @@ import EditCounter from "./EditCounter";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const API = "http://localhost:5000/api";
+const API = "http://${API_BASE_URL}/api";
 
 const toNumber = (value) => {
   const num = Number(value);

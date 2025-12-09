@@ -17,7 +17,7 @@ const SupportForm = () => {
 
   const fetchReports = async () => {
   try {
-    const res = await axios.get(`http://localhost:5000/api/support`);
+    const res = await axios.get(`http://${API_BASE_URL}/api/support`);
     // Frontend filtering by report type
     const filtered = res.data.filter(report => report.type === activeForm);
     setReports(filtered);
@@ -45,7 +45,7 @@ const SupportForm = () => {
     payload.append('type', activeForm);
 
     try {
-      await axios.post('http://localhost:5000/api/support', payload, { headers: { 'Content-Type': 'multipart/form-data' } });
+      await axios.post('http://${API_BASE_URL}/api/support', payload, { headers: { 'Content-Type': 'multipart/form-data' } });
       alert('Incident reported successfully');
       setFormData({});
       fetchReports();
@@ -57,7 +57,7 @@ const SupportForm = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this report?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/support/${id}`);
+      await axios.delete(`http://${API_BASE_URL}/api/support/${id}`);
       setReports(reports.filter(report => report._id !== id));
     } catch (error) {
       console.error('Delete error:', error);
