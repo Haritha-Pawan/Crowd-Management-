@@ -19,7 +19,8 @@ import { Bell, X } from "lucide-react";
 import NotificationBell from "../../Components/NotificationBell";
 
 // ✅ Base API endpoint (use your backend URL)
-const API = "http://${API_BASE_URL}/api";
+const API = "https://crowd-management-api.onrender.com/api";
+
 const api = axios.create({ baseURL: API, withCredentials: true });
 const LIVE_REFRESH_MS = 8000; // optional: refresh metrics/zones every 8s
 
