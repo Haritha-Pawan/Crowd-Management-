@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { MapPin, Car, ChevronRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const API = "http://${API_BASE_URL}/api";
+const API = "https://crowd-management-api.onrender.com/api";
 const LIVE_REFRESH_MS = 10000; // poll every 5s
 
 /* ---------- helpers ---------- */
