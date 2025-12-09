@@ -7,13 +7,15 @@ import SendMessage from "../sendSMS"; // ✅ your sendSMS.jsx component
 const AdminOverview = () => {
   const [attendeeCount, setAttendeeCount] = useState(0);
   const [totalCounters, setTotalCounters] = useState(0);
-  const [isPopupOpen, setIsPopupOpen] = useState(false); // ✅ for popup
+  const [isPopupOpen, setIsPopupOpen] = useState(false); // ✅ for 
+  const API = "https://crowd-management-api.onrender.com/api";
+
 
   // Fetch attendee count
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const res = await fetch("http://${API_BASE_URL}/other/attendance/count");
+        const res = await fetch(`${API}/other/attendance/count`);
         const data = await res.json();
         setAttendeeCount(data.count);
       } catch (err) {

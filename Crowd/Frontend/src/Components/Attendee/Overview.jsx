@@ -8,7 +8,9 @@ import NotificationBell from "../../Components/NotificationBell";
 
 // ---- inline API helper ----
 const api = axios.create({
-  baseURL: "http://${API_BASE_URL}/api",
+  
+
+  baseURL: "https://crowd-management-api.onrender.com/api",
   withCredentials: true,
 });
 

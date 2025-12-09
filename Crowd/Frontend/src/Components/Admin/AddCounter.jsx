@@ -2,7 +2,8 @@
 import React, { useState } from "react";
 import axios from "axios";
 
-const API = "http://${API_BASE_URL}/api";
+const API = "https://crowd-management-api.onrender.com/api";
+
 
 const AddCounter = ({ isOpen, onClose, onCreate }) => {
   const [form, setForm] = useState({
