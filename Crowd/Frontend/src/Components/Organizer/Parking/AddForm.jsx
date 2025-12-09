@@ -7,6 +7,9 @@ const FACILITY_OPTIONS = [
   "24/7 access", "Security personnel", "Restrooms",
 ];
 
+const API = "https://crowd-management-api.onrender.com/api";
+
+
 const NAME_REGEX = /^[A-Za-z0-9][A-Za-z0-9 \-_.]{1,58}[A-Za-z0-9]$/; // 2–60 chars, letters/numbers/space/-/_/.
 const PRICE_REGEX = /^\d+(\.\d{1,2})?$/;                              // 0, 10, 10.5, 10.55
 const DISTANCE_REGEX = /^\d+(\.\d+)?\s*(m|km)?$/i;                    // 50, 50m, 0.3km
