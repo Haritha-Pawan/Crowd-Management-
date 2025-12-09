@@ -19,7 +19,7 @@ import { Bell, X } from "lucide-react";
 import NotificationBell from "../../Components/NotificationBell";
 
 // ✅ Base API endpoint (use your backend URL)
-const API = "http://localhost:5000/api";
+const API = "http://${API_BASE_URL}/api";
 const api = axios.create({ baseURL: API, withCredentials: true });
 const LIVE_REFRESH_MS = 8000; // optional: refresh metrics/zones every 8s
 
@@ -52,7 +52,7 @@ const OrganizerOverview = () => {
 
   // ✅ Connect socket
   useEffect(() => {
-    const s = io("http://localhost:5000", { withCredentials: true });
+    const s = io("http://${API_BASE_URL}", { withCredentials: true });
     setSocket(s);
 
     s.emit("join", { role: currentUser.role });

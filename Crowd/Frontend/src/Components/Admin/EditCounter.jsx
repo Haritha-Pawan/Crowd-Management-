@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const API = "http://localhost:5000/api";
+const API = "http://${API_BASE_URL}/api";
 
 const EditCounter = ({ isOpen, onClose, counter, onUpdated }) => {
   const [form, setForm] = useState({

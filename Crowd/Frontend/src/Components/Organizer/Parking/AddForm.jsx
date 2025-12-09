@@ -146,7 +146,7 @@ const AddForm = ({ isOpen, onClose, OnCreated, refresh }) => {
           : undefined,
       };
 
-      const response = await axios.post("http://localhost:5000/api/zone", placeData);
+      const response = await axios.post("http://${API_BASE_URL}/api/zone", placeData);
 
       if (response?.data?.data) {
         OnCreated?.(response.data.data);

@@ -12,7 +12,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import useLogout from "../../hooks/useLogout";
 
-const API_URL = "http://localhost:5000/users";
+const API_URL = "http://${API_BASE_URL}/users";
 
 const UserManagement = () => {
   const navigate = useNavigate();
@@ -93,7 +93,7 @@ const UserManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
-        await axios.delete(`http://localhost:5000/users/${id}`);
+        await axios.delete(`http://${API_BASE_URL}/users/${id}`);
         setUsers(users.filter((u) => u._id !== id));
       } catch (err) {
         console.error(

@@ -15,7 +15,7 @@ const Coordinator = () => {
 
   // WebSocket connection (listen for new incidents)
   useEffect(() => {
-    const socket = io('http://localhost:5000'); // Change to your backend URL if needed
+    const socket = io('http://${API_BASE_URL}'); // Change to your backend URL if needed
 
     // Listen for newIncident event
     socket.on('newIncident', (incident) => {

@@ -4,7 +4,7 @@ import axios from "axios";
 import { Car, Map } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const API = "http://localhost:5000/api";
+const API = "http://${API_BASE_URL}/api";
 
 /* ---------- small UI helpers ---------- */
 const badgeClasses = (status) =>

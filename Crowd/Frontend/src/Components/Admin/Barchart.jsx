@@ -18,7 +18,7 @@ function Barchart() {
     // Fetch user data from backend
     const fetchData = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/users");
+        const res = await axios.get("http://${API_BASE_URL}/users");
         const users = res.data;
 
         // ✅ Example of processing data (adjust based on your API structure)

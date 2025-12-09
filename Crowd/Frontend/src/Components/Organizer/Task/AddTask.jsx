@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 
-const API = "http://localhost:5000/api";           // for tasks
-const USERS_API = "http://localhost:5000/users";    // your existing users route (not under /api)
+const API = "http://${API_BASE_URL}/api";           // for tasks
+const USERS_API = "http://${API_BASE_URL}/users";    // your existing users route (not under /api)
 
 const emptyForm = {
   title: "",

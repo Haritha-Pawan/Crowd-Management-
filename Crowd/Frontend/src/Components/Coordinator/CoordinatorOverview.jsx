@@ -6,7 +6,7 @@ import { io } from "socket.io-client";
 import NotificationBell from "../../Components/NotificationBell";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "http://${API_BASE_URL}/api",
   withCredentials: true,
 });
 const postNotification = (payload) => api.post("/notifications", payload);
@@ -31,7 +31,7 @@ export default function CoordinatorOverview() {
   useEffect(() => { audioRef.current = new Audio("/new-notification-021-370045.mp3"); }, []);
 
   useEffect(() => {
-    const s = io("http://localhost:5000", { withCredentials: true });
+    const s = io("http://${API_BASE_URL}", { withCredentials: true });
     setSocket(s);
     s.emit("join", { role: currentUser.role });
 

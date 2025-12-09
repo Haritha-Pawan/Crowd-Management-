@@ -30,7 +30,7 @@ const AddUser = ({ isOpen, onClose }) => {
 
   const sendRequest = async () => {
     try {
-      const res = await axios.post("http://localhost:5000/users", {
+      const res = await axios.post("http://${API_BASE_URL}/users", {
         name: String (input.name)   ,
         email:String (input.email),
         password:String (input.password),

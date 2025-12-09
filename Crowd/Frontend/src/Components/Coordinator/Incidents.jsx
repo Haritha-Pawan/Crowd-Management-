@@ -18,7 +18,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { addBusinessHeader } from "../../assets/pdfHeader"; // adjust relative path if needed
 
-const API = "http://localhost:5000/api";
+const API = "http://${API_BASE_URL}/api";
 
 // ---------- utils ----------
 const norm = (s) =>
@@ -77,7 +77,7 @@ const Incidents = () => {
   useEffect(() => {
     fetchIncidents();
 
-    const socket = io("http://localhost:5000", { withCredentials: true });
+    const socket = io("http://${API_BASE_URL}", { withCredentials: true });
 
     socket.on("newIncident", (newIncident) => {
       setIncidents((prev) => [newIncident, ...prev]);
@@ -472,7 +472,7 @@ const Incidents = () => {
             src={
               String(i.imageUrl).startsWith("http")
                 ? i.imageUrl
-                : `http://localhost:5000${i.imageUrl}`
+                : `http://${API_BASE_URL}${i.imageUrl}`
             }
             alt="Lost Person"
             className="w-16 h-16 object-cover rounded"
@@ -493,7 +493,7 @@ const Incidents = () => {
             src={
               String(i.imageUrl).startsWith("http")
                 ? i.imageUrl
-                : `http://localhost:5000${i.imageUrl}`
+                : `http://${API_BASE_URL}${i.imageUrl}`
             }
             alt="Lost Item"
             className="w-16 h-16 object-cover rounded"
