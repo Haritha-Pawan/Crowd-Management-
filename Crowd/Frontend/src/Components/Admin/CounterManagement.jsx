@@ -14,7 +14,8 @@ import EditCounter from "./EditCounter";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const API = "http://${API_BASE_URL}/api";
+  const API = "https://crowd-management-api.onrender.com/api";
+
 
 const toNumber = (value) => {
   const num = Number(value);
