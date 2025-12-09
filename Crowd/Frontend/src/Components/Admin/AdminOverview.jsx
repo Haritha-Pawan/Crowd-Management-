@@ -29,7 +29,7 @@ const AdminOverview = () => {
   useEffect(() => {
     const fetchTotalCounters = async () => {
       try {
-        const res = await fetch("http://${API_BASE_URL}/api/counter/totalCount");
+        const res = await fetch(`${API}/api/counter/totalCount`);
         const data = await res.json();
         setTotalCounters(data.count);
       } catch (err) {

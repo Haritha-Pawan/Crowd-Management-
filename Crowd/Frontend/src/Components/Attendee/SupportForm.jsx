@@ -14,6 +14,7 @@ const SupportForm = () => {
     fetchReports();
     setFormData({}); // clear form on switch
   }, [activeForm]);
+  
 
   const fetchReports = async () => {
   try {

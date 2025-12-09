@@ -11,6 +11,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+ const API = "https://crowd-management-api.onrender.com/api";
+
+
 function Barchart() {
   const [data, setData] = useState([]);
 
@@ -18,7 +21,7 @@ function Barchart() {
     // Fetch user data from backend
     const fetchData = async () => {
       try {
-        const res = await axios.get("http://${API_BASE_URL}/users");
+        const res = await axios.get(`${API}/users`);
         const users = res.data;
 
         // ✅ Example of processing data (adjust based on your API structure)

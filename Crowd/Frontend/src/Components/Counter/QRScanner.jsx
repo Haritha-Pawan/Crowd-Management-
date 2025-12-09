@@ -3,7 +3,9 @@ import { Scanner, useDevices } from "@yudiel/react-qr-scanner";
 import { Camera, Pause, Play, ScanLine } from "lucide-react";
 import { toast } from "react-hot-toast";
 
-const API_SCAN = "http://${API_BASE_URL}/api/checkout/scan";
+
+
+const API_SCAN = "https://crowd-management-api.onrender.com/api/checkout/scan";
 
 export default function QRScanner({ onFound }) {
   const devices = useDevices();

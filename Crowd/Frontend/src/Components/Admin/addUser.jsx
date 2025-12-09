@@ -28,9 +28,11 @@ const AddUser = ({ isOpen, onClose }) => {
     sendRequest().then(() => navigate("/Admin/UserManagement.jsx")); 
   };
 
+    const API = "https://crowd-management-api.onrender.com/api";
+
   const sendRequest = async () => {
     try {
-      const res = await axios.post("http://${API_BASE_URL}/users", {
+      const res = await axios.post(`${API}/users`, {
         name: String (input.name)   ,
         email:String (input.email),
         password:String (input.password),
