@@ -15,7 +15,7 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import EditForm from "./EditForm";
 
-const API = "https://crowd-management-api.onrender.com/api";
+const API = "https://crowd-management-api.onrender.com";
 
 const ParkingManagement = () => {
   const [isAddPopupOpen, setAddIsPopupOpen] = useState(false);
@@ -29,7 +29,7 @@ const ParkingManagement = () => {
   // ---- single fetcher for /api/zone ----
   const fetchPlaces = async () => {
     try {
-      const res = await axios.get(`${API}/zone`);
+      const res = await axios.get(`https://crowd-management-api.onrender.com/api/zone`);
       console.log("[PM] GET /zone:", res.data);
       const list = res?.data?.data ?? res?.data ?? [];
       if (Array.isArray(list)) setPlaces(list);
