@@ -18,9 +18,13 @@ import {
   Copy,
 } from "lucide-react";
 
+
+
+
+
 // ---- axios instance (adds JWT automatically) ----
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE?.replace(/\/+$/, "") || "http://${API_BASE_URL}/api",
+  baseURL: import.meta.env.VITE_API_BASE?.replace(/\/+$/, "") || "https://crowd-management-api.onrender.com/api",
   withCredentials: true,
 });
 api.interceptors.request.use((config) => {

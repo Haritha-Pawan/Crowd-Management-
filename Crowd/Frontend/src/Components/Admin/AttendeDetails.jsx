@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+ const API = "https://crowd-management-api.onrender.com/api";
+
+
 function AttendeDetails() {
   
   const [allAttendees, setAllAttendees] = useState([]);
   const [attendees, setAttendees] = useState([]);
 
+   
   // fetch attendees from backend when component mounts
   useEffect(() => {
     const fetchAttendees = async () => {
       try {
       
-        const res = await axios.get('http://${API_BASE_URL}/other/attendance'); 
+        const res = await axios.get(`${API}/other/attendance`); 
    
         setAllAttendees(res.data); 
         setAttendees(res.data); 
@@ -36,10 +40,11 @@ function AttendeDetails() {
   };
 
   // delete all attendees
+
   const handleDeleteAll = async () => {
     if (window.confirm("Are you sure you want to delete all attendees?")) {
       try {
-        await axios.delete('http://${API_BASE_URL}/other/attendance/delete"'); 
+        await axios.delete(`${API}/other/attendance/delete`); 
         setAllAttendees([]);
         setAttendees([]);
       } catch (err) {

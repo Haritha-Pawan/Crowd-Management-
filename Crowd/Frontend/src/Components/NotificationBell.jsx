@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Bell, Check } from "lucide-react";
 import axios from "axios";
 
+
+
 const api = axios.create({
-  baseURL: "http://${API_BASE_URL}/api",
+  baseURL: "https://crowd-management-api.onrender.com/api",
   withCredentials: true,
 });
 

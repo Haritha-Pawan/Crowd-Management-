@@ -12,7 +12,9 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import useLogout from "../../hooks/useLogout";
 
-const API_URL = "http://${API_BASE_URL}/users";
+
+ const API = "https://crowd-management-api.onrender.com/users";
+
 
 const UserManagement = () => {
   const navigate = useNavigate();
@@ -67,7 +69,7 @@ const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(API_URL);
+      const response = await axios.get(API);
       // Handle both cases where data might be directly in response.data or in response.data.users
       const userData = response.data.users || response.data || [];
       setUsers(userData);
@@ -93,7 +95,7 @@ const UserManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
-        await axios.delete(`http://${API_BASE_URL}/users/${id}`);
+        await axios.delete(`http://${API}/users/${id}`);
         setUsers(users.filter((u) => u._id !== id));
       } catch (err) {
         console.error(

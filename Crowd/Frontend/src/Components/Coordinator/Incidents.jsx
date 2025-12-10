@@ -18,7 +18,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { addBusinessHeader } from "../../assets/pdfHeader"; // adjust relative path if needed
 
-const API = "http://${API_BASE_URL}/api";
+const API = "https://crowd-management-api.onrender.com/api";
 
 // ---------- utils ----------
 const norm = (s) =>

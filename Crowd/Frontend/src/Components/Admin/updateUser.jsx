@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
+ const API = "https://crowd-management-api.onrender.com/api";
+
+
 const EditUser = ({ isOpen, onClose, user, onUserUpdated }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -33,7 +36,7 @@ const EditUser = ({ isOpen, onClose, user, onUserUpdated }) => {
     e.preventDefault();
     try {
       const res = await axios.put(
-        `http://${API_BASE_URL}/users/${user._id}`,
+        `${API}/users/${user._id}`,
         formData
       );
       onUserUpdated(res.data); // update parent state

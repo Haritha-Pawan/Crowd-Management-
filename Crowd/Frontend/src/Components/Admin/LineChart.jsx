@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { LineChart as ReLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
+
+
+
+ const API = "https://crowd-management-api.onrender.com/api";
+
+
 function AttendeeLineChart() {
   const [data, setData] = useState([]);
   console.log(data);
 
   useEffect(() => {
-    fetch('http://${API_BASE_URL}/users/attendee-daily-count')
+    fetch(`${API}/users/attendee-daily-count`)
       .then(res => res.json())
       .then(setData)
       .catch(console.error);

@@ -5,8 +5,10 @@ import axios from "axios";
 import { io } from "socket.io-client";
 import NotificationBell from "../../Components/NotificationBell";
 
+
+
 const api = axios.create({
-  baseURL: "http://${API_BASE_URL}/api",
+  baseURL: "https://crowd-management-api.onrender.com/api",
   withCredentials: true,
 });
 const postNotification = (payload) => api.post("/notifications", payload);
