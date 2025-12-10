@@ -7,6 +7,7 @@ import io from 'socket.io-client'; // Import socket.io client
 import Incidents from './Incidents.jsx';
 import ViewTasks from './ViewTasks.jsx';
 import CoordinatorOverview from './CoordinatorOverview.jsx';
+import CounterDashboard from '../Counter/CounterDashboard.jsx';
 
 const Coordinator = () => {
   const [notifications, setNotifications] = useState([]);
@@ -42,6 +43,7 @@ const Coordinator = () => {
     { name: 'View Tasks', icon: <UserPlus />, to: '/Coordinator/ViewTasks' },
     { name: 'Incident Management', icon: <UserPlus />, to: '/Coordinator/Incidents' },
     { name: 'Overview', icon: <UserPlus />, to: '/Coordinator/CoordinatorOverview' },
+    { name: ' Counter Management', icon: <Car />, to: '/Admin/CounterManagement' },
   ];
 
   return (
@@ -71,6 +73,7 @@ const Coordinator = () => {
           <Route path="/ViewTasks" element={<ViewTasks />} />
           <Route path="/Incidents" element={<Incidents />} />
           <Route path="/CoordinatorOverview" element={<CoordinatorOverview />} />
+          <Route path="/CounterManagement" element={<CounterDashboard />} />
         </Routes>
       </div>
     </div>

@@ -18,6 +18,7 @@ const Admin = () => {
         { name: 'User Management', icon: <UserPlus />, to: '/Admin/UserManagement' },
         { name: 'Counter Management', icon: <Loader2Icon />, to: '/Admin/CounterManagement' },
         { name: ' Parking Management', icon: <Car />, to: '/Admin/parkingManagement' },
+        
        
       ];
 
