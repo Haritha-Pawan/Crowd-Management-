@@ -14,7 +14,7 @@ import QRScanner from '../Counter/QRScanner.jsx';
 const CounterDashboard = () => {
 
        const AdminLinks = [
-        { name: 'overview', icon: <User size={20} />, to: '/Admin/AdminOverview' },
+        { name: 'overview', icon: <User size={20} />, to: '' },
         { name: 'QR Scanner', icon: <UserPlus />, to: '/QRScanner' },
         { name: 'Report', icon: <ChartArea />, to: '/Admin/CounterManagement' },
        

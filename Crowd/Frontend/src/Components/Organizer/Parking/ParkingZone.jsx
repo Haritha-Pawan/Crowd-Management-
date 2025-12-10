@@ -24,6 +24,8 @@ const timeAgo = (iso) => {
   return `${diffMin} min ago`;
 };
 
+
+
 const currencyToNumber = (raw) => {
   if (raw === null || raw === undefined) return null;
   const m = String(raw).match(/-?\d+(\.\d+)?/);
@@ -105,6 +107,9 @@ const statusToOccupied = (spot) => {
   }
   return false;
 };
+
+
+
 
 const computeCountsFromSpots = (spots) => {
   const total = spots.length;
